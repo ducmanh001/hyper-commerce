@@ -407,7 +407,7 @@ services:
     # DEV ONLY: 127.0.0.1 binding → chỉ debug từ localhost, không expose ra network
     # PRODUCTION: xoá mục ports này hoàn toàn
     ports:
-      - "127.0.0.1:3001:3001" ─────────────────────────────────────────────
+      - "127.0.0.1:3001:3001"
   # Personalized feed, fan-out on write, ranking
   # Port: 3002
   feed-service:
@@ -424,7 +424,7 @@ services:
       KAFKAJS_NO_PARTITIONER_WARNING: "1"
     # DEV ONLY — 127.0.0.1 only
     ports:
-      - "127.0.0.1:3002:3002" ─────────────────────────────────────────────
+      - "127.0.0.1:3002:3002"
   # Vòng đời đơn hàng, Saga choreography, commissions
   # Port: 3003
   order-service:
@@ -442,7 +442,7 @@ services:
       KAFKAJS_NO_PARTITIONER_WARNING: "1"
     # DEV ONLY — 127.0.0.1 only
     ports:
-      - "127.0.0.1:3003:3003" ─────────────────────────────────────────
+      - "127.0.0.1:3003:3003"
   # Stock reservation, flash sales, gRPC
   # Port: 3004
   inventory-service:
@@ -459,7 +459,7 @@ services:
       KAFKAJS_NO_PARTITIONER_WARNING: "1"
     # DEV ONLY — 127.0.0.1 only
     ports:
-      - "127.0.0.1:3004:3004" ────────────────────────────────────────────
+      - "127.0.0.1:3004:3004"
   # Hybrid BM25 + kNN search (Elasticsearch + Qdrant)
   # Port: 3005
   search-service:
@@ -503,7 +503,7 @@ services:
       KAFKAJS_NO_PARTITIONER_WARNING: "1"
     # DEV ONLY — 127.0.0.1 only
     ports:
-      - "127.0.0.1:3006:3006" ───────────────────────────────────────────
+      - "127.0.0.1:3006:3006"
   # VNPay, MoMo, Stripe gateway adapters + webhooks
   # Port: 3007
   payment-service:
