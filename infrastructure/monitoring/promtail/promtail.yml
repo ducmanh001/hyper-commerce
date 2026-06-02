@@ -1,0 +1,100 @@
+# Promtail — log shipping agent
+# Tails Docker container log files and ships them to Loki
+#
+# WHY container log tailing instead of syslog/journald?
+# All services run in Docker. Docker writes container stdout/stderr to
+# /var/lib/docker/containers/<id>/<id>-json.log (JSON format).
+# Promtail's docker_sd_configs auto-discovers containers and extracts labels
+# (container name, image, compose service) — no manual service registration.
+#
+# Label strategy (mirrors Prometheus for correlation in Grafana):
+#   service: extracted from docker-compose service name (container_label_com_docker_compose_service)
+#   level:   extracted from log body via pipeline stages (regex on "level": "ERROR" etc.)
+#   job:     always "docker-containers"
+
+server:
+  http_listen_port: 9080
+  grpc_listen_port: 0
+
+positions:
+  filename: /tmp/positions.yaml
+
+clients:
+  - url: http://loki:3100/loki/api/v1/push
+
+scrape_configs:
+  - job_name: docker-containers
+    docker_sd_configs:
+      - host: unix:///var/run/docker.sock
+        refresh_interval: 10s
+        filters:
+          - name: status
+            values: ["running"]
+
+    relabel_configs:
+      # Extract docker-compose service name as "service" label
+      - source_labels: [__meta_docker_container_label_com_docker_compose_service]
+        target_label: service
+      # Extract container name
+      - source_labels: [__meta_docker_container_name]
+        regex: /(.+)
+        target_label: container
+      # Keep the job label
+      - replacement: docker-containers
+        target_label: job
+
+    pipeline_stages:
+      # Docker wraps logs in JSON: {"log":"...", "stream":"stdout", "time":"..."}
+      - json:
+          expressions:
+            output: log
+            stream: stream
+            time: time
+      - labels:
+          stream:
+      - output:
+          source: output
+
+      # Extract log level from NestJS structured logs
+      # NestJS format: {"level":"error","message":"...","context":"...","timestamp":"..."}
+      - match:
+          selector: '{job="docker-containers"}'
+          stages:
+            - json:
+                expressions:
+                  level: level
+                  context: context
+                drop_malformed: false
+            - labels:
+                level:
+                context:
+
+      # Timestamp from log body
+      - timestamp:
+          source: time
+          format: RFC3339Nano
+          fallback_formats:
+            - RFC3339
+            - UnixMs
+
+  # Nginx access logs (structured JSON format from nginx.conf)
+  - job_name: nginx
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: nginx
+          service: nginx
+          __path__: /var/log/nginx/*.log
+
+    pipeline_stages:
+      - json:
+          expressions:
+            method: method
+            uri: uri
+            status: status
+            request_time: request_time
+            upstream: upstream_addr
+      - labels:
+          method:
+          status:

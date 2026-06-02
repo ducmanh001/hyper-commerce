@@ -1,0 +1,326 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: hypercommerce
+  labels:
+    app.kubernetes.io/name: hypercommerce
+    istio-injection: enabled   # Service mesh for mTLS + observability
+
+---
+# ── HPA for User Service ──────────────────────────────────────
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: user-service-hpa
+  namespace: hypercommerce
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: user-service
+  minReplicas: 3
+  maxReplicas: 50
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 65
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: 75
+  behavior:
+    scaleUp:
+      stabilizationWindowSeconds: 30    # Fast scale-up during flash sales
+      policies:
+        - type: Pods
+          value: 5
+          periodSeconds: 30
+    scaleDown:
+      stabilizationWindowSeconds: 300   # Slow scale-down — avoid flapping
+
+---
+# ── User Service Deployment ──────────────────────────────────
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: user-service
+  namespace: hypercommerce
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: user-service
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 2
+  template:
+    metadata:
+      labels:
+        app: user-service
+        version: "1.0.0"
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "3001"
+        prometheus.io/path: "/metrics"
+    spec:
+      topologySpreadConstraints:
+        # Spread pods across AZs — resilience to zone failure
+        - maxSkew: 1
+          topologyKey: topology.kubernetes.io/zone
+          whenUnsatisfiable: DoNotSchedule
+          labelSelector:
+            matchLabels:
+              app: user-service
+      containers:
+        - name: user-service
+          image: hypercommerce/user-service:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 3001
+              name: http
+          env:
+            - name: NODE_ENV
+              value: production
+            - name: PORT
+              value: "3001"
+            - name: DB_HOST
+              valueFrom:
+                secretKeyRef:
+                  name: db-credentials
+                  key: host
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: jwt-secret
+                  key: secret
+            - name: REDIS_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: redis-config
+                  key: host
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "256Mi"
+            limits:
+              cpu: "1000m"
+              memory: "512Mi"
+          livenessProbe:
+            httpGet:
+              path: /health/live
+              port: 3001
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /health/ready
+              port: 3001
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 3
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1001
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: user-service
+  namespace: hypercommerce
+spec:
+  selector:
+    app: user-service
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 3001
+  type: ClusterIP
+
+---
+# ── Live Service (WebSocket) ─────────────────────────────────
+# WebSocket services CANNOT use RollingUpdate cleanly.
+# Use sessionAffinity to route same user to same pod.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: live-service
+  namespace: hypercommerce
+spec:
+  replicas: 5
+  selector:
+    matchLabels:
+      app: live-service
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
+  template:
+    metadata:
+      labels:
+        app: live-service
+    spec:
+      containers:
+        - name: live-service
+          image: hypercommerce/live-service:latest
+          ports:
+            - containerPort: 3006
+          resources:
+            requests:
+              cpu: "500m"      # WebSocket is CPU-heavy for JSON serialization
+              memory: "512Mi"
+            limits:
+              cpu: "2000m"
+              memory: "1Gi"
+          env:
+            - name: REDIS_ADAPTER_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: redis-config
+                  key: host
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: live-service
+  namespace: hypercommerce
+spec:
+  selector:
+    app: live-service
+  sessionAffinity: ClientIP  # WebSocket — keep same pod
+  sessionAffinityConfig:
+    clientIP:
+      timeoutSeconds: 3600
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 3006
+
+---
+# ── HPA for Live Service ──────────────────────────────────────
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: live-service-hpa
+  namespace: hypercommerce
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: live-service
+  minReplicas: 5
+  maxReplicas: 200   # Large max — flash sale events spike to 500K concurrent
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 60
+
+---
+# ── Redis ConfigMap ───────────────────────────────────────────
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: redis-config
+  namespace: hypercommerce
+data:
+  host: "redis-cluster.hypercommerce.svc.cluster.local"
+  port: "6379"
+
+---
+# ── Network Policy ────────────────────────────────────────────
+# Zero-trust: only allow explicit service-to-service traffic
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-all
+  namespace: hypercommerce
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
+    - Egress
+
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-user-service
+  namespace: hypercommerce
+spec:
+  podSelector:
+    matchLabels:
+      app: user-service
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              role: api-gateway
+      ports:
+        - port: 3001
+  egress:
+    - to:
+        - podSelector:
+            matchLabels:
+              app: postgres
+      ports:
+        - port: 5432
+    - to:
+        - podSelector:
+            matchLabels:
+              app: redis
+      ports:
+        - port: 6379
+    - to:
+        - podSelector:
+            matchLabels:
+              app: kafka
+      ports:
+        - port: 9092
+
+---
+# ── PodDisruptionBudget ───────────────────────────────────────
+# Prevents K8s from taking down too many pods during node maintenance
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: user-service-pdb
+  namespace: hypercommerce
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app: user-service
+
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: live-service-pdb
+  namespace: hypercommerce
+spec:
+  minAvailable: 3
+  selector:
+    matchLabels:
+      app: live-service

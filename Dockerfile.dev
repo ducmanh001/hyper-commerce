@@ -1,0 +1,27 @@
+# ============================================================
+# HYPERCOMMERCE — Shared Dev Image (NestJS Monorepo)
+# Node.js 20 (ts-node hoạt động ổn định, tránh lỗi Node 22)
+#
+# Pattern:
+#   - Image này cài sẵn node_modules (Node 20 compatible)
+#   - Source code được mount vào lúc runtime qua volume
+#   - ts-node biên dịch on-the-fly → hot reload với --watch
+# ============================================================
+
+FROM node:20-alpine
+
+WORKDIR /app
+
+# Cài các tool cần thiết
+RUN apk add --no-cache curl netcat-openbsd
+
+# Copy chỉ package files + tsconfig (ít thay đổi → cache tốt)
+COPY package*.json ./
+COPY tsconfig*.json ./
+COPY nest-cli.json ./
+
+# Cài toàn bộ deps (bao gồm devDependencies để ts-node hoạt động)
+RUN npm ci --legacy-peer-deps
+
+# Source code KHÔNG copy vào image — sẽ được bind-mount qua volume
+# Mục đích: code thay đổi không cần rebuild image

@@ -1,0 +1,87 @@
+syntax = "proto3";
+
+package hypercommerce.inventory;
+
+service InventoryService {
+  rpc CheckStock (CheckStockRequest) returns (CheckStockResponse);
+  rpc CheckStockBatch (CheckStockBatchRequest) returns (CheckStockBatchResponse);
+  rpc ReserveStock (ReserveStockRequest) returns (ReserveStockResponse);
+  rpc ReleaseReservation (ReleaseReservationRequest) returns (ReleaseReservationResponse);
+  rpc CommitReservation (CommitReservationRequest) returns (CommitReservationResponse);
+  rpc GetFlashSaleStock (GetFlashSaleStockRequest) returns (GetFlashSaleStockResponse);
+}
+
+message CheckStockRequest {
+  string product_id = 1;
+  string variant_id = 2;
+  int32 quantity = 3;
+}
+
+message CheckStockResponse {
+  bool available = 1;
+  int32 available_quantity = 2;
+  bool is_flash_sale = 3;
+}
+
+message StockCheckItem {
+  string product_id = 1;
+  string variant_id = 2;
+  int32 quantity = 3;
+}
+
+message CheckStockBatchRequest {
+  repeated StockCheckItem items = 1;
+}
+
+message StockCheckResult {
+  string product_id = 1;
+  string variant_id = 2;
+  bool available = 3;
+  int32 available_quantity = 4;
+}
+
+message CheckStockBatchResponse {
+  repeated StockCheckResult results = 1;
+  bool all_available = 2;
+}
+
+message ReserveStockRequest {
+  string order_id = 1;
+  repeated StockCheckItem items = 2;
+  int64 ttl_seconds = 3;  // how long to hold reservation (default 600)
+}
+
+message ReserveStockResponse {
+  bool success = 1;
+  string reservation_id = 2;
+  repeated string insufficient_items = 3;  // product_ids with insufficient stock
+}
+
+message ReleaseReservationRequest {
+  string reservation_id = 1;
+  string order_id = 2;
+}
+
+message ReleaseReservationResponse {
+  bool success = 1;
+}
+
+message CommitReservationRequest {
+  string reservation_id = 1;
+  string order_id = 2;
+}
+
+message CommitReservationResponse {
+  bool success = 1;
+}
+
+message GetFlashSaleStockRequest {
+  string flash_sale_id = 1;
+}
+
+message GetFlashSaleStockResponse {
+  int32 remaining = 1;
+  int32 total = 2;
+  bool active = 3;
+  int64 ends_at = 4;
+}

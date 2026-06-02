@@ -1,0 +1,599 @@
+# ============================================================
+# HYPERCOMMERCE — Docker Compose (Full Stack Dev)
+#
+# Chạy toàn bộ hệ thống với 1 lệnh:
+#   docker compose up -d
+#
+# Lần đầu build image (~3-5 phút):
+#   docker compose build
+#
+# Xem log tất cả service:
+#   docker compose logs -f
+#
+# Dừng tất cả:
+#   docker compose down
+# ============================================================
+
+networks:
+  hypercommerce:
+    driver: bridge
+  monitoring:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  redis_data:
+  kafka_data:
+  zookeeper_data:
+  elasticsearch_data:
+  clickhouse_data:
+  prometheus_data:
+  grafana_data:
+  # anonymous volumes cho node_modules (tránh conflict host vs container)
+  web_modules:
+  nestjs_modules:
+
+# ── x-nestjs-base: anchor dùng chung cho tất cả NestJS service ──
+x-nestjs-base: &nestjs-base
+  build:
+    context: .
+    dockerfile: Dockerfile.dev
+  volumes:
+    - .:/app
+    - nestjs_modules:/app/node_modules
+  env_file:
+    - .env
+  networks:
+    - hypercommerce
+  restart: unless-stopped
+  depends_on:
+    postgres:
+      condition: service_healthy
+    redis:
+      condition: service_healthy
+    kafka:
+      condition: service_healthy
+
+services:
+
+  # ════════════════════════════════════════════════════════════
+  # INFRASTRUCTURE
+  # ════════════════════════════════════════════════════════════
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: hypercommerce-postgres
+    environment:
+      POSTGRES_USER: hypercommerce
+      POSTGRES_PASSWORD: hypercommerce_secret
+      POSTGRES_DB: hypercommerce
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale=C"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./infrastructure/postgres/init.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U hypercommerce"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - hypercommerce
+    command: >
+      postgres
+        -c max_connections=200
+        -c shared_buffers=256MB
+        -c effective_cache_size=768MB
+        -c work_mem=16MB
+        -c wal_level=logical
+    restart: unless-stopped
+
+  redis:
+    image: redis:7.2-alpine
+    container_name: hypercommerce-redis
+    command: >
+      redis-server
+        --maxmemory 512mb
+        --maxmemory-policy allkeys-lru
+        --save 60 1000
+        --appendonly yes
+        --appendfsync everysec
+        --requirepass redis_secret
+    volumes:
+      - redis_data:/data
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "redis_secret", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - hypercommerce
+    restart: unless-stopped
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.6.0
+    container_name: hypercommerce-zookeeper
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+      ZOOKEEPER_SYNC_LIMIT: 2
+      KAFKA_OPTS: "-Dzookeeper.4lw.commands.whitelist=ruok,srvr,stat"
+    volumes:
+      - zookeeper_data:/var/lib/zookeeper
+    healthcheck:
+      test: ["CMD-SHELL", "echo ruok | nc localhost 2181 | grep imok"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+    networks:
+      - hypercommerce
+    restart: unless-stopped
+
+  kafka:
+    image: confluentinc/cp-kafka:7.6.0
+    container_name: hypercommerce-kafka
+    depends_on:
+      zookeeper:
+        condition: service_healthy
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:29092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 100
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+      KAFKA_LOG_RETENTION_HOURS: 168
+      KAFKA_NUM_PARTITIONS: 6
+      KAFKA_DEFAULT_REPLICATION_FACTOR: 1
+    volumes:
+      - kafka_data:/var/lib/kafka/data
+    ports:
+      - "29092:29092"
+    healthcheck:
+      test: ["CMD-SHELL", "nc -z localhost 9092 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 15
+      start_period: 40s
+    networks:
+      - hypercommerce
+    restart: unless-stopped
+
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: hypercommerce-kafka-ui
+    depends_on:
+      kafka:
+        condition: service_healthy
+    environment:
+      KAFKA_CLUSTERS_0_NAME: hypercommerce-local
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092
+    ports:
+      - "8080:8080"
+    networks:
+      - hypercommerce
+    restart: unless-stopped
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.13.0
+    container_name: hypercommerce-elasticsearch
+    environment:
+      discovery.type: single-node
+      ES_JAVA_OPTS: "-Xms512m -Xmx512m"
+      xpack.security.enabled: "false"
+      xpack.security.http.ssl.enabled: "false"
+    volumes:
+      - elasticsearch_data:/usr/share/elasticsearch/data
+    ports:
+      - "9200:9200"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:9200/_cat/health | grep -qE 'green|yellow'"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+      start_period: 30s
+    networks:
+      - hypercommerce
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    restart: unless-stopped
+
+  clickhouse:
+    image: clickhouse/clickhouse-server:24.3
+    container_name: hypercommerce-clickhouse
+    environment:
+      CLICKHOUSE_USER: default
+      CLICKHOUSE_PASSWORD: ""
+      CLICKHOUSE_DB: hypercommerce
+    volumes:
+      - clickhouse_data:/var/lib/clickhouse
+    ports:
+      - "8123:8123"
+      - "9000:9000"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8123/ping || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    networks:
+      - hypercommerce
+    restart: unless-stopped
+
+  prometheus:
+    image: prom/prometheus:v2.51.0
+    container_name: hypercommerce-prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.enable-lifecycle'
+      - '--storage.tsdb.retention.time=30d'
+    volumes:
+      - ./infrastructure/monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./infrastructure/monitoring/alerts:/etc/prometheus/alerts:ro
+      - prometheus_data:/prometheus
+    ports:
+      - "9090:9090"
+    networks:
+      - hypercommerce
+      - monitoring
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:10.4.0
+    container_name: hypercommerce-grafana
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin_secret
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_SERVER_HTTP_PORT: 3000
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./infrastructure/monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./infrastructure/monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    ports:
+      - "9001:3000"
+    depends_on:
+      - prometheus
+    networks:
+      - monitoring
+    restart: unless-stopped
+
+  jaeger:
+    image: jaegertracing/all-in-one:1.56
+    container_name: hypercommerce-jaeger
+    environment:
+      COLLECTOR_ZIPKIN_HOST_PORT: 9411
+    ports:
+      - "16686:16686"
+      - "4317:4317"
+      - "4318:4318"
+    networks:
+      - hypercommerce
+      - monitoring
+    restart: unless-stopped
+
+  # ════════════════════════════════════════════════════════════
+  # APPLICATION LAYER
+  # ════════════════════════════════════════════════════════════
+
+  # ── API Gateway (Express + Socket.IO) ───────────────────────
+  # URL: http://localhost:4000
+  # Health: http://localhost:4000/health
+  api-gateway:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: hypercommerce-api-gateway
+    command: node apps/api-gateway/server.js
+    volumes:
+      - .:/app
+      - nestjs_modules:/app/node_modules
+    environment:
+      GATEWAY_PORT: 4000
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: hypercommerce
+      DB_PASSWORD: hypercommerce_secret
+      DB_NAME: hypercommerce
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: redis_secret
+      KAFKA_BROKERS: kafka:9092
+      JWT_SECRET: hypercommerce_dev_jwt_secret_change_in_prod
+      CORS_ORIGINS: http://localhost:3000
+      KAFKAJS_NO_PARTITIONER_WARNING: "1"
+      NODE_ENV: development
+    ports:
+      - "4000:4000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    networks:
+      - hypercommerce
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:4000/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  # ── NGINX — Edge Proxy (Production-style) ───────────────────
+  # URL: http://localhost:80  (dev, no SSL)
+  # Vai trò: SSL termination, WAF, rate limit tầng network
+  nginx:
+    image: nginx:1.27-alpine
+    container_name: hypercommerce-nginx
+    volumes:
+      - ./infrastructure/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./infrastructure/nginx/conf.d:/etc/nginx/conf.d:ro
+    ports:
+      - "80:80"
+    depends_on:
+      api-gateway:
+        condition: service_healthy
+    networks:
+      - hypercommerce
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+
+  # ── Next.js Storefront ───────────────────────────────────────
+  # URL: http://localhost:3000
+  web:
+    build:
+      context: apps/web
+      dockerfile: Dockerfile.dev
+    container_name: hypercommerce-web
+    command: npm run dev
+    volumes:
+      - ./apps/web:/app
+      - web_modules:/app/node_modules
+    environment:
+      # Server-side (Next.js BFF → API Gateway internal Docker network)
+      GATEWAY_URL: http://api-gateway:4000
+      # Client-side (browser → localhost, vì browser không biết "api-gateway")
+      NEXT_PUBLIC_GATEWAY_WS: http://localhost:4000
+      NEXT_PUBLIC_APP_URL: http://localhost:3000
+      NEXT_PUBLIC_APP_NAME: HyperCommerce
+      NEXTAUTH_URL: http://localhost:3000
+      NEXTAUTH_SECRET: hypercommerce_dev_nextauth_secret
+      REDIS_PASSWORD: redis_secret
+      INTERNAL_SERVICE_TOKEN: internal_dev_token_change_in_prod
+      NODE_ENV: development
+    ports:
+      - "3000:3000"
+    depends_on:
+      api-gateway:
+        condition: service_healthy
+    networks:
+      - hypercommerce
+    restart: unless-stopped
+
+  # ── User Service ─────────────────────────────────────────────
+  # Auth, profiles, seller onboarding
+  # Port: 3001
+  user-service:
+    <<: *nestjs-base
+    container_name: hypercommerce-user-service
+    command: npx nest start user-service --watch
+    environment:
+      DATABASE_URL: postgresql://hypercommerce:hypercommerce_secret@postgres:5432/hypercommerce
+      REDIS_URL: redis://:redis_secret@redis:6379
+      KAFKA_BROKERS: kafka:9092
+      USER_PORT: 3001
+      PORT: 3001
+      JWT_SECRET: hypercommerce_dev_jwt_secret_change_in_prod
+      JWT_EXPIRY: 15m
+      REFRESH_TOKEN_EXPIRY: 7d
+      NODE_ENV: development
+      KAFKAJS_NO_PARTITIONER_WARNING: "1"
+    # DEV ONLY: 127.0.0.1 binding → chỉ debug từ localhost, không expose ra network
+    # PRODUCTION: xoá mục ports này hoàn toàn
+    ports:
+      - "127.0.0.1:3001:3001" ─────────────────────────────────────────────
+  # Personalized feed, fan-out on write, ranking
+  # Port: 3002
+  feed-service:
+    <<: *nestjs-base
+    container_name: hypercommerce-feed-service
+    command: npx nest start feed-service --watch
+    environment:
+      DATABASE_URL: postgresql://hypercommerce:hypercommerce_secret@postgres:5432/hypercommerce
+      REDIS_URL: redis://:redis_secret@redis:6379
+      KAFKA_BROKERS: kafka:9092
+      FEED_PORT: 3002
+      PORT: 3002
+      NODE_ENV: development
+      KAFKAJS_NO_PARTITIONER_WARNING: "1"
+    # DEV ONLY — 127.0.0.1 only
+    ports:
+      - "127.0.0.1:3002:3002" ─────────────────────────────────────────────
+  # Vòng đời đơn hàng, Saga choreography, commissions
+  # Port: 3003
+  order-service:
+    <<: *nestjs-base
+    container_name: hypercommerce-order-service
+    command: npx nest start order-service --watch
+    environment:
+      DATABASE_URL: postgresql://hypercommerce:hypercommerce_secret@postgres:5432/hypercommerce
+      REDIS_URL: redis://:redis_secret@redis:6379
+      KAFKA_BROKERS: kafka:9092
+      ORDER_PORT: 3003
+      PORT: 3003
+      JWT_SECRET: hypercommerce_dev_jwt_secret_change_in_prod
+      NODE_ENV: development
+      KAFKAJS_NO_PARTITIONER_WARNING: "1"
+    # DEV ONLY — 127.0.0.1 only
+    ports:
+      - "127.0.0.1:3003:3003" ─────────────────────────────────────────
+  # Stock reservation, flash sales, gRPC
+  # Port: 3004
+  inventory-service:
+    <<: *nestjs-base
+    container_name: hypercommerce-inventory-service
+    command: npx nest start inventory-service --watch
+    environment:
+      DATABASE_URL: postgresql://hypercommerce:hypercommerce_secret@postgres:5432/hypercommerce
+      REDIS_URL: redis://:redis_secret@redis:6379
+      KAFKA_BROKERS: kafka:9092
+      INVENTORY_PORT: 3004
+      PORT: 3004
+      NODE_ENV: development
+      KAFKAJS_NO_PARTITIONER_WARNING: "1"
+    # DEV ONLY — 127.0.0.1 only
+    ports:
+      - "127.0.0.1:3004:3004" ────────────────────────────────────────────
+  # Hybrid BM25 + kNN search (Elasticsearch + Qdrant)
+  # Port: 3005
+  search-service:
+    <<: *nestjs-base
+    container_name: hypercommerce-search-service
+    command: npx nest start search-service --watch
+    environment:
+      ELASTICSEARCH_URL: http://elasticsearch:9200
+      REDIS_URL: redis://:redis_secret@redis:6379
+      KAFKA_BROKERS: kafka:9092
+      SEARCH_PORT: 3005
+      PORT: 3005
+      JWT_SECRET: hypercommerce_dev_jwt_secret_change_in_prod
+      NODE_ENV: development
+      KAFKAJS_NO_PARTITIONER_WARNING: "1"
+    depends_on:
+      redis:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      elasticsearch:
+        condition: service_healthy
+    # DEV ONLY — 127.0.0.1 only
+    ports:
+      - "127.0.0.1:3005:3005"
+
+  # ── Live Service ──────────────────────────────────────────────
+  # WebSocket sessions, viewer tracking
+  # Port: 3006
+  live-service:
+    <<: *nestjs-base
+    container_name: hypercommerce-live-service
+    command: npx nest start live-service --watch
+    environment:
+      DATABASE_URL: postgresql://hypercommerce:hypercommerce_secret@postgres:5432/hypercommerce
+      REDIS_URL: redis://:redis_secret@redis:6379
+      KAFKA_BROKERS: kafka:9092
+      LIVE_PORT: 3006
+      PORT: 3006
+      NODE_ENV: development
+      KAFKAJS_NO_PARTITIONER_WARNING: "1"
+    # DEV ONLY — 127.0.0.1 only
+    ports:
+      - "127.0.0.1:3006:3006" ───────────────────────────────────────────
+  # VNPay, MoMo, Stripe gateway adapters + webhooks
+  # Port: 3007
+  payment-service:
+    <<: *nestjs-base
+    container_name: hypercommerce-payment-service
+    command: npx nest start payment-service --watch
+    environment:
+      DATABASE_URL: postgresql://hypercommerce:hypercommerce_secret@postgres:5432/hypercommerce
+      REDIS_URL: redis://:redis_secret@redis:6379
+      KAFKA_BROKERS: kafka:9092
+      PAYMENT_PORT: 3007
+      PORT: 3007
+      JWT_SECRET: hypercommerce_dev_jwt_secret_change_in_prod
+      STRIPE_SECRET_KEY: sk_test_placeholder
+      STRIPE_WEBHOOK_SECRET: whsec_placeholder
+      VNPAY_HASH_SECRET: vnpay_secret_placeholder
+      MOMO_SECRET_KEY: momo_secret_placeholder
+      NODE_ENV: development
+      KAFKAJS_NO_PARTITIONER_WARNING: "1"
+    # DEV ONLY — 127.0.0.1 only
+    ports:
+      - "127.0.0.1:3007:3007"
+
+  # ── Notification Service ──────────────────────────────────────
+  # Email / push / SMS multi-channel fan-out
+  # Port: 3008
+  notification-service:
+    <<: *nestjs-base
+    container_name: hypercommerce-notification-service
+    command: npx nest start notification-service --watch
+    environment:
+      DATABASE_URL: postgresql://hypercommerce:hypercommerce_secret@postgres:5432/hypercommerce
+      REDIS_URL: redis://:redis_secret@redis:6379
+      KAFKA_BROKERS: kafka:9092
+      NOTIFICATION_PORT: 3008
+      PORT: 3008
+      FCM_PROJECT_ID: placeholder
+      FCM_PRIVATE_KEY: placeholder
+      FCM_CLIENT_EMAIL: placeholder
+      SENDGRID_API_KEY: placeholder
+      NODE_ENV: development
+      KAFKAJS_NO_PARTITIONER_WARNING: "1"
+    # DEV ONLY — 127.0.0.1 only
+    ports:
+      - "127.0.0.1:3008:3008"
+
+  # ── Analytics Service ─────────────────────────────────────────
+  # Event ingestion → ClickHouse OLAP
+  # Port: 3009
+  analytics-service:
+    <<: *nestjs-base
+    container_name: hypercommerce-analytics-service
+    command: npx nest start analytics-service --watch
+    environment:
+      CLICKHOUSE_HOST: clickhouse
+      CLICKHOUSE_PORT: 8123
+      CLICKHOUSE_DB: hypercommerce
+      REDIS_URL: redis://:redis_secret@redis:6379
+      KAFKA_BROKERS: kafka:9092
+      ANALYTICS_PORT: 3009
+      PORT: 3009
+      NODE_ENV: development
+      KAFKAJS_NO_PARTITIONER_WARNING: "1"
+    depends_on:
+      redis:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      clickhouse:
+        condition: service_healthy
+    # DEV ONLY — 127.0.0.1 only
+    ports:
+      - "127.0.0.1:3009:3009"
+
+  # ── AI Service ────────────────────────────────────────────────
+  # Product recommendations (ANN), fraud scoring
+  # Port: 3010
+  ai-service:
+    <<: *nestjs-base
+    container_name: hypercommerce-ai-service
+    command: npx nest start ai-service --watch
+    environment:
+      REDIS_URL: redis://:redis_secret@redis:6379
+      KAFKA_BROKERS: kafka:9092
+      DATABASE_URL: postgresql://hypercommerce:hypercommerce_secret@postgres:5432/hypercommerce
+      AI_PORT: 3010
+      PORT: 3010
+      NODE_ENV: development
+      KAFKAJS_NO_PARTITIONER_WARNING: "1"
+    # DEV ONLY — 127.0.0.1 only
+    ports:
+      - "127.0.0.1:3010:3010"
+

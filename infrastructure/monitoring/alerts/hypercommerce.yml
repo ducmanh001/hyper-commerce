@@ -1,0 +1,202 @@
+# ============================================================
+# HYPERCOMMERCE — Alert Rules
+# Critical alerts for PagerDuty / Slack
+# ============================================================
+
+groups:
+  # ── Service Health ─────────────────────────────────────────
+  - name: service_health
+    rules:
+      - alert: ServiceDown
+        expr: up{job="hypercommerce-services"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          team: platform
+        annotations:
+          summary: "Service {{ $labels.service }} is down"
+          description: "{{ $labels.service }} pod {{ $labels.pod }} has been down for more than 1 minute."
+          runbook_url: "https://wiki.hypercommerce.vn/runbooks/service-down"
+
+      - alert: HighErrorRate
+        expr: |
+          sum(rate(http_requests_total{status=~"5.."}[5m])) by (service)
+          /
+          sum(rate(http_requests_total[5m])) by (service) > 0.05
+        for: 2m
+        labels:
+          severity: critical
+          team: platform
+        annotations:
+          summary: "High error rate on {{ $labels.service }}"
+          description: "{{ $labels.service }} has {{ $value | humanizePercentage }} error rate (>5%)."
+
+      - alert: HighLatencyP99
+        expr: |
+          histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket[5m])) by (service, le)) > 2
+        for: 5m
+        labels:
+          severity: warning
+          team: platform
+        annotations:
+          summary: "High P99 latency on {{ $labels.service }}"
+          description: "P99 latency on {{ $labels.service }} is {{ $value | humanizeDuration }} (>2s)."
+
+  # ── Payment Alerts ─────────────────────────────────────────
+  - name: payment_alerts
+    rules:
+      - alert: PaymentDeclineRateHigh
+        expr: |
+          sum(rate(payment_declined_total[10m])) /
+          sum(rate(payment_attempts_total[10m])) > 0.1
+        for: 5m
+        labels:
+          severity: critical
+          team: payments
+        annotations:
+          summary: "Payment decline rate is high (>10%)"
+          description: "Payment decline rate: {{ $value | humanizePercentage }}"
+
+      - alert: PaymentProcessorCircuitOpen
+        expr: payment_processor_circuit_open == 1
+        for: 0m
+        labels:
+          severity: critical
+          team: payments
+        annotations:
+          summary: "Payment processor circuit breaker OPEN: {{ $labels.processor }}"
+
+  # ── Infrastructure ─────────────────────────────────────────
+  - name: infrastructure
+    rules:
+      - alert: KafkaConsumerLagHigh
+        expr: kafka_consumer_group_lag{group=~".*-consumer"} > 10000
+        for: 5m
+        labels:
+          severity: warning
+          team: platform
+        annotations:
+          summary: "Kafka consumer lag high: {{ $labels.group }}/{{ $labels.topic }}"
+          description: "Lag: {{ $value }} messages"
+
+      - alert: RedisMemoryHigh
+        expr: redis_memory_used_bytes / redis_memory_max_bytes > 0.85
+        for: 5m
+        labels:
+          severity: warning
+          team: platform
+        annotations:
+          summary: "Redis memory usage high (>85%)"
+          description: "Current usage: {{ $value | humanizePercentage }}"
+
+      - alert: PostgreSQLConnectionsHigh
+        expr: pg_stat_database_numbackends / pg_settings_max_connections > 0.8
+        for: 5m
+        labels:
+          severity: warning
+          team: platform
+        annotations:
+          summary: "PostgreSQL connections high (>80%)"
+
+      - alert: DiskSpaceLow
+        expr: (node_filesystem_avail_bytes / node_filesystem_size_bytes) < 0.1
+        for: 5m
+        labels:
+          severity: critical
+          team: platform
+        annotations:
+          summary: "Low disk space on {{ $labels.node }}: {{ $value | humanizePercentage }} free"
+
+  # ── Stock Alerts ────────────────────────────────────────────
+  - name: inventory
+    rules:
+      - alert: LowStockProducts
+        expr: inventory_low_stock_count > 100
+        for: 10m
+        labels:
+          severity: info
+          team: inventory
+        annotations:
+          summary: "{{ $value }} products are below low-stock threshold"
+
+  # ── Business Metric Alerts ──────────────────────────────────
+  # WHY BUSINESS ALERTS IN PROMETHEUS (not just dashboards)?
+  # Because revenue drops can be caused by infrastructure bugs —
+  # alert infra+product teams simultaneously, not just ops.
+  - name: business_metrics
+    rules:
+      - alert: GmvDrop30Pct
+        # Compare last 1h GMV vs same 1h window 24h ago
+        # 0.3 threshold = >30% drop signals: outage, payment issue, bot attack
+        expr: |
+          (
+            sum(increase(hc_orders_created_total{status="CONFIRMED"}[1h]))
+            / sum(increase(hc_orders_created_total{status="CONFIRMED"}[1h] offset 24h))
+          ) < 0.70
+        for: 10m
+        labels:
+          severity: critical
+          team: business
+        annotations:
+          summary: "GMV dropped >30% vs same window yesterday"
+          description: "Current/Yesterday ratio: {{ $value | humanizePercentage }}. Investigate payment failures, outages, or fraud."
+
+      - alert: ConversionRateLow
+        # Orders confirmed / total carts (created) < 2% over 30min window
+        expr: |
+          sum(rate(hc_orders_created_total{status="CONFIRMED"}[30m]))
+          / sum(rate(hc_orders_created_total[30m])) < 0.02
+        for: 15m
+        labels:
+          severity: warning
+          team: business
+        annotations:
+          summary: "Conversion rate below 2%"
+          description: "Current rate: {{ $value | humanizePercentage }}. Possible causes: checkout bug, payment UX regression, high cancel rate."
+
+      - alert: DisputeRateHigh
+        # Dispute rate = open disputes / delivered orders > 5% (7-day rolling)
+        expr: |
+          (
+            count(hc_disputes_total{status=~"AWAITING.*|ESCALATED"})
+            / sum(increase(hc_orders_created_total{status="DELIVERED"}[168h]))
+          ) > 0.05
+        for: 30m
+        labels:
+          severity: warning
+          team: trust_safety
+        annotations:
+          summary: "Dispute rate exceeds 5% of delivered orders (7d)"
+          description: "Rate: {{ $value | humanizePercentage }}. Investigate seller quality, counterfeit reports, or shipping issues."
+
+      - alert: FlashSaleQueueBacklog
+        # During flash sale, queue > 9000 means near oversell risk
+        expr: max(hc_flash_sale_queue_length) > 9000
+        for: 1m
+        labels:
+          severity: critical
+          team: inventory
+        annotations:
+          summary: "Flash sale queue near capacity (>9000)"
+          description: "Queue depth: {{ $value }}. Risk: oversell if queue processor falls behind."
+
+      - alert: FraudSpike
+        # More than 50 blocked fraud events in 5min = coordinated attack
+        expr: sum(rate(hc_fraud_blocked_total[5m])) * 300 > 50
+        for: 0m
+        labels:
+          severity: critical
+          team: trust_safety
+        annotations:
+          summary: "Fraud spike: >50 blocked events in 5 minutes"
+          description: "Blocked count: {{ $value }}. Possible credential stuffing or payment fraud wave."
+
+      - alert: StockSyncDrift
+        expr: abs(inventory_db_stock - inventory_redis_stock) > 10
+        for: 5m
+        labels:
+          severity: warning
+          team: inventory
+        annotations:
+          summary: "Stock sync drift detected for {{ $labels.product_id }}"
+          description: "DB: {{ $labels.db_stock }}, Redis: {{ $labels.redis_stock }}"

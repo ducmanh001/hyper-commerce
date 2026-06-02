@@ -1,0 +1,87 @@
+syntax = "proto3";
+
+package hypercommerce.search;
+
+service SearchService {
+  rpc Search (SearchRequest) returns (SearchResponse);
+  rpc Autocomplete (AutocompleteRequest) returns (AutocompleteResponse);
+  rpc Suggest (SuggestRequest) returns (SuggestResponse);
+  rpc IndexProduct (IndexProductRequest) returns (IndexProductResponse);
+}
+
+message SearchRequest {
+  string query = 1;
+  string user_id = 2;          // for personalized ranking
+  repeated string categories = 3;
+  double min_price = 4;
+  double max_price = 5;
+  int32 page = 6;
+  int32 page_size = 7;
+  string sort_by = 8;          // relevance, price_asc, price_desc, newest
+  repeated string filters_json = 9;  // additional filters as JSON strings
+  bool use_vector_search = 10;  // enable semantic search
+  bool use_rrf = 11;           // enable RRF fusion
+}
+
+message SearchHit {
+  string product_id = 1;
+  string title = 2;
+  double price = 3;
+  string thumbnail_url = 4;
+  string category = 5;
+  double relevance_score = 6;
+  double rrf_score = 7;
+  bool is_flash_sale = 8;
+  int32 stock = 9;
+}
+
+message SearchResponse {
+  repeated SearchHit hits = 1;
+  int64 total = 2;
+  int32 page = 3;
+  int32 total_pages = 4;
+  string query_id = 5;  // for analytics
+  int32 latency_ms = 6;
+}
+
+message AutocompleteRequest {
+  string prefix = 1;
+  int32 limit = 2;
+  string user_id = 3;  // for personalized autocomplete
+}
+
+message AutocompleteSuggestion {
+  string text = 1;
+  int32 frequency = 2;
+  string type = 3;  // keyword, product, category, brand
+}
+
+message AutocompleteResponse {
+  repeated AutocompleteSuggestion suggestions = 1;
+}
+
+message SuggestRequest {
+  string product_id = 1;
+  string user_id = 2;
+  int32 limit = 3;
+}
+
+message SuggestResponse {
+  repeated SearchHit products = 1;
+}
+
+message IndexProductRequest {
+  string product_id = 1;
+  string title = 2;
+  string description = 3;
+  string category = 4;
+  double price = 5;
+  repeated string tags = 6;
+  string brand = 7;
+  bool is_active = 8;
+}
+
+message IndexProductResponse {
+  bool success = 1;
+  string index_id = 2;
+}

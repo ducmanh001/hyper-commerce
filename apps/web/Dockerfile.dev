@@ -1,0 +1,17 @@
+# ============================================================
+# HYPERCOMMERCE Web — Dev Image (Next.js 14)
+# ============================================================
+
+FROM node:20-alpine
+
+WORKDIR /app
+
+RUN apk add --no-cache curl
+
+# Copy chỉ package files → cache layer
+COPY package*.json ./
+
+# Cài deps (bao gồm devDeps để next dev hoạt động)
+RUN npm install --legacy-peer-deps
+
+# Source code sẽ được bind-mount qua volume

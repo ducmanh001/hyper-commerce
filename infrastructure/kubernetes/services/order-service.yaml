@@ -1,0 +1,334 @@
+# ============================================================
+# HYPERCOMMERCE — Kubernetes Deployment: Order Service
+# Applies to: All microservices (replicate per service)
+# ============================================================
+
+# ── Namespace ────────────────────────────────────────────────
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: hypercommerce
+  labels:
+    istio-injection: enabled
+
+---
+# ── ConfigMap ────────────────────────────────────────────────
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: order-service-config
+  namespace: hypercommerce
+data:
+  NODE_ENV: "production"
+  ORDER_PORT: "3001"
+  KAFKA_BROKERS: "kafka-broker-0.kafka:9092,kafka-broker-1.kafka:9092,kafka-broker-2.kafka:9092"
+  ELASTICSEARCH_URL: "http://elasticsearch:9200"
+
+---
+# ── Secret (managed by External Secrets Operator in prod) ────
+apiVersion: v1
+kind: Secret
+metadata:
+  name: order-service-secrets
+  namespace: hypercommerce
+type: Opaque
+stringData:
+  DATABASE_URL: "postgresql://hypercommerce:REPLACE_ME@pgbouncer:6432/hypercommerce"
+  REDIS_URL: "redis://:REPLACE_ME@redis-cluster:6379"
+  JWT_SECRET: "REPLACE_ME_WITH_STRONG_SECRET"
+
+---
+# ── Deployment ────────────────────────────────────────────────
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: order-service
+  namespace: hypercommerce
+  labels:
+    app: order-service
+    version: v1
+    app.kubernetes.io/part-of: hypercommerce
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: order-service
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0   # Zero-downtime deploy
+  template:
+    metadata:
+      labels:
+        app: order-service
+        version: v1
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "3001"
+        prometheus.io/path: "/metrics"
+    spec:
+      # ── Security context ──────────────────────────────────
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 2000
+
+      # ── Topology spread — distribute across AZs ───────────
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: topology.kubernetes.io/zone
+          whenUnsatisfiable: DoNotSchedule
+          labelSelector:
+            matchLabels:
+              app: order-service
+
+      # ── Anti-affinity — no 2 pods on same node ───────────
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchLabels:
+                    app: order-service
+                topologyKey: kubernetes.io/hostname
+
+      containers:
+        - name: order-service
+          image: 123456789.dkr.ecr.ap-southeast-1.amazonaws.com/hypercommerce/order-service:latest
+          imagePullPolicy: Always
+          ports:
+            - name: http
+              containerPort: 3001
+              protocol: TCP
+
+          # ── Environment ──────────────────────────────────
+          envFrom:
+            - configMapRef:
+                name: order-service-config
+            - secretRef:
+                name: order-service-secrets
+
+          # ── Resource limits ───────────────────────────────
+          resources:
+            requests:
+              cpu: "200m"
+              memory: "256Mi"
+            limits:
+              cpu: "1000m"
+              memory: "512Mi"
+
+          # ── Health probes ─────────────────────────────────
+          livenessProbe:
+            httpGet:
+              path: /health/liveness
+              port: 3001
+            initialDelaySeconds: 30
+            periodSeconds: 15
+            failureThreshold: 3
+
+          readinessProbe:
+            httpGet:
+              path: /health/readiness
+              port: 3001
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            failureThreshold: 3
+
+          startupProbe:
+            httpGet:
+              path: /health/startup
+              port: 3001
+            failureThreshold: 30
+            periodSeconds: 10
+
+          # ── Security ──────────────────────────────────────
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            readOnlyRootFilesystem: true
+
+          # ── Tmp dir (required for read-only root fs) ──────
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+
+      volumes:
+        - name: tmp
+          emptyDir: {}
+
+      # ── Graceful shutdown ─────────────────────────────────
+      terminationGracePeriodSeconds: 60
+
+---
+# ── Service ───────────────────────────────────────────────────
+apiVersion: v1
+kind: Service
+metadata:
+  name: order-service
+  namespace: hypercommerce
+  labels:
+    app: order-service
+spec:
+  selector:
+    app: order-service
+  ports:
+    - name: http
+      port: 3001
+      targetPort: 3001
+  type: ClusterIP
+
+---
+# ── HorizontalPodAutoscaler (KEDA) ────────────────────────────
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: order-service-scaler
+  namespace: hypercommerce
+spec:
+  scaleTargetRef:
+    name: order-service
+  minReplicaCount: 3
+  maxReplicaCount: 50
+  pollingInterval: 15
+  cooldownPeriod: 300
+  triggers:
+    # Scale on Kafka consumer lag
+    - type: kafka
+      metadata:
+        bootstrapServers: kafka-broker-0.kafka:9092,kafka-broker-1.kafka:9092
+        consumerGroup: order-consumer
+        topic: order.events
+        lagThreshold: "100"
+        offsetResetPolicy: latest
+    # Scale on CPU
+    - type: cpu
+      metricType: Utilization
+      metadata:
+        value: "70"
+    # Scale on memory
+    - type: memory
+      metricType: Utilization
+      metadata:
+        value: "80"
+
+---
+# ── PodDisruptionBudget ───────────────────────────────────────
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: order-service-pdb
+  namespace: hypercommerce
+spec:
+  minAvailable: 2  # Always keep 2 pods up during node drains
+  selector:
+    matchLabels:
+      app: order-service
+
+---
+# ── NetworkPolicy (zero trust) ────────────────────────────────
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: order-service-netpol
+  namespace: hypercommerce
+spec:
+  podSelector:
+    matchLabels:
+      app: order-service
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    # Allow from NGINX ingress controller
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: ingress-nginx
+      ports:
+        - port: 3001
+    # Allow from Prometheus scraping
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: monitoring
+      ports:
+        - port: 3001
+  egress:
+    # Allow to Postgres
+    - to:
+        - podSelector:
+            matchLabels:
+              app: pgbouncer
+      ports:
+        - port: 6432
+    # Allow to Redis
+    - to:
+        - podSelector:
+            matchLabels:
+              app: redis
+      ports:
+        - port: 6379
+    # Allow to Kafka
+    - to:
+        - podSelector:
+            matchLabels:
+              app: kafka
+      ports:
+        - port: 9092
+    # Allow DNS
+    - to: []
+      ports:
+        - port: 53
+          protocol: UDP
+
+---
+# ── Istio VirtualService ──────────────────────────────────────
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: order-service-vs
+  namespace: hypercommerce
+spec:
+  hosts:
+    - order-service
+  http:
+    - route:
+        - destination:
+            host: order-service
+            port:
+              number: 3001
+      timeout: 30s
+      retries:
+        attempts: 3
+        perTryTimeout: 10s
+        retryOn: "5xx,reset,connect-failure"
+
+---
+# ── Istio DestinationRule (Circuit Breaker) ───────────────────
+apiVersion: networking.istio.io/v1alpha3
+kind: DestinationRule
+metadata:
+  name: order-service-dr
+  namespace: hypercommerce
+spec:
+  host: order-service
+  trafficPolicy:
+    connectionPool:
+      tcp:
+        maxConnections: 100
+      http:
+        h2UpgradePolicy: UPGRADE
+        http1MaxPendingRequests: 100
+        http2MaxRequests: 1000
+        maxRequestsPerConnection: 100
+    # Circuit breaker — open if 50% of requests fail in 30s window
+    outlierDetection:
+      consecutive5xxErrors: 5
+      interval: 10s
+      baseEjectionTime: 30s
+      maxEjectionPercent: 50
+      minHealthPercent: 50

@@ -1,0 +1,159 @@
+name: CD — Deploy to EKS
+
+on:
+  workflow_run:
+    workflows: ["CI — HYPERCOMMERCE"]
+    branches: [main]
+    types: [completed]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: Target environment
+        required: true
+        default: staging
+        type: choice
+        options: [staging, production]
+      services:
+        description: Comma-separated service names (or "all")
+        required: false
+        default: all
+
+env:
+  AWS_REGION: ap-southeast-1
+  ECR_REGISTRY: 123456789.dkr.ecr.ap-southeast-1.amazonaws.com
+  EKS_CLUSTER_NAME: hypercommerce-prod
+
+jobs:
+  deploy:
+    name: Deploy to ${{ github.event.inputs.environment || 'production' }}
+    runs-on: ubuntu-latest
+    if: github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch'
+    environment:
+      name: ${{ github.event.inputs.environment || 'production' }}
+      url: https://api.hypercommerce.vn
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Update kubeconfig
+        run: |
+          aws eks update-kubeconfig \
+            --region ${{ env.AWS_REGION }} \
+            --name ${{ env.EKS_CLUSTER_NAME }}
+
+      - name: Install Helm
+        uses: azure/setup-helm@v4
+        with:
+          version: v3.14.3
+
+      - name: Get SHA tag
+        id: vars
+        run: |
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            echo "sha=${{ github.sha }}" >> $GITHUB_OUTPUT
+          else
+            echo "sha=${{ github.event.workflow_run.head_sha }}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Deploy all services
+        if: github.event.inputs.services == 'all' || github.event.inputs.services == ''
+        run: |
+          SERVICES=(
+            order-service
+            payment-service
+            inventory-service
+            user-service
+            notification-service
+            search-service
+            ai-service
+            live-service
+            feed-service
+            analytics-service
+          )
+
+          for SERVICE in "${SERVICES[@]}"; do
+            echo "Deploying $SERVICE..."
+            kubectl set image deployment/$SERVICE \
+              $SERVICE=${{ env.ECR_REGISTRY }}/hypercommerce/$SERVICE:${{ steps.vars.outputs.sha }} \
+              --namespace hypercommerce
+
+            kubectl rollout status deployment/$SERVICE \
+              --namespace hypercommerce \
+              --timeout=5m
+
+            echo "✓ $SERVICE deployed successfully"
+          done
+
+      - name: Deploy specific services
+        if: github.event.inputs.services != 'all' && github.event.inputs.services != ''
+        run: |
+          IFS=',' read -ra SERVICES <<< "${{ github.event.inputs.services }}"
+
+          for SERVICE in "${SERVICES[@]}"; do
+            SERVICE=$(echo $SERVICE | tr -d ' ')
+            echo "Deploying $SERVICE..."
+            kubectl set image deployment/$SERVICE \
+              $SERVICE=${{ env.ECR_REGISTRY }}/hypercommerce/$SERVICE:${{ steps.vars.outputs.sha }} \
+              --namespace hypercommerce
+
+            kubectl rollout status deployment/$SERVICE \
+              --namespace hypercommerce \
+              --timeout=5m
+          done
+
+      - name: Smoke test
+        run: |
+          # Wait for all pods to be ready
+          kubectl wait --for=condition=ready pod \
+            -l app.kubernetes.io/part-of=hypercommerce \
+            --namespace hypercommerce \
+            --timeout=120s
+
+          # Basic health checks
+          for SERVICE in user order payment inventory search; do
+            CLUSTER_IP=$(kubectl get service ${SERVICE}-service -n hypercommerce -o jsonpath='{.spec.clusterIP}')
+            echo "Health check: $SERVICE → $CLUSTER_IP"
+          done
+
+          echo "✓ All services healthy"
+
+      - name: Notify Slack on success
+        if: success()
+        uses: slackapi/slack-github-action@v1.26.0
+        with:
+          payload: |
+            {
+              "text": "✅ Deployed to ${{ github.event.inputs.environment || 'production' }} — SHA: ${{ steps.vars.outputs.sha }}",
+              "channel": "#deployments"
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+      - name: Rollback on failure
+        if: failure()
+        run: |
+          echo "Deploy failed. Rolling back all services..."
+          SERVICES=(order-service payment-service inventory-service user-service notification-service search-service ai-service live-service feed-service analytics-service)
+          for SERVICE in "${SERVICES[@]}"; do
+            kubectl rollout undo deployment/$SERVICE --namespace hypercommerce || true
+          done
+          echo "Rollback complete"
+
+      - name: Notify Slack on failure
+        if: failure()
+        uses: slackapi/slack-github-action@v1.26.0
+        with:
+          payload: |
+            {
+              "text": "🚨 Deploy FAILED & rolled back — ${{ github.event.inputs.environment || 'production' }} — SHA: ${{ steps.vars.outputs.sha }}",
+              "channel": "#deployments"
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}

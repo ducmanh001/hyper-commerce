@@ -1,0 +1,366 @@
+{
+  "__inputs": [],
+  "__requires": [
+    { "type": "grafana", "id": "grafana", "name": "Grafana", "version": "10.0.0" },
+    { "type": "datasource", "id": "prometheus", "name": "Prometheus", "version": "1.0.0" },
+    { "type": "datasource", "id": "postgres", "name": "PostgreSQL", "version": "1.0.0" }
+  ],
+  "annotations": { "list": [] },
+  "description": "HyperCommerce Business Overview — GMV, Orders, Conversion, Revenue",
+  "editable": false,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "liveNow": false,
+  "panels": [
+
+    {
+      "type": "stat",
+      "title": "💰 GMV Today (VND)",
+      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 0 },
+      "id": 1,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "textMode": "auto"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "yellow", "value": 100000000 },
+              { "color": "green", "value": 500000000 }
+            ]
+          },
+          "unit": "short",
+          "mappings": []
+        },
+        "overrides": []
+      },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "sum(increase(hc_orders_created_total{status='CONFIRMED'}[24h])) * on() group_left() avg(hc_avg_order_value_vnd)",
+          "legendFormat": "GMV Today",
+          "refId": "A"
+        }
+      ]
+    },
+
+    {
+      "type": "stat",
+      "title": "📦 Orders Today",
+      "gridPos": { "h": 4, "w": 4, "x": 6, "y": 0 },
+      "id": 2,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "area",
+        "reduceOptions": { "calcs": ["lastNotNull"] }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "steps": [
+              { "color": "blue", "value": null }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "expr": "sum(increase(hc_orders_created_total[24h]))",
+          "legendFormat": "Orders",
+          "refId": "A"
+        }
+      ]
+    },
+
+    {
+      "type": "stat",
+      "title": "💳 Payment Success Rate",
+      "gridPos": { "h": 4, "w": 4, "x": 10, "y": 0 },
+      "id": 3,
+      "options": {
+        "colorMode": "background",
+        "reduceOptions": { "calcs": ["lastNotNull"] }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "mode": "percentage",
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "yellow", "value": 85 },
+              { "color": "green", "value": 95 }
+            ]
+          },
+          "unit": "percentunit",
+          "min": 0,
+          "max": 1
+        },
+        "overrides": []
+      },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "expr": "sum(rate(hc_payment_duration_seconds_count{status='CAPTURED'}[1h])) / sum(rate(hc_payment_duration_seconds_count[1h]))",
+          "legendFormat": "Success Rate",
+          "refId": "A"
+        }
+      ]
+    },
+
+    {
+      "type": "stat",
+      "title": "🛡️ Fraud Blocked",
+      "gridPos": { "h": 4, "w": 4, "x": 14, "y": 0 },
+      "id": 4,
+      "options": {
+        "colorMode": "background",
+        "reduceOptions": { "calcs": ["lastNotNull"] }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "steps": [{ "color": "orange", "value": null }, { "color": "red", "value": 100 }]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "expr": "sum(increase(hc_fraud_blocked_total[24h]))",
+          "legendFormat": "Blocked",
+          "refId": "A"
+        }
+      ]
+    },
+
+    {
+      "type": "stat",
+      "title": "📺 Live Viewers Now",
+      "gridPos": { "h": 4, "w": 4, "x": 18, "y": 0 },
+      "id": 5,
+      "options": {
+        "colorMode": "background",
+        "reduceOptions": { "calcs": ["lastNotNull"] }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "steps": [{ "color": "blue", "value": null }]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "expr": "hc_active_stream_viewers",
+          "legendFormat": "Viewers",
+          "refId": "A"
+        }
+      ]
+    },
+
+    {
+      "type": "timeseries",
+      "title": "📈 GMV Over Time (hourly)",
+      "gridPos": { "h": 8, "w": 16, "x": 0, "y": 4 },
+      "id": 6,
+      "options": {
+        "legend": { "calcs": ["sum", "mean", "max"], "displayMode": "table", "placement": "bottom" },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "unit": "currencyVND",
+          "custom": {
+            "lineInterpolation": "smooth",
+            "fillOpacity": 15,
+            "spanNulls": false
+          }
+        },
+        "overrides": []
+      },
+      "datasource": { "type": "postgres", "uid": "postgres" },
+      "targets": [
+        {
+          "rawSql": "SELECT date_trunc('hour', created_at) AS time, SUM(total_amount) AS value FROM orders WHERE created_at >= NOW() - INTERVAL '7 days' AND status NOT IN ('CANCELLED') GROUP BY 1 ORDER BY 1",
+          "format": "time_series",
+          "refId": "A"
+        }
+      ]
+    },
+
+    {
+      "type": "piechart",
+      "title": "💳 Revenue by Payment Method",
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 4 },
+      "id": 7,
+      "options": {
+        "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["sum"] },
+        "pieType": "donut",
+        "tooltip": { "mode": "single" }
+      },
+      "fieldConfig": {
+        "defaults": { "unit": "currencyVND", "color": { "mode": "palette-classic" } },
+        "overrides": []
+      },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "expr": "sum by (payment_method) (increase(hc_orders_created_total[24h]))",
+          "legendFormat": "{{payment_method}}",
+          "refId": "A"
+        }
+      ]
+    },
+
+    {
+      "type": "timeseries",
+      "title": "🎯 Order Funnel (1h window)",
+      "description": "Orders created → Stock reserved → Payment captured → Confirmed",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 12 },
+      "id": 8,
+      "options": {
+        "legend": { "displayMode": "table", "placement": "bottom" },
+        "tooltip": { "mode": "multi" }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": { "lineInterpolation": "stepAfter", "fillOpacity": 10 }
+        },
+        "overrides": []
+      },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        { "expr": "sum(increase(hc_orders_created_total[5m]))", "legendFormat": "Orders Created", "refId": "A" },
+        { "expr": "sum(increase(hc_orders_created_total{status='STOCK_RESERVED'}[5m]))", "legendFormat": "Stock Reserved", "refId": "B" },
+        { "expr": "sum(increase(hc_orders_created_total{status='CONFIRMED'}[5m]))", "legendFormat": "Confirmed", "refId": "C" },
+        { "expr": "sum(increase(hc_orders_created_total{status='CANCELLED'}[5m]))", "legendFormat": "Cancelled", "refId": "D" }
+      ]
+    },
+
+    {
+      "type": "bargauge",
+      "title": "🏆 Top Sellers by GMV (Today)",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 12 },
+      "id": 9,
+      "options": {
+        "displayMode": "lcd",
+        "orientation": "horizontal",
+        "reduceOptions": { "calcs": ["lastNotNull"] }
+      },
+      "fieldConfig": {
+        "defaults": { "unit": "currencyVND", "color": { "mode": "continuous-GrYlRd" } },
+        "overrides": []
+      },
+      "datasource": { "type": "postgres", "uid": "postgres" },
+      "targets": [
+        {
+          "rawSql": "SELECT seller_id AS metric, SUM(total_amount) AS value FROM orders WHERE created_at >= CURRENT_DATE AND status NOT IN ('CANCELLED') GROUP BY seller_id ORDER BY value DESC LIMIT 10",
+          "format": "table",
+          "refId": "A"
+        }
+      ]
+    },
+
+    {
+      "type": "table",
+      "title": "⚠️ Open Disputes (Requires Attention)",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 20 },
+      "id": 10,
+      "options": {
+        "showHeader": true,
+        "sortBy": [{ "displayName": "Created", "desc": true }]
+      },
+      "fieldConfig": {
+        "defaults": { "custom": { "align": "auto", "filterable": true } },
+        "overrides": [
+          { "matcher": { "id": "byName", "options": "status" }, "properties": [{ "id": "custom.width", "value": 160 }] }
+        ]
+      },
+      "datasource": { "type": "postgres", "uid": "postgres" },
+      "targets": [
+        {
+          "rawSql": "SELECT id, order_id, reason, status, created_at, respond_by_deadline FROM disputes WHERE status IN ('AWAITING_SELLER_RESPONSE', 'ESCALATED') ORDER BY created_at DESC LIMIT 20",
+          "format": "table",
+          "refId": "A"
+        }
+      ]
+    },
+
+    {
+      "type": "timeseries",
+      "title": "📉 Dispute Rate (7-day trend)",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 20 },
+      "id": 11,
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "custom": { "lineInterpolation": "smooth", "fillOpacity": 10 }
+        },
+        "overrides": []
+      },
+      "datasource": { "type": "postgres", "uid": "postgres" },
+      "targets": [
+        {
+          "rawSql": "SELECT DATE_TRUNC('day', d.created_at) AS time, COUNT(d.id)::float / NULLIF(COUNT(o.id), 0) AS value FROM orders o LEFT JOIN disputes d ON d.order_id = o.id WHERE o.created_at >= NOW() - INTERVAL '7 days' AND o.status = 'DELIVERED' GROUP BY 1 ORDER BY 1",
+          "format": "time_series",
+          "refId": "A"
+        }
+      ]
+    }
+
+  ],
+  "refresh": "1m",
+  "schemaVersion": 38,
+  "style": "dark",
+  "tags": ["business", "hypercommerce", "gmv"],
+  "templating": {
+    "list": [
+      {
+        "current": {},
+        "datasource": { "type": "prometheus", "uid": "prometheus" },
+        "definition": "label_values(hc_orders_created_total, environment)",
+        "hide": 0,
+        "includeAll": false,
+        "multi": false,
+        "name": "environment",
+        "options": [],
+        "query": { "query": "label_values(hc_orders_created_total, environment)", "refId": "Prometheus-environment-Variable-Query" },
+        "refresh": 1,
+        "type": "query",
+        "label": "Environment"
+      }
+    ]
+  },
+  "time": { "from": "now-24h", "to": "now" },
+  "timepicker": {},
+  "timezone": "Asia/Ho_Chi_Minh",
+  "title": "00 — Business Overview",
+  "uid": "hc-business-overview",
+  "version": 1,
+  "weekStart": "monday"
+}

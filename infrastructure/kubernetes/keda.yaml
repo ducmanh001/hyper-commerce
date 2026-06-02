@@ -1,0 +1,247 @@
+# ============================================================
+# KEDA — Kubernetes Event-Driven Autoscaling
+#
+# WHY KEDA instead of standard HPA?
+#
+# Standard HPA:
+#   - Scales on CPU/Memory metrics
+#   - Problem: Kafka consumer lag doesn't correlate with CPU
+#     → CPU is 20% but 1M messages are queued → HPA won't scale up
+#
+# KEDA:
+#   - Scales on EXTERNAL metrics: Kafka lag, Redis queue depth, Cron schedule
+#   - Scale-to-zero: pods become 0 when no messages in queue (save cost)
+#   - Scale-from-zero: KEDA wakes up pods when messages arrive
+#
+# WHY NOT Kubernetes KEDA for all services?
+#   HTTP-only services (search, user) still use standard HPA (CPU/custom metrics)
+#   KEDA adds value specifically for queue/stream-driven services
+#
+# vs KEDA Alternatives:
+#   - Karpenter (AWS): Node autoscaling, not pod — works WITH KEDA
+#   - Cluster Autoscaler: Also node-level, not pod-level
+#   - Custom controller: Reinventing KEDA — no value in this
+# ============================================================
+
+# Install KEDA:
+# helm repo add kedacore https://kedacore.github.io/charts
+# helm install keda kedacore/keda --namespace keda --create-namespace
+# ============================================================
+
+---
+# Inventory Service — scale based on Kafka stock.reserve topic lag
+# WHY? During flash sales, stock.reserve events spike 100x
+# Standard HPA would under-provision; KEDA responds to actual queue depth
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: inventory-service-scaler
+  namespace: hypercommerce
+  annotations:
+    description: "Scale inventory-service based on stock.reserve Kafka topic lag.
+      Target: 1 pod per 1000 pending messages.
+      Min 3 pods for HA; max 50 pods during flash sales."
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: inventory-service
+  pollingInterval: 15    # Check lag every 15 seconds
+  cooldownPeriod: 60     # Wait 60s after scale-down trigger before scaling down
+                         # WHY 60s? Kafka consumers take ~10s to rebalance partitions
+  minReplicaCount: 3     # Always 3 for HA (zone spread = 1 per AZ)
+  maxReplicaCount: 50    # Max 50 during 11.11 flash sale
+  triggers:
+    - type: kafka
+      metadata:
+        bootstrapServers: "kafka:9092"
+        consumerGroup: inventory-service
+        topic: stock.reserve
+        lagThreshold: "1000"          # 1 pod per 1000 unprocessed messages
+        offsetResetPolicy: latest
+      authenticationRef:
+        name: kafka-trigger-auth       # Secret reference (do NOT hardcode credentials)
+    - type: kafka
+      metadata:
+        bootstrapServers: "kafka:9092"
+        consumerGroup: inventory-service
+        topic: stock.release
+        lagThreshold: "1000"
+      authenticationRef:
+        name: kafka-trigger-auth
+---
+# Notification Service — scale on notification.send queue depth
+# WHY? Order confirmations, flash sale alerts create sudden bursts
+# Example: 100K orders in 1 minute → 100K notification events → need burst capacity
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: notification-service-scaler
+  namespace: hypercommerce
+  annotations:
+    description: "Scale notification-service on Kafka notification.send lag.
+      Notification sending is I/O bound (SMTP, FCM, SMS APIs).
+      Scale aggressively during flash sales."
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: notification-service
+  pollingInterval: 10
+  cooldownPeriod: 120    # Longer cooldown: email providers throttle scale-in/out
+  minReplicaCount: 2
+  maxReplicaCount: 30
+  triggers:
+    - type: kafka
+      metadata:
+        bootstrapServers: "kafka:9092"
+        consumerGroup: notification-service
+        topic: notification.send
+        lagThreshold: "500"          # 1 pod per 500 notification events
+      authenticationRef:
+        name: kafka-trigger-auth
+---
+# Feed Service — scale based on Redis pub/sub queue for fanout jobs
+# WHY Redis scaler not Kafka?
+# Feed fanout jobs are enqueued in Redis List (LPUSH/BRPOP pattern)
+# Better fit for KEDA Redis scaler than Kafka
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: feed-service-scaler
+  namespace: hypercommerce
+  annotations:
+    description: "Scale feed-service fanout workers based on Redis queue depth.
+      Feed fanout: user posts content → fan out to all followers' feeds.
+      Celebrities (>10K followers) use dedicated celebrity-fanout queue."
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: feed-service
+  pollingInterval: 10
+  cooldownPeriod: 30
+  minReplicaCount: 3
+  maxReplicaCount: 20
+  triggers:
+    - type: redis
+      metadata:
+        address: "redis:6379"
+        listName: "feed:fanout:queue"
+        listLength: "100"          # 1 pod per 100 pending fanout jobs
+      authenticationRef:
+        name: redis-trigger-auth
+    - type: redis
+      metadata:
+        address: "redis:6379"
+        listName: "feed:celebrity:fanout"
+        listLength: "50"           # Celebrity fanout is heavier, lower threshold
+      authenticationRef:
+        name: redis-trigger-auth
+---
+# Analytics Service — scale on analytics.events Kafka topic
+# During live streams, analytics events are 100x normal rate
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: analytics-service-scaler
+  namespace: hypercommerce
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: analytics-service
+  pollingInterval: 30    # Analytics: less time-sensitive, check less often
+  cooldownPeriod: 300    # Scale down slowly (ClickHouse writes need to drain)
+  minReplicaCount: 2
+  maxReplicaCount: 15
+  triggers:
+    - type: kafka
+      metadata:
+        bootstrapServers: "kafka:9092"
+        consumerGroup: analytics-service
+        topic: analytics.events
+        lagThreshold: "5000"       # Analytics can tolerate more lag (not real-time)
+      authenticationRef:
+        name: kafka-trigger-auth
+---
+# Search Indexer — scale on product.updated events during bulk import
+# E.g., seller imports 10K products → search-indexer must catch up
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: search-indexer-scaler
+  namespace: hypercommerce
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: search-service
+  pollingInterval: 30
+  cooldownPeriod: 120
+  minReplicaCount: 3
+  maxReplicaCount: 20
+  triggers:
+    - type: kafka
+      metadata:
+        bootstrapServers: "kafka:9092"
+        consumerGroup: search-indexer
+        topic: product.updated
+        lagThreshold: "100"        # 1 pod per 100 pending product index operations
+      authenticationRef:
+        name: kafka-trigger-auth
+---
+# Scheduled scaling — pre-warm before known events
+# 11.11 (November 11) flash sale: pre-scale at 10:50 PM, scale down at 1 AM
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: inventory-service-scheduled-scaler
+  namespace: hypercommerce
+  annotations:
+    description: "Pre-warms inventory-service before 11.11 flash sale.
+      Why scheduled? KEDA's reactive scaling has a ~30s lag (pollingInterval).
+      For known events, pre-scale eliminates that lag entirely."
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: inventory-service
+  minReplicaCount: 3
+  maxReplicaCount: 50
+  triggers:
+    - type: cron
+      metadata:
+        timezone: "Asia/Ho_Chi_Minh"
+        start: "50 22 11 11 *"   # 10:50 PM Nov 11 (10 min before midnight sale)
+        end: "0 1 12 11 *"       # 1 AM Nov 12
+        desiredReplicas: "40"    # Pre-scale to 40 pods
+---
+# TriggerAuthentication — references Kubernetes secrets for Kafka credentials
+# WHY TriggerAuthentication vs inline credentials?
+#   Inline would expose credentials in YAML (committed to git)
+#   TriggerAuthentication references K8s secrets (injected from Vault)
+apiVersion: keda.sh/v1alpha1
+kind: TriggerAuthentication
+metadata:
+  name: kafka-trigger-auth
+  namespace: hypercommerce
+spec:
+  secretTargetRef:
+    - parameter: sasl.username
+      name: kafka-credentials
+      key: username
+    - parameter: sasl.password
+      name: kafka-credentials
+      key: password
+---
+apiVersion: keda.sh/v1alpha1
+kind: TriggerAuthentication
+metadata:
+  name: redis-trigger-auth
+  namespace: hypercommerce
+spec:
+  secretTargetRef:
+    - parameter: password
+      name: redis-credentials
+      key: password

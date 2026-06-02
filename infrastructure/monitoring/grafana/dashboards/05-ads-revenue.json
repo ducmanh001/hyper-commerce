@@ -1,0 +1,189 @@
+{
+  "id": null,
+  "uid": "hc-ads",
+  "title": "06 — Ads Revenue",
+  "description": "Ad platform performance: CPC/CPM revenue, auction metrics, campaign health, budget burn rates. Primary audience: Growth & Monetisation team.",
+  "tags": ["ads", "revenue", "monetisation"],
+  "timezone": "Asia/Ho_Chi_Minh",
+  "refresh": "1m",
+  "time": { "from": "now-24h", "to": "now" },
+  "templating": {
+    "list": [
+      {
+        "name": "environment",
+        "type": "custom",
+        "label": "Environment",
+        "options": [
+          { "text": "production", "value": "production", "selected": true },
+          { "text": "staging", "value": "staging" }
+        ]
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1,
+      "title": "Total Ad Revenue Today (₫)",
+      "type": "stat",
+      "gridPos": { "x": 0, "y": 0, "w": 6, "h": 4 },
+      "datasource": { "type": "postgres", "uid": "postgres" },
+      "targets": [
+        {
+          "rawSql": "SELECT COALESCE(SUM(total_spent), 0) FROM ad_campaigns WHERE DATE(updated_at) = CURRENT_DATE",
+          "format": "table",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "locale",
+          "decimals": 0,
+          "color": { "mode": "thresholds" },
+          "thresholds": { "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 5000000 }, { "color": "red", "value": 50000000 }] }
+        }
+      }
+    },
+    {
+      "id": 2,
+      "title": "Active Campaigns",
+      "type": "stat",
+      "gridPos": { "x": 6, "y": 0, "w": 4, "h": 4 },
+      "datasource": { "type": "postgres", "uid": "postgres" },
+      "targets": [
+        {
+          "rawSql": "SELECT COUNT(*) FROM ad_campaigns WHERE status = 'ACTIVE'",
+          "format": "table",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": { "defaults": { "unit": "short", "color": { "fixedColor": "blue", "mode": "fixed" } } }
+    },
+    {
+      "id": 3,
+      "title": "Total Clicks Today",
+      "type": "stat",
+      "gridPos": { "x": 10, "y": 0, "w": 4, "h": 4 },
+      "datasource": { "type": "postgres", "uid": "postgres" },
+      "targets": [
+        {
+          "rawSql": "SELECT COUNT(*) FROM ad_impressions WHERE clicked = true AND DATE(clicked_at) = CURRENT_DATE",
+          "format": "table",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": { "defaults": { "unit": "short", "color": { "fixedColor": "purple", "mode": "fixed" } } }
+    },
+    {
+      "id": 4,
+      "title": "Platform CTR Today (%)",
+      "type": "stat",
+      "gridPos": { "x": 14, "y": 0, "w": 4, "h": 4 },
+      "datasource": { "type": "postgres", "uid": "postgres" },
+      "targets": [
+        {
+          "rawSql": "SELECT ROUND(100.0 * SUM(CASE WHEN clicked THEN 1 ELSE 0 END) / NULLIF(COUNT(*), 0), 2) FROM ad_impressions WHERE DATE(created_at) = CURRENT_DATE",
+          "format": "table",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "thresholds": { "steps": [{ "color": "red", "value": null }, { "color": "yellow", "value": 1.5 }, { "color": "green", "value": 3.0 }] }
+        }
+      }
+    },
+    {
+      "id": 5,
+      "title": "Budget Exhausted Campaigns",
+      "type": "stat",
+      "gridPos": { "x": 18, "y": 0, "w": 6, "h": 4 },
+      "datasource": { "type": "postgres", "uid": "postgres" },
+      "targets": [
+        {
+          "rawSql": "SELECT COUNT(*) FROM ad_campaigns WHERE status = 'BUDGET_EXHAUSTED' AND DATE(updated_at) = CURRENT_DATE",
+          "format": "table",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": { "defaults": { "unit": "short", "color": { "mode": "thresholds" }, "thresholds": { "steps": [{ "color": "green", "value": null }, { "color": "red", "value": 1 }] } } }
+    },
+    {
+      "id": 6,
+      "title": "Ad Revenue Over Time (CPC vs CPM)",
+      "description": "CPC = performance-based revenue (user clicked). CPM = brand awareness (impression served).",
+      "type": "timeseries",
+      "gridPos": { "x": 0, "y": 4, "w": 16, "h": 8 },
+      "datasource": { "type": "postgres", "uid": "postgres" },
+      "targets": [
+        {
+          "rawSql": "SELECT date_trunc('hour', ai.created_at) as time, SUM(CASE WHEN c.bidding_model = 'CPC' AND ai.clicked THEN c.max_bid_vnd ELSE 0 END) as cpc_revenue, SUM(CASE WHEN c.bidding_model = 'CPM' THEN c.max_bid_vnd / 1000.0 ELSE 0 END) as cpm_revenue FROM ad_impressions ai JOIN ad_campaigns c ON c.id = ai.campaign_id WHERE ai.created_at >= NOW() - INTERVAL '24 hours' GROUP BY 1 ORDER BY 1",
+          "format": "time_series",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": { "defaults": { "unit": "locale", "custom": { "fillOpacity": 10 } } }
+    },
+    {
+      "id": 7,
+      "title": "Top 10 Campaigns by Spend",
+      "type": "bargauge",
+      "gridPos": { "x": 16, "y": 4, "w": 8, "h": 8 },
+      "datasource": { "type": "postgres", "uid": "postgres" },
+      "targets": [
+        {
+          "rawSql": "SELECT name, total_spent FROM ad_campaigns WHERE status IN ('ACTIVE', 'BUDGET_EXHAUSTED') ORDER BY total_spent DESC LIMIT 10",
+          "format": "table",
+          "refId": "A"
+        }
+      ],
+      "options": { "orientation": "horizontal", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "total_spent" } },
+      "fieldConfig": { "defaults": { "unit": "locale" } }
+    },
+    {
+      "id": 8,
+      "title": "Impressions & Clicks by Hour",
+      "type": "timeseries",
+      "gridPos": { "x": 0, "y": 12, "w": 24, "h": 7 },
+      "datasource": { "type": "postgres", "uid": "postgres" },
+      "targets": [
+        {
+          "rawSql": "SELECT date_trunc('hour', created_at) as time, COUNT(*) as impressions, SUM(CASE WHEN clicked THEN 1 ELSE 0 END) as clicks FROM ad_impressions WHERE created_at >= NOW() - INTERVAL '24 hours' GROUP BY 1 ORDER BY 1",
+          "format": "time_series",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 9,
+      "title": "Subscription MRR (Monthly Recurring Revenue)",
+      "description": "WHY track here: Ads + Subscriptions = platform revenue. Compare MRR trend vs ad revenue.",
+      "type": "timeseries",
+      "gridPos": { "x": 0, "y": 19, "w": 12, "h": 6 },
+      "datasource": { "type": "postgres", "uid": "postgres" },
+      "targets": [
+        {
+          "rawSql": "SELECT date_trunc('day', created_at) as time, SUM(last_paid_vnd) as mrr FROM seller_subscriptions WHERE status = 'ACTIVE' AND created_at >= NOW() - INTERVAL '30 days' GROUP BY 1 ORDER BY 1",
+          "format": "time_series",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": { "defaults": { "unit": "locale", "custom": { "fillOpacity": 10 } } }
+    },
+    {
+      "id": 10,
+      "title": "Subscription Plan Distribution",
+      "description": "Sellers per plan tier. Upgrade rate from FREE→BASIC→PROFESSIONAL indicates platform value.",
+      "type": "piechart",
+      "gridPos": { "x": 12, "y": 19, "w": 12, "h": 6 },
+      "datasource": { "type": "postgres", "uid": "postgres" },
+      "targets": [
+        {
+          "rawSql": "SELECT plan_tier, COUNT(*) as sellers FROM seller_subscriptions WHERE status = 'ACTIVE' GROUP BY plan_tier",
+          "format": "table",
+          "refId": "A"
+        }
+      ]
+    }
+  ]
+}

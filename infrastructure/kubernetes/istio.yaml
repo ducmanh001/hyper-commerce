@@ -1,0 +1,383 @@
+# ============================================================
+# Istio Service Mesh Configuration for HYPERCOMMERCE
+#
+# WHY Istio instead of alternatives?
+#
+# vs Linkerd:
+#   ✅ Istio: Full traffic management (canary, fault injection, mirroring)
+#   ✅ Istio: mTLS + JWT auth + RBAC in one tool
+#   ✅ Istio: L7 circuit breaking (Linkerd only L4)
+#   ❌ Istio: Heavier (~300MB/pod for sidecar vs ~50MB for Linkerd)
+#   ❌ Linkerd: Simpler; better for teams who don't need all Istio features
+#
+# vs Consul Connect (HashiCorp):
+#   ✅ Istio: Better Kubernetes native integration
+#   ✅ Istio: Envoy proxy is battle-tested at scale (Lyft, Uber, Google)
+#   ❌ Consul: Better for multi-cloud and non-K8s workloads (bare metal)
+#
+# vs No service mesh (just Kubernetes Services):
+#   ✅ Istio: mTLS between pods automatically (zero-trust)
+#   ✅ Istio: Distributed tracing without code changes
+#   ✅ Istio: Circuit breaking prevents cascading failures
+#   ✅ Istio: Canary releases without changing Deployments
+#   ❌ No mesh: Simpler, less ops overhead (Istio adds ~10ms latency per hop)
+#
+# Decision: Istio — our architecture requires canary deploys, mTLS, and
+# circuit breaking. The operational overhead is justified at this scale.
+# ============================================================
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: order-service
+  namespace: hypercommerce
+  annotations:
+    description: "Traffic management for order-service. Enables canary deployment
+      where 5% of traffic goes to new version. Percentage adjusted by CI/CD pipeline
+      during progressive rollout."
+spec:
+  hosts:
+    - order-service
+  http:
+    # Canary traffic split — 5% to v2, 95% to v1 (stable)
+    # WHY 5% initial? Low blast radius: if v2 is broken, only 5% of users affected
+    # CI/CD pipeline gradually increases: 5% → 20% → 50% → 100%
+    # Monitor: error rate < 0.1%, p99 latency < 200ms before advancing
+    - match:
+        - headers:
+            x-canary:
+              exact: "true"   # Force canary for internal testers
+      route:
+        - destination:
+            host: order-service
+            subset: v2
+          weight: 100
+    - route:
+        - destination:
+            host: order-service
+            subset: v1   # stable
+          weight: 95
+        - destination:
+            host: order-service
+            subset: v2   # canary
+          weight: 5
+      # Timeout: 10s total (order creation involves Kafka + inventory check)
+      # WHY 10s not shorter? Kafka produce + inventory gRPC call ≈ 2-3s typical
+      # WHY not longer? User UX: > 10s = abandon
+      timeout: 10s
+      retries:
+        # Retry configuration
+        # WHY retry on 5xx but not 429?
+        #   5xx = transient failure (pod restarting, OOM)
+        #   429 = rate limit — retrying immediately makes it worse
+        attempts: 3
+        perTryTimeout: 3s
+        retryOn: "5xx,reset,connect-failure,retriable-4xx"
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: payment-service
+  namespace: hypercommerce
+spec:
+  hosts:
+    - payment-service
+  http:
+    - route:
+        - destination:
+            host: payment-service
+            subset: v1
+      # Payment timeout: 30s (Stripe API calls, bank processing time)
+      # WHY longer than order-service?
+      # Card authorization can take up to 20s in worst case (international cards)
+      timeout: 30s
+      retries:
+        # WHY only 1 retry for payments?
+        # Idempotency: payment may have been processed on first attempt
+        # We use idempotency keys to handle retries safely
+        # But we limit retries to avoid double-charge appearance to user
+        attempts: 1
+        perTryTimeout: 30s
+        retryOn: "connect-failure,reset"
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: search-service
+  namespace: hypercommerce
+spec:
+  hosts:
+    - search-service
+  http:
+    - route:
+        - destination:
+            host: search-service
+            subset: v1
+      # Search timeout: 3s (user expects fast search)
+      # WHY 3s? Elasticsearch p99 < 200ms; 3s allows for slow ES queries
+      # If > 3s: return stale cached results instead of waiting
+      timeout: 3s
+      retries:
+        attempts: 2
+        perTryTimeout: 1500ms
+        retryOn: "5xx,connect-failure"
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: inventory-service
+  namespace: hypercommerce
+spec:
+  hosts:
+    - inventory-service
+  http:
+    - route:
+        - destination:
+            host: inventory-service
+            subset: v1
+      timeout: 5s
+      retries:
+        attempts: 3
+        perTryTimeout: 2s
+        retryOn: "5xx,connect-failure"
+
+---
+# ============================================================
+# DestinationRules — Circuit Breaker + Load Balancing + mTLS
+# ============================================================
+
+apiVersion: networking.istio.io/v1alpha3
+kind: DestinationRule
+metadata:
+  name: order-service
+  namespace: hypercommerce
+  annotations:
+    description: "Circuit breaker for order-service. If upstream is degraded,
+      fail fast instead of queuing requests (cascade prevention)."
+spec:
+  host: order-service
+  trafficPolicy:
+    # Circuit Breaker settings
+    # WHY circuit breaker instead of just retries?
+    # Retries alone: failed requests keep hitting degraded service
+    # Circuit breaker: OPEN state stops all requests, gives service time to recover
+    #
+    # Pattern: Closed → (failures > threshold) → Open → (after sleepWindow) → Half-Open
+    outlierDetection:
+      # Eject host if 5 consecutive 5xx errors within 1 minute
+      consecutive5xxErrors: 5
+      # Check every 30 seconds
+      interval: 30s
+      # How long to eject (exponential backoff: 30s, 60s, 120s...)
+      baseEjectionTime: 30s
+      # Max % of hosts that can be ejected simultaneously
+      # WHY 50%? If all hosts are bad, better to let some traffic through
+      # (avoid total blackout) rather than eject all
+      maxEjectionPercent: 50
+      # Minimum health threshold — panic mode if <50% hosts are healthy
+      minHealthPercent: 50
+
+    connectionPool:
+      tcp:
+        # Max connections to upstream pod
+        # WHY 100? Each order-service pod handles 200 concurrent (10 thread pool + async)
+        maxConnections: 100
+        connectTimeout: 5s
+        tcpKeepalive:
+          time: 7200s
+          interval: 75s
+          probes: 3
+      http:
+        # Max pending requests before circuit opens
+        # WHY 50? Queue depth = 50 means ~500ms backpressure at 100 RPS
+        http1MaxPendingRequests: 50
+        # Max concurrent requests
+        http2MaxRequests: 1000
+        # Max per-connection requests (prevent stale connections)
+        maxRequestsPerConnection: 100
+        maxRetries: 3
+
+    loadBalancer:
+      # ROUND_ROBIN vs LEAST_CONN vs RANDOM
+      # WHY LEAST_CONN? Order creation is non-uniform cost (simple get vs complex create+kafka)
+      # LEAST_CONN routes to the pod with fewest in-flight requests
+      # ROUND_ROBIN would send to heavily loaded pods
+      simple: LEAST_CONN
+
+    tls:
+      # mTLS between all pods
+      # WHY mTLS not just server TLS?
+      # Server TLS: client verifies server identity
+      # mTLS: both sides verify — prevents SSRF from within the cluster
+      # Even if attacker runs a pod in our namespace, they can't call our services
+      # without a valid service certificate
+      mode: ISTIO_MUTUAL
+
+  subsets:
+    - name: v1
+      labels:
+        version: v1
+    - name: v2
+      labels:
+        version: v2
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: DestinationRule
+metadata:
+  name: payment-service
+  namespace: hypercommerce
+spec:
+  host: payment-service
+  trafficPolicy:
+    outlierDetection:
+      # Payment service: MORE conservative circuit breaker
+      # WHY fewer consecutive errors? Payment failures are costly (lost sales)
+      # Trip circuit faster to protect users from failed payment attempts
+      consecutive5xxErrors: 3
+      interval: 60s
+      baseEjectionTime: 60s    # 2x longer: payment service needs more time to recover
+      maxEjectionPercent: 30   # Only eject 30%: payments must always be available
+      minHealthPercent: 70
+    connectionPool:
+      tcp:
+        maxConnections: 50    # Payment is slower, fewer concurrent connections per pod
+      http:
+        http1MaxPendingRequests: 10   # Very low queue: payment must be fast or fail
+        maxRetries: 1
+    tls:
+      mode: ISTIO_MUTUAL
+  subsets:
+    - name: v1
+      labels:
+        version: v1
+    - name: v2
+      labels:
+        version: v2
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: DestinationRule
+metadata:
+  name: search-service
+  namespace: hypercommerce
+spec:
+  host: search-service
+  trafficPolicy:
+    outlierDetection:
+      consecutive5xxErrors: 10    # Search: more tolerant — Elasticsearch lag is common
+      interval: 10s
+      baseEjectionTime: 10s       # Short ejection: search pods recover fast
+      maxEjectionPercent: 50
+    connectionPool:
+      http:
+        http1MaxPendingRequests: 500   # Search: very high concurrency (browse traffic)
+        http2MaxRequests: 5000
+    loadBalancer:
+      simple: ROUND_ROBIN   # Search: uniform cost per request
+    tls:
+      mode: ISTIO_MUTUAL
+  subsets:
+    - name: v1
+      labels:
+        version: v1
+    - name: v2
+      labels:
+        version: v2
+
+---
+# ============================================================
+# PeerAuthentication — enforce mTLS for all pods
+# ============================================================
+apiVersion: security.istio.io/v1beta1
+kind: PeerAuthentication
+metadata:
+  name: default
+  namespace: hypercommerce
+  annotations:
+    description: "STRICT mode mTLS: all pod-to-pod communication must be encrypted
+      and mutually authenticated. PERMISSIVE mode (alternative) allows plain text —
+      only use during initial mesh adoption, never in production."
+spec:
+  # STRICT: reject any non-mTLS connection
+  # WHY STRICT not PERMISSIVE?
+  #   PERMISSIVE: allows plain HTTP (for legacy services migrating to mesh)
+  #   STRICT: zero-trust — inside cluster is NOT trusted by default
+  #   Financial data (payment service) REQUIRES STRICT
+  mtls:
+    mode: STRICT
+---
+# ============================================================
+# AuthorizationPolicy — service-to-service access control
+# ============================================================
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: order-service-authz
+  namespace: hypercommerce
+spec:
+  selector:
+    matchLabels:
+      app: order-service
+  rules:
+    # Allow NGINX (gateway) → order-service
+    - from:
+        - source:
+            principals:
+              - "cluster.local/ns/hypercommerce/sa/nginx-gateway"
+    # Allow inventory-service → order-service (stock confirmation callback)
+    - from:
+        - source:
+            principals:
+              - "cluster.local/ns/hypercommerce/sa/inventory-service"
+    # Allow payment-service → order-service (payment status update)
+    - from:
+        - source:
+            principals:
+              - "cluster.local/ns/hypercommerce/sa/payment-service"
+---
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: payment-service-authz
+  namespace: hypercommerce
+spec:
+  selector:
+    matchLabels:
+      app: payment-service
+  rules:
+    # Only order-service and NGINX may call payment-service
+    # WHY? Payment endpoints are the most sensitive — minimal blast radius
+    - from:
+        - source:
+            principals:
+              - "cluster.local/ns/hypercommerce/sa/nginx-gateway"
+              - "cluster.local/ns/hypercommerce/sa/order-service"
+---
+# ============================================================
+# Fault Injection — for chaos engineering / load testing
+# (Disabled by default; enabled via label selector during tests)
+# ============================================================
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: inventory-service-fault-injection
+  namespace: hypercommerce-test   # Only in test namespace
+  annotations:
+    description: "Fault injection for chaos testing. Simulates:
+      1. 50ms artificial delay to inventory-service (tests order-service timeout handling)
+      2. 5% HTTP 503 errors (tests circuit breaker)
+      Deploy only to test namespace, never to production."
+spec:
+  hosts:
+    - inventory-service
+  http:
+    - fault:
+        delay:
+          percentage:
+            value: 10.0   # 10% of requests get delayed
+          fixedDelay: 50ms
+        abort:
+          percentage:
+            value: 5.0   # 5% of requests get HTTP 503
+          httpStatus: 503
+      route:
+        - destination:
+            host: inventory-service

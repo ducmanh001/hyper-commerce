@@ -1,0 +1,67 @@
+syntax = "proto3";
+
+package hypercommerce.user;
+
+option java_multiple_files = true;
+
+service UserService {
+  rpc GetUser (GetUserRequest) returns (UserResponse);
+  rpc GetUserBatch (GetUserBatchRequest) returns (GetUserBatchResponse);
+  rpc GetUserProfile (GetUserProfileRequest) returns (UserProfileResponse);
+  rpc CheckUserExists (CheckUserExistsRequest) returns (CheckUserExistsResponse);
+  rpc GetFollowerCount (GetFollowerCountRequest) returns (GetFollowerCountResponse);
+}
+
+message GetUserRequest {
+  string user_id = 1;
+  repeated string fields = 2; // field mask — only return requested fields
+}
+
+message GetUserBatchRequest {
+  repeated string user_ids = 1;
+  repeated string fields = 2;
+}
+
+message GetUserBatchResponse {
+  repeated UserResponse users = 1;
+}
+
+message UserResponse {
+  string id = 1;
+  string username = 2;
+  string email = 3;
+  string avatar_url = 4;
+  string display_name = 5;
+  bool is_celebrity = 6;
+  int64 follower_count = 7;
+  int64 created_at = 8;
+}
+
+message GetUserProfileRequest {
+  string user_id = 1;
+  string viewer_id = 2; // for personalized response (is_following, etc.)
+}
+
+message UserProfileResponse {
+  UserResponse user = 1;
+  bool is_following = 2;
+  bool is_blocked = 3;
+  int64 post_count = 4;
+  int64 following_count = 5;
+}
+
+message CheckUserExistsRequest {
+  string user_id = 1;
+}
+
+message CheckUserExistsResponse {
+  bool exists = 1;
+}
+
+message GetFollowerCountRequest {
+  string user_id = 1;
+}
+
+message GetFollowerCountResponse {
+  int64 count = 1;
+}

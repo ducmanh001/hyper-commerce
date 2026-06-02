@@ -1,0 +1,305 @@
+{
+  "description": "Real-time Operations — Flash Sales, Live Streams, Inventory Alerts, Rate Limits",
+  "editable": false,
+  "graphTooltip": 0,
+  "liveNow": true,
+  "id": null,
+  "panels": [
+
+    {
+      "type": "row",
+      "title": "⚡ Flash Sale Monitor",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 },
+      "id": 100,
+      "collapsed": false
+    },
+
+    {
+      "type": "gauge",
+      "title": "Flash Sale Queue Depth",
+      "gridPos": { "h": 6, "w": 8, "x": 0, "y": 1 },
+      "id": 1,
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"] },
+        "orientation": "auto",
+        "showThresholdLabels": true,
+        "showThresholdMarkers": true
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "min": 0,
+          "max": 10000,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 5000 },
+              { "color": "red", "value": 9000 }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "expr": "max(hc_flash_sale_queue_length)",
+          "legendFormat": "Queue",
+          "refId": "A"
+        }
+      ]
+    },
+
+    {
+      "type": "stat",
+      "title": "Active Flash Sales",
+      "gridPos": { "h": 3, "w": 4, "x": 8, "y": 1 },
+      "id": 2,
+      "options": {
+        "colorMode": "background",
+        "reduceOptions": { "calcs": ["lastNotNull"] }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "color": { "mode": "thresholds" },
+          "thresholds": { "steps": [{ "color": "green", "value": null }] }
+        },
+        "overrides": []
+      },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "expr": "count(hc_flash_sale_queue_length > 0) or vector(0)",
+          "legendFormat": "Active Sales",
+          "refId": "A"
+        }
+      ]
+    },
+
+    {
+      "type": "timeseries",
+      "title": "Flash Sale Order Throughput (orders/sec)",
+      "gridPos": { "h": 6, "w": 12, "x": 12, "y": 1 },
+      "id": 3,
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps",
+          "custom": { "lineInterpolation": "stepAfter" }
+        },
+        "overrides": []
+      },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        { "expr": "sum(rate(hc_orders_created_total[10s]))", "legendFormat": "Orders/sec", "refId": "A" },
+        { "expr": "sum(rate(hc_inventory_conflicts_total[10s]))", "legendFormat": "Stock Conflicts/sec", "refId": "B" }
+      ]
+    },
+
+    {
+      "type": "row",
+      "title": "📺 Livestream Monitor",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 7 },
+      "id": 200,
+      "collapsed": false
+    },
+
+    {
+      "type": "stat",
+      "title": "🟢 Active Streams",
+      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 8 },
+      "id": 20,
+      "options": {
+        "colorMode": "background",
+        "reduceOptions": { "calcs": ["lastNotNull"] }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "color": { "mode": "thresholds" },
+          "thresholds": { "steps": [{ "color": "green", "value": null }] }
+        },
+        "overrides": []
+      },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        { "expr": "count(hc_active_stream_viewers > 0) or vector(0)", "legendFormat": "Active Streams", "refId": "A" }
+      ]
+    },
+
+    {
+      "type": "stat",
+      "title": "👥 Total Viewers",
+      "gridPos": { "h": 4, "w": 6, "x": 6, "y": 8 },
+      "id": 21,
+      "options": {
+        "colorMode": "background",
+        "reduceOptions": { "calcs": ["lastNotNull"] }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "color": { "mode": "thresholds" },
+          "thresholds": { "steps": [{ "color": "blue", "value": null }] }
+        },
+        "overrides": []
+      },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        { "expr": "sum(hc_active_stream_viewers)", "legendFormat": "Total Viewers", "refId": "A" }
+      ]
+    },
+
+    {
+      "type": "timeseries",
+      "title": "Viewer Count Over Time",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+      "id": 22,
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": { "lineInterpolation": "smooth", "fillOpacity": 15 }
+        },
+        "overrides": []
+      },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        { "expr": "sum(hc_active_stream_viewers)", "legendFormat": "Total Viewers", "refId": "A" }
+      ]
+    },
+
+    {
+      "type": "row",
+      "title": "🔒 Rate Limits & Security",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 16 },
+      "id": 300,
+      "collapsed": false
+    },
+
+    {
+      "type": "timeseries",
+      "title": "Rate Limit Rejections by Tier (per minute)",
+      "description": "Spike = DDoS or misconfigured client",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 17 },
+      "id": 30,
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": { "lineInterpolation": "smooth", "fillOpacity": 10 }
+        },
+        "overrides": []
+      },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "expr": "sum by (tier) (rate(http_requests_total{status='429'}[1m])) * 60",
+          "legendFormat": "Tier: {{tier}}",
+          "refId": "A"
+        }
+      ]
+    },
+
+    {
+      "type": "timeseries",
+      "title": "Fraud Detection Events",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 17 },
+      "id": 31,
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": { "lineInterpolation": "smooth", "fillOpacity": 10 }
+        },
+        "overrides": []
+      },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "expr": "sum by (reason) (rate(hc_fraud_blocked_total[5m])) * 60",
+          "legendFormat": "{{reason}}",
+          "refId": "A"
+        }
+      ]
+    },
+
+    {
+      "type": "row",
+      "title": "📦 Inventory Real-time",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 25 },
+      "id": 400,
+      "collapsed": false
+    },
+
+    {
+      "type": "timeseries",
+      "title": "Stock Reservation Conflicts (oversell prevention)",
+      "description": "High rate = flash sale hot products. Expected spikes during sale events.",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 26 },
+      "id": 40,
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": { "lineInterpolation": "stepAfter" },
+          "thresholds": {
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 100 },
+              { "color": "red", "value": 500 }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "expr": "sum(rate(hc_inventory_conflicts_total[30s])) * 30",
+          "legendFormat": "Conflicts/30s",
+          "refId": "A"
+        }
+      ]
+    },
+
+    {
+      "type": "timeseries",
+      "title": "Cache Hit Rate (L1/L2)",
+      "description": "High hit rate = low DB load. Target: > 95%",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 26 },
+      "id": 41,
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "min": 0,
+          "max": 1,
+          "custom": { "lineInterpolation": "smooth" },
+          "thresholds": {
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "yellow", "value": 0.8 },
+              { "color": "green", "value": 0.95 }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "expr": "sum(rate(hc_cache_hits_total{hit='true'}[1m])) by (cache_layer) / sum(rate(hc_cache_hits_total[1m])) by (cache_layer)",
+          "legendFormat": "{{cache_layer}} hit rate",
+          "refId": "A"
+        }
+      ]
+    }
+
+  ],
+  "refresh": "5s",
+  "schemaVersion": 38,
+  "style": "dark",
+  "tags": ["real-time", "operations", "hypercommerce"],
+  "time": { "from": "now-30m", "to": "now" },
+  "timezone": "Asia/Ho_Chi_Minh",
+  "title": "03 — Real-time Operations",
+  "uid": "hc-realtime-ops",
+  "version": 1
+}

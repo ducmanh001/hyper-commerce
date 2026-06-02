@@ -1,0 +1,266 @@
+{
+  "description": "HyperCommerce Service SLOs — Latency P50/P95/P99, Error Rate, Throughput per service",
+  "editable": false,
+  "graphTooltip": 1,
+  "id": null,
+  "panels": [
+
+    {
+      "type": "row",
+      "title": "SLO Targets: Order API P99 < 3s | Search P99 < 200ms | Feed P99 < 80ms | Live P99 < 50ms",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 },
+      "id": 100,
+      "collapsed": false
+    },
+
+    {
+      "type": "timeseries",
+      "title": "HTTP Request Latency P99 by Service",
+      "description": "Red line = SLO target per service",
+      "gridPos": { "h": 10, "w": 24, "x": 0, "y": 1 },
+      "id": 1,
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "custom": {
+            "lineInterpolation": "smooth",
+            "fillOpacity": 5,
+            "spanNulls": false
+          }
+        },
+        "overrides": []
+      },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        { "expr": "histogram_quantile(0.99, sum by (service, le) (rate(http_request_duration_seconds_bucket[5m])))", "legendFormat": "P99 {{service}}", "refId": "A" },
+        { "expr": "histogram_quantile(0.95, sum by (service, le) (rate(http_request_duration_seconds_bucket[5m])))", "legendFormat": "P95 {{service}}", "refId": "B" }
+      ]
+    },
+
+    {
+      "type": "table",
+      "title": "Service SLO Status",
+      "description": "Green = within SLO. Red = SLO breach.",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 11 },
+      "id": 2,
+      "options": {
+        "showHeader": true,
+        "sortBy": [{ "displayName": "P99 (s)", "desc": true }]
+      },
+      "fieldConfig": {
+        "defaults": { "custom": { "align": "center", "displayMode": "color-background" } },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "P99 (s)" },
+            "properties": [
+              { "id": "thresholds", "value": { "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 1 }, { "color": "red", "value": 3 }] } },
+              { "id": "custom.displayMode", "value": "color-background" }
+            ]
+          }
+        ]
+      },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.99, sum by (service, le) (rate(http_request_duration_seconds_bucket[5m])))",
+          "legendFormat": "{{service}}",
+          "refId": "A",
+          "instant": true
+        }
+      ]
+    },
+
+    {
+      "type": "timeseries",
+      "title": "Error Rate by Service (5xx / total)",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 11 },
+      "id": 3,
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "min": 0,
+          "custom": { "lineInterpolation": "smooth", "fillOpacity": 10 },
+          "thresholds": {
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 0.01 },
+              { "color": "red", "value": 0.05 }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "expr": "sum by (service) (rate(http_requests_total{status=~'5..'}[5m])) / sum by (service) (rate(http_requests_total[5m]))",
+          "legendFormat": "{{service}}",
+          "refId": "A"
+        }
+      ]
+    },
+
+    {
+      "type": "row",
+      "title": "💳 Payment Processor Performance",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 19 },
+      "id": 200,
+      "collapsed": false
+    },
+
+    {
+      "type": "timeseries",
+      "title": "Payment Latency P99 by Processor",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 20 },
+      "id": 20,
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "custom": { "lineInterpolation": "smooth" }
+        },
+        "overrides": []
+      },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.99, sum by (processor, le) (rate(hc_payment_duration_seconds_bucket[5m])))",
+          "legendFormat": "{{processor}}",
+          "refId": "A"
+        }
+      ]
+    },
+
+    {
+      "type": "stat",
+      "title": "🔴 Circuit Breakers Open",
+      "gridPos": { "h": 4, "w": 6, "x": 12, "y": 20 },
+      "id": 21,
+      "options": {
+        "colorMode": "background",
+        "reduceOptions": { "calcs": ["lastNotNull"] }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "thresholds": {
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "red", "value": 1 }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "expr": "count(payment_processor_circuit_open == 1) or vector(0)",
+          "legendFormat": "Open Circuits",
+          "refId": "A"
+        }
+      ]
+    },
+
+    {
+      "type": "row",
+      "title": "🔍 Search Service",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 28 },
+      "id": 300,
+      "collapsed": false
+    },
+
+    {
+      "type": "timeseries",
+      "title": "Search Latency (BM25 vs Vector vs Total)",
+      "description": "SLO: P99 < 200ms",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 29 },
+      "id": 30,
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ms",
+          "custom": { "lineInterpolation": "smooth" },
+          "thresholds": {
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 100 },
+              { "color": "red", "value": 200 }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        { "expr": "histogram_quantile(0.99, sum by (search_type, le) (rate(hc_search_duration_ms_bucket[5m])))", "legendFormat": "P99 {{search_type}}", "refId": "A" },
+        { "expr": "histogram_quantile(0.50, sum by (search_type, le) (rate(hc_search_duration_ms_bucket[5m])))", "legendFormat": "P50 {{search_type}}", "refId": "B" }
+      ]
+    },
+
+    {
+      "type": "timeseries",
+      "title": "Search Throughput (QPS)",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 29 },
+      "id": 31,
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps",
+          "custom": { "lineInterpolation": "smooth" }
+        },
+        "overrides": []
+      },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "expr": "sum(rate(hc_search_duration_ms_count[1m]))",
+          "legendFormat": "Search QPS",
+          "refId": "A"
+        }
+      ]
+    },
+
+    {
+      "type": "row",
+      "title": "📱 Feed Service",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 37 },
+      "id": 400,
+      "collapsed": false
+    },
+
+    {
+      "type": "timeseries",
+      "title": "Feed Ranking Latency (SLO: P99 < 80ms)",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 38 },
+      "id": 40,
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ms",
+          "custom": { "lineInterpolation": "smooth", "fillOpacity": 10 },
+          "thresholds": {
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 50 },
+              { "color": "red", "value": 80 }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        { "expr": "histogram_quantile(0.99, sum by (le) (rate(hc_feed_ranking_duration_ms_bucket[5m])))", "legendFormat": "P99", "refId": "A" },
+        { "expr": "histogram_quantile(0.95, sum by (le) (rate(hc_feed_ranking_duration_ms_bucket[5m])))", "legendFormat": "P95", "refId": "B" },
+        { "expr": "histogram_quantile(0.50, sum by (le) (rate(hc_feed_ranking_duration_ms_bucket[5m])))", "legendFormat": "P50 (median)", "refId": "C" }
+      ]
+    }
+
+  ],
+  "refresh": "30s",
+  "schemaVersion": 38,
+  "style": "dark",
+  "tags": ["slo", "latency", "hypercommerce"],
+  "time": { "from": "now-1h", "to": "now" },
+  "timezone": "Asia/Ho_Chi_Minh",
+  "title": "02 — Service SLO",
+  "uid": "hc-service-slo",
+  "version": 1
+}

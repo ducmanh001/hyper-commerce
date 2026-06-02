@@ -1,0 +1,151 @@
+{
+  "id": null,
+  "uid": "hc-logs",
+  "title": "05 — Log Explorer",
+  "description": "Loki log streams for all HyperCommerce services. Filter by service, level, and trace ID. Correlates with Prometheus metrics and Jaeger traces.",
+  "tags": ["logs", "loki", "observability"],
+  "timezone": "Asia/Ho_Chi_Minh",
+  "refresh": "30s",
+  "time": { "from": "now-1h", "to": "now" },
+  "templating": {
+    "list": [
+      {
+        "name": "service",
+        "type": "query",
+        "datasource": { "type": "loki", "uid": "loki" },
+        "query": "label_values(service)",
+        "label": "Service",
+        "multi": true,
+        "includeAll": true,
+        "current": { "text": "All", "value": "$__all" }
+      },
+      {
+        "name": "level",
+        "type": "custom",
+        "label": "Log Level",
+        "options": [
+          { "text": "All", "value": "", "selected": true },
+          { "text": "error", "value": "error" },
+          { "text": "warn", "value": "warn" },
+          { "text": "info", "value": "info" },
+          { "text": "debug", "value": "debug" }
+        ],
+        "current": { "text": "All", "value": "" }
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1,
+      "title": "Log Volume by Level (all services)",
+      "type": "timeseries",
+      "gridPos": { "x": 0, "y": 0, "w": 24, "h": 6 },
+      "datasource": { "type": "loki", "uid": "loki" },
+      "targets": [
+        {
+          "expr": "sum by (level) (count_over_time({job=\"docker-containers\", service=~\"$service\"} [$__interval]))",
+          "legendFormat": "{{level}}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "custom": { "fillOpacity": 15 } },
+        "overrides": [
+          { "matcher": { "id": "byName", "options": "error" }, "properties": [{ "id": "color", "value": { "fixedColor": "red", "mode": "fixed" } }] },
+          { "matcher": { "id": "byName", "options": "warn" }, "properties": [{ "id": "color", "value": { "fixedColor": "orange", "mode": "fixed" } }] }
+        ]
+      }
+    },
+    {
+      "id": 2,
+      "title": "Error Rate by Service",
+      "type": "bargauge",
+      "gridPos": { "x": 0, "y": 6, "w": 12, "h": 6 },
+      "datasource": { "type": "loki", "uid": "loki" },
+      "targets": [
+        {
+          "expr": "sum by (service) (count_over_time({job=\"docker-containers\", level=\"error\"} [5m]))",
+          "legendFormat": "{{service}}",
+          "refId": "A"
+        }
+      ],
+      "options": { "orientation": "horizontal", "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 5 },
+              { "color": "red", "value": 20 }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": 3,
+      "title": "Top Error Messages (last 1h)",
+      "type": "table",
+      "gridPos": { "x": 12, "y": 6, "w": 12, "h": 6 },
+      "datasource": { "type": "loki", "uid": "loki" },
+      "targets": [
+        {
+          "expr": "topk(10, sum by (service, context) (count_over_time({job=\"docker-containers\", level=\"error\"} [1h])))",
+          "legendFormat": "{{service}} — {{context}}",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "title": "Live Log Stream",
+      "description": "Real-time log stream. Filter by service and level above.",
+      "type": "logs",
+      "gridPos": { "x": 0, "y": 12, "w": 24, "h": 16 },
+      "datasource": { "type": "loki", "uid": "loki" },
+      "options": {
+        "showTime": true,
+        "showLabels": true,
+        "showCommonLabels": false,
+        "wrapLogMessage": true,
+        "prettifyLogMessage": true,
+        "enableLogDetails": true,
+        "sortOrder": "Descending",
+        "dedupStrategy": "none"
+      },
+      "targets": [
+        {
+          "expr": "{job=\"docker-containers\", service=~\"$service\"} |~ \"$level\"",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "title": "Order Service — Error Logs",
+      "type": "logs",
+      "gridPos": { "x": 0, "y": 28, "w": 12, "h": 8 },
+      "datasource": { "type": "loki", "uid": "loki" },
+      "targets": [
+        {
+          "expr": "{service=\"order-service\", level=\"error\"} | json | line_format \"[{{.context}}] {{.message}}\"",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "title": "Payment Service — Error Logs",
+      "type": "logs",
+      "gridPos": { "x": 12, "y": 28, "w": 12, "h": 8 },
+      "datasource": { "type": "loki", "uid": "loki" },
+      "targets": [
+        {
+          "expr": "{service=\"payment-service\", level=\"error\"} | json | line_format \"[{{.context}}] {{.message}}\"",
+          "refId": "A"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,13 @@
+apiVersion: 1
+
+providers:
+  - name: HyperCommerce Dashboards
+    orgId: 1
+    folder: HyperCommerce
+    type: file
+    disableDeletion: true
+    updateIntervalSeconds: 30
+    allowUiUpdates: false
+    options:
+      path: /etc/grafana/dashboards
+      foldersFromFilesStructure: false

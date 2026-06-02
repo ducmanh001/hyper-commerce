@@ -1,0 +1,218 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;600;700;800;900&display=swap');
+
+:root {
+  --primary: #EE4D2D;
+  --primary-dark: #D94326;
+  --primary-glow: rgba(238,77,45,0.3);
+  --gold: #F5A623;
+  --gold-light: #FFF3CD;
+}
+
+@layer base {
+  html {
+    font-family: 'Be Vietnam Pro', system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-[#F7F8FC] text-gray-900;
+  }
+
+  * { box-sizing: border-box; }
+}
+
+@layer components {
+  /* ── Buttons ── */
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 px-6 py-3 font-semibold rounded-xl
+           text-white transition-all duration-200 shadow-lg
+           disabled:opacity-50 disabled:cursor-not-allowed;
+    background: linear-gradient(135deg, #EE4D2D 0%, #FF6B4A 100%);
+    box-shadow: 0 4px 15px var(--primary-glow);
+  }
+  .btn-primary:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px var(--primary-glow);
+  }
+  .btn-primary:active:not(:disabled) { transform: translateY(0); }
+
+  .btn-outline {
+    @apply inline-flex items-center justify-center gap-2 px-6 py-3 font-semibold rounded-xl
+           transition-all duration-200;
+    border: 2px solid #EE4D2D;
+    color: #EE4D2D;
+  }
+  .btn-outline:hover { background-color: #fff4f2; }
+
+  .btn-ghost {
+    @apply inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium
+           text-gray-600 hover:bg-gray-100 rounded-xl transition-colors duration-150;
+  }
+
+  /* ── Cards ── */
+  .card {
+    @apply bg-white rounded-2xl overflow-hidden;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.04);
+    transition: box-shadow 0.25s ease, transform 0.25s ease;
+  }
+  .card:hover {
+    box-shadow: 0 8px 30px rgba(0,0,0,0.10);
+    transform: translateY(-2px);
+  }
+
+  .glass-card {
+    backdrop-filter: blur(16px) saturate(180%);
+    background: rgba(255,255,255,0.72);
+    border: 1px solid rgba(255,255,255,0.4);
+    @apply rounded-2xl;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.08);
+  }
+
+  /* ── Badges ── */
+  .badge-discount {
+    @apply inline-flex items-center text-white text-xs font-black px-2 py-0.5 rounded-lg;
+    background: linear-gradient(135deg, #EE4D2D, #FF6B35);
+  }
+
+  .badge-sponsored {
+    @apply inline-block bg-amber-50 text-amber-600 text-xs font-semibold px-2 py-0.5 rounded-lg border border-amber-200;
+  }
+
+  .flash-sale-badge {
+    @apply inline-flex items-center gap-1 text-white text-xs font-black px-2 py-1 rounded-lg;
+    background: linear-gradient(135deg, #DC2626, #EE4D2D);
+    animation: flash-pulse 1.2s ease-in-out infinite;
+  }
+
+  .badge-new {
+    @apply inline-flex items-center text-white text-xs font-bold px-2 py-0.5 rounded-lg;
+    background: linear-gradient(135deg, #7C3AED, #A855F7);
+  }
+
+  /* ── Input ── */
+  .input-base {
+    @apply w-full px-4 py-3 border border-gray-200 rounded-xl text-sm
+           bg-white transition-all duration-200 placeholder:text-gray-400;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04) inset;
+  }
+  .input-base:focus {
+    outline: none;
+    border-color: transparent;
+    box-shadow: 0 0 0 3px rgba(238,77,45,0.25);
+  }
+
+  /* ── Skeleton ── */
+  .skeleton {
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+    @apply rounded-xl;
+  }
+
+  /* ── Stats card ── */
+  .stat-card {
+    @apply bg-white rounded-2xl p-5;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    border: 1px solid rgba(0,0,0,0.04);
+  }
+}
+
+/* ── Animations ── */
+@keyframes shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+@keyframes flash-pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.75; }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50%       { transform: translateY(-8px); }
+}
+
+@keyframes slide-in-right {
+  from { opacity: 0; transform: translateX(20px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.animate-float    { animation: float 3s ease-in-out infinite; }
+.animate-fade-up  { animation: fade-up 0.5s ease-out forwards; }
+.animate-slide-in { animation: slide-in-right 0.4s ease-out forwards; }
+
+/* ── Gradient text ── */
+.gradient-text {
+  background: linear-gradient(135deg, #EE4D2D 0%, #FF8C42 50%, #FFCA3A 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.gradient-text-purple {
+  background: linear-gradient(135deg, #7C3AED 0%, #A855F7 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ── Progress bar ── */
+#nprogress .bar {
+  background: linear-gradient(to right, #EE4D2D, #FF8C42) !important;
+  height: 3px !important;
+}
+
+/* ── Custom scrollbar ── */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 99px; }
+::-webkit-scrollbar-thumb:hover { background: #9ca3af; }
+
+/* ── Admin sidebar gradient ── */
+.admin-sidebar {
+  background: linear-gradient(180deg, #0F172A 0%, #1E293B 100%);
+}
+
+/* ── Product image zoom ── */
+.img-zoom-container { overflow: hidden; }
+.img-zoom-container img { transition: transform 0.4s cubic-bezier(0.25,0.46,0.45,0.94); }
+.img-zoom-container:hover img { transform: scale(1.07); }
+
+/* ── Hero pattern ── */
+.hero-pattern {
+  background-image: radial-gradient(circle at 20% 50%, rgba(255,255,255,0.1) 0%, transparent 50%),
+                    radial-gradient(circle at 80% 20%, rgba(255,200,50,0.15) 0%, transparent 40%);
+}
+
+/* ── Glow effect ── */
+.glow-primary {
+  box-shadow: 0 0 20px rgba(238,77,45,0.4), 0 0 40px rgba(238,77,45,0.2);
+}
+
+/* ── Category pill hover ── */
+.category-pill {
+  @apply flex flex-col items-center gap-2 px-4 py-3 rounded-2xl font-medium text-sm
+         transition-all duration-200 cursor-pointer whitespace-nowrap;
+  border: 1px solid transparent;
+}
+.category-pill:hover {
+  border-color: rgba(238,77,45,0.25);
+  background-color: #fff4f2;
+  color: #EE4D2D;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(238,77,45,0.15);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}

@@ -1,0 +1,77 @@
+apiVersion: 1
+
+datasources:
+  # ── Prometheus ─────────────────────────────────────────────
+  - name: Prometheus
+    type: prometheus
+    access: proxy
+    url: http://prometheus:9090
+    isDefault: true
+    jsonData:
+      httpMethod: POST
+      exemplarTraceIdDestinations:
+        - name: trace_id
+          datasourceUid: jaeger
+          urlDisplayLabel: 'View in Jaeger'
+    editable: false
+
+  # ── Jaeger (distributed tracing) ──────────────────────────
+  - name: Jaeger
+    type: jaeger
+    uid: jaeger
+    access: proxy
+    url: http://jaeger:16686
+    jsonData:
+      tracesToLogsV2:
+        datasourceUid: loki
+        tags: ['service.name', 'container']
+    editable: false
+
+  # ── PostgreSQL (direct query for business metrics) ─────────
+  - name: PostgreSQL
+    type: postgres
+    access: proxy
+    url: postgres:5432
+    database: hypercommerce
+    user: hc_grafana_readonly  # Read-only user for security
+    secureJsonData:
+      password: ${GRAFANA_POSTGRES_PASSWORD}
+    jsonData:
+      sslmode: disable
+      maxOpenConns: 5
+      maxIdleConns: 2
+      connMaxLifetime: 14400
+      postgresVersion: 1500
+      timescaledb: false
+    editable: false
+
+  # ── Loki (log aggregation) ────────────────────────────────
+  # WHY Loki: Same label model as Prometheus, native Grafana, compressed storage
+  # 10x cheaper than Elasticsearch for structured log streams
+  - name: Loki
+    type: loki
+    uid: loki
+    access: proxy
+    url: http://loki:3100
+    jsonData:
+      maxLines: 1000
+      derivedFields:
+        # Extract trace IDs from logs and link to Jaeger
+        - name: TraceID
+          matcherRegex: '"traceId":"(\w+)"'
+          url: '$${__value.raw}'
+          datasourceUid: jaeger
+    editable: false
+
+  # ── ClickHouse (analytics OLAP) ───────────────────────────
+  - name: ClickHouse
+    type: grafana-clickhouse-datasource
+    access: proxy
+    jsonData:
+      server: clickhouse
+      port: 8123
+      defaultDatabase: hypercommerce
+      username: default
+    secureJsonData:
+      password: ${CLICKHOUSE_PASSWORD}
+    editable: false
