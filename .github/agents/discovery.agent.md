@@ -227,30 +227,3 @@ Before outputting Plan Card (Mode 1) or Execute prompt (Mode 2):
 ```
 
 > Missing any step → go back and read the file. Never fabricate schema or event names.
-
----
-
-## Example invocations
-
-### Mode 1
-
-```
-@discovery I want users to be able to save products to a wishlist and get notified when price drops.
-```
-
-### Mode 2
-
-```
-@discovery Proceed. Max 50 items per wishlist. Notify only if drop ≥ 10%.
-[paste Plan Card from Mode 1]
-```
-
-### Shorthand Mode 2 (when user knows exactly what they want)
-
-```
-@discovery Execute:
-- Add wishlist_items table (userId, productId, variantId, savedPrice BIGINT)
-- Kafka: price.events → wishlist-service consumer
-- Notify if newPrice < savedPrice * 0.9
-Level L3, domain @commerce
-```

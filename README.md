@@ -25,7 +25,7 @@
 
 ## Tổng quan dự án
 
-HyperCommerce là một monorepo NestJS (Nx) chứa **14 microservice** + **1 Next.js 14 storefront** + **1 Express API Gateway**. Dự án được thiết kế để chịu tải hàng triệu người dùng đồng thời với kiến trúc event-driven, eventual consistency, và horizontal scaling.
+HyperCommerce là một monorepo NestJS (Nx) chứa **16 microservice** + **1 Next.js 14 storefront** + **1 Express API Gateway**. Dự án được thiết kế để chịu tải hàng triệu người dùng đồng thời với kiến trúc event-driven, eventual consistency, và horizontal scaling.
 
 ### Tính năng nổi bật
 
@@ -235,6 +235,9 @@ Orders được shard theo `userId` — tất cả JOIN cho một đơn hàng (i
 | **admin-service**        | 3011     | NestJS            | Dashboard nội bộ (localhost-only)                                |
 | **ads-service**          | 3012     | NestJS            | GSP auction engine, campaign management                          |
 | **subscription-service** | 3013     | NestJS            | Gói seller, Stripe Billing                                       |
+| **chat-service**         | 3015     | NestJS            | Tin nhắn real-time, conversations, Socket.IO                     |
+| **review-service**       | 3016     | NestJS            | Reviews & ratings sản phẩm, helpful votes                        |
+| **wallet-service**       | 3017     | NestJS            | Credit/debit ledger, cashback tự động, virtual coins             |
 
 ---
 
@@ -811,18 +814,24 @@ hypercommerce/
 │   ├── payment-service/           # VNPay, MoMo, Stripe + webhook idempotent
 │   ├── notification-service/      # Email / push / SMS fan-out
 │   ├── analytics-service/         # Event ingestion → ClickHouse OLAP
-│   └── ai-service/                # Recommendations (ANN) + Fraud scoring
+│   ├── ai-service/                # Recommendations (ANN) + Fraud scoring
+│   ├── admin-service/             # Dashboard nội bộ (127.0.0.1:3011)
+│   ├── ads-service/               # GSP auction engine, campaign management
+│   ├── subscription-service/      # Gói seller, Stripe Billing
+│   ├── chat-service/              # Tin nhắn real-time, conversations
+│   ├── review-service/            # Reviews & ratings, helpful votes
+│   └── wallet-service/            # Credit/debit ledger, cashback, coins
 │
 ├── libs/                          # Shared libraries (NestJS monorepo)
 │   ├── common/                    #   Guards, filters, decorators, exceptions
 │   ├── database/                  #   TypeORM base config
-│   ├── events/                    #   Kafka event type definitions (shared)
-│   ├── grpc/                      #   Proto definitions + gRPC client factories
+│   ├── events/                    #   Kafka event types + EVENTS.md routing catalog
+│   ├── grpc/                      #   Proto definitions + PROTOS.md catalog + gRPC clients
 │   ├── kafka/                     #   KafkaProducerService wrapper
 │   ├── redis/                     #   RedisClientService wrapper
-│   ├── queue/                     #   BullMQ helpers
+│   ├── queue/                     #   BullMQ helpers + QUEUES.md job catalog
 │   ├── algorithms/                #   Ranking, scoring, ANN utilities
-│   └── tracing/                   #   OpenTelemetry setup
+│   └── tracing/                   #   OpenTelemetry → Jaeger distributed tracing
 │
 └── infrastructure/
     ├── docker-compose.yml         # Local development full stack
@@ -868,14 +877,45 @@ git push origin feat/my-feature
 # Mở Pull Request → review → merge
 ```
 
+**Commit format** (enforced by commitlint + husky):
+
+```
+type(scope): subject          ← max 72 chars, imperative mood
+
+Optional body lines           ← max 72 chars each
+```
+
+Types: `feat` `fix` `docs` `chore` `refactor` `perf` `test` `style` `ci` `revert`
+Full guide: `.github/COMMIT_CONVENTION.md`
+
 ### Thêm service mới
 
 1. Tạo `apps/my-service/src/`
 2. Đăng ký trong `nest-cli.json`
 3. Thêm script `start:dev:my-service` vào `package.json`
-4. Dùng Kafka consumer/producer theo pattern của `order-service`
-5. Expose `/metrics` endpoint cho Prometheus
-6. Thêm `traceId` vào mọi Kafka event và log entry
+4. Thêm proxy route tại `apps/api-gateway/server.js`
+5. Dùng Kafka consumer/producer theo pattern của `order-service`
+6. DB writes multi-table → dùng Outbox pattern (xem `wallet-service`)
+7. Expose `/metrics` endpoint cho Prometheus
+8. Thêm `traceId` vào mọi Kafka event và log entry
+9. Chạy `make context:refresh` sau khi thêm entity mới
+
+### AI Developer Tooling
+
+```bash
+make context:refresh     # Regenerate SCHEMA.md + QUEUES.md + PROTOS.md
+npm run context:index    # SCHEMA.md only
+npm run context:catalogs # QUEUES.md + PROTOS.md only
+```
+
+Catalog files tự động cập nhật khi commit:
+
+- `queue.constants.ts` thay đổi → `libs/queue/QUEUES.md` auto-update
+- `*.proto` thay đổi → `libs/grpc/PROTOS.md` auto-update
+
+Feature specs: `.github/specs/*.spec.md` — invoke với `@agent #file:.github/specs/name.spec.md +wrap`
+Fragment library: `.github/prompts/fragments/` — +base +kafka +redis +tx +migration
+AI dev guide: `.github/AI_DEV_GUIDE.md`
 
 ### Bảo mật (OWASP Top 10)
 

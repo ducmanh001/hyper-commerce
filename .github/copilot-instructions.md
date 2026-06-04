@@ -64,19 +64,14 @@ Multi-vendor social commerce platform. Target: 50M DAU, 500K orders/day, 100K co
 
 ## Workflow Files
 
-```
-.github/prompts/        ← optional, only for repeatable team checklists — NOT required to implement
-.github/prompts/fragments/ ← reusable prompt fragments (+base, +kafka, +redis, +tx, +migration, +verify-L*)
-.github/chatmodes/      ← custom chat modes: feature-dev, code-review, debug
-.github/instructions/   ← code-gen rules (auto-load by applyTo: nestjs, nextjs, database)
-.github/agents/discovery.agent.md ← 2-mode agent: vague idea → Plan Card | confirmed plan → implement prompt
-.github/specs/          ← persistent feature specs — invoke with: @{agent} #file:.github/specs/{name}.spec.md +wrap
-```
+- **Fragments**: `.github/prompts/fragments/` — +base +kafka +redis +tx +migration +verify-L2/L3/L4 +wrap
+- **Specs**: `.github/specs/*.spec.md` — invoke: `@{agent} #file:.github/specs/{name}.spec.md +wrap`
+- **Instructions**: `.github/instructions/` — auto-load by `applyTo` (nestjs, nextjs, database, security, testing)
+- **Discovery**: `.github/agents/discovery.agent.md` — vague idea → Plan Card | confirmed plan → implement prompt
+- **Prompts**: `.github/prompts/` — optional team checklists only, NOT needed for one-off work
 
-> **To implement any feature: just describe it directly — no prompt file needed.**
-> AI will self-retrieve all context (SCHEMA.md → entity files → EVENTS.md → events.ts) automatically.
-> After implementation, AI runs `node scripts/gen-context-index.js` to refresh SCHEMA.md.
-> Prompt files exist ONLY for team-shared repeatable checklists — skip them for one-off work.
+> Implement any feature: describe it directly. AI self-retrieves SCHEMA.md → entities → EVENTS.md → events.ts.
+> After new table/event: run `make context:refresh` to regenerate all catalogs.
 
 ## Context Layers (how context auto-loads)
 
