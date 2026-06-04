@@ -1,5 +1,5 @@
 ---
-applyTo: .github/prompts/**
+applyTo: '**'
 ---
 
 ## Prompt Fragments — Auto-resolution Rule (LCB v3 L7)
