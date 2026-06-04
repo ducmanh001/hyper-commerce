@@ -90,10 +90,16 @@ This auto-refreshes SCHEMA.md table map + migration number from live @Entity dec
 2. `libs/events/EVENTS.md` — add row to routing table (topic | emitter | consumer(s) only, no payload details)
 3. If it's part of a saga flow → update the saga diagram in EVENTS.md
 
-**After creating a new NestJS service** → update `apps/api-gateway/server.js`:
+**After creating a new NestJS service** → three places to update:
 
-- Add proxy route following existing `createProxyMiddleware` pattern
-- Add port to service map in `copilot-instructions.md`
+1. `apps/api-gateway/server.js` — add proxy route following existing `createProxyMiddleware` pattern
+2. `copilot-instructions.md` — add port to service map
+3. `agents/{domain}.agent.md` — add `apps/{service-name}/**` to the `applyTo` pattern of the relevant domain agent
+   - Commerce (order/payment/inventory/wallet) → `agents/commerce.agent.md`
+   - Social (user/feed/live/chat/subscription) → `agents/social.agent.md`
+   - Platform (notification/analytics/admin/ads) → `agents/platform.agent.md`
+   - AI/ML (ai/search/algorithms) → `agents/ai-ml.agent.md`
+   - **New domain entirely** → create `agents/{domain}.agent.md` following existing agent file pattern with `applyTo`, `description`, domain patterns, Redis keys, Kafka events sections
 
 **After adding a BullMQ queue or job** → update `libs/queue/src/constants/queue.constants.ts`:
 
