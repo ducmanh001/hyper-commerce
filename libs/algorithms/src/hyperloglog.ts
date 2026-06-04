@@ -48,7 +48,7 @@ function murmurhash3(key: string, seed: number): number {
 }
 
 export class HyperLogLog {
-  private readonly m: number;       // Number of registers (2^precision)
+  private readonly m: number; // Number of registers (2^precision)
   private readonly registers: Uint8Array;
   private readonly precision: number;
 
@@ -141,10 +141,14 @@ export class HyperLogLog {
 
   private getAlpha(): number {
     switch (this.m) {
-      case 16: return 0.673;
-      case 32: return 0.697;
-      case 64: return 0.709;
-      default: return 0.7213 / (1 + 1.079 / this.m);
+      case 16:
+        return 0.673;
+      case 32:
+        return 0.697;
+      case 64:
+        return 0.709;
+      default:
+        return 0.7213 / (1 + 1.079 / this.m);
     }
   }
 }
@@ -152,11 +156,25 @@ export class HyperLogLog {
 function countLeadingZeros(n: number): number {
   if (n === 0) return 32;
   let count = 0;
-  if ((n & 0xffff0000) === 0) { count += 16; n <<= 16; }
-  if ((n & 0xff000000) === 0) { count += 8; n <<= 8; }
-  if ((n & 0xf0000000) === 0) { count += 4; n <<= 4; }
-  if ((n & 0xc0000000) === 0) { count += 2; n <<= 2; }
-  if ((n & 0x80000000) === 0) { count += 1; }
+  if ((n & 0xffff0000) === 0) {
+    count += 16;
+    n <<= 16;
+  }
+  if ((n & 0xff000000) === 0) {
+    count += 8;
+    n <<= 8;
+  }
+  if ((n & 0xf0000000) === 0) {
+    count += 4;
+    n <<= 4;
+  }
+  if ((n & 0xc0000000) === 0) {
+    count += 2;
+    n <<= 2;
+  }
+  if ((n & 0x80000000) === 0) {
+    count += 1;
+  }
   return count;
 }
 

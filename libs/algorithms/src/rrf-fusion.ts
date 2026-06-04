@@ -17,7 +17,7 @@
 
 export interface RankedResult {
   id: string;
-  score?: number;   // Original score (BM25, cosine similarity, etc.)
+  score?: number; // Original score (BM25, cosine similarity, etc.)
   metadata?: Record<string, unknown>;
 }
 
@@ -40,7 +40,7 @@ export interface RRFOptions {
 export interface FusedResult {
   id: string;
   rrfScore: number;
-  originalScores: Record<string, number>;  // 'bm25', 'knn', 'trending' etc.
+  originalScores: Record<string, number>; // 'bm25', 'knn', 'trending' etc.
   rank: number;
 }
 
@@ -84,7 +84,7 @@ export function reciprocalRankFusion(
 
       // RRF contribution: weight / (k + rank + 1) — rank is 0-indexed, formula is 1-indexed
       existing.rrfScore += weight / (k + rank + 1);
-      existing.originalScores[listName] = item.score ?? (list.length - rank);
+      existing.originalScores[listName] = item.score ?? list.length - rank;
 
       scoreMap.set(item.id, existing);
     }
@@ -116,11 +116,7 @@ export function reciprocalRankFusion(
  * @param relevance - Map of doc_id → relevance score (0-3 typical)
  * @param k - Compute nDCG@k
  */
-export function ndcgAtK(
-  results: FusedResult[],
-  relevance: Map<string, number>,
-  k: number,
-): number {
+export function ndcgAtK(results: FusedResult[], relevance: Map<string, number>, k: number): number {
   const topK = results.slice(0, k);
 
   const dcg = topK.reduce((sum, result, i) => {
@@ -133,10 +129,7 @@ export function ndcgAtK(
     .sort((a, b) => b - a)
     .slice(0, k);
 
-  const idcg = idealRels.reduce(
-    (sum, rel, i) => sum + rel / Math.log2(i + 2),
-    0,
-  );
+  const idcg = idealRels.reduce((sum, rel, i) => sum + rel / Math.log2(i + 2), 0);
 
   return idcg === 0 ? 0 : dcg / idcg;
 }
@@ -168,7 +161,7 @@ export interface BM25Options {
 
 export interface BM25Document {
   id: string;
-  terms: string[];  // Pre-tokenized
+  terms: string[]; // Pre-tokenized
 }
 
 export class BM25Scorer {
@@ -209,8 +202,7 @@ export class BM25Scorer {
 
       const idf = this.idf(term);
       const numerator = termTf * (this.k1 + 1);
-      const denominator =
-        termTf + this.k1 * (1 - this.b + (this.b * docLen) / this.avgDocLength);
+      const denominator = termTf + this.k1 * (1 - this.b + (this.b * docLen) / this.avgDocLength);
 
       return sum + idf * (numerator / denominator);
     }, 0);

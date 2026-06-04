@@ -173,7 +173,7 @@ export function crc32(str: string): number {
   for (let i = 0; i < str.length; i++) {
     crc = (crc >>> 8) ^ CRC_TABLE[(crc ^ str.charCodeAt(i)) & 0xff];
   }
-  return (~crc) >>> 0;
+  return ~crc >>> 0;
 }
 
 // Pre-computed lookup table (faster than recomputing for each byte)

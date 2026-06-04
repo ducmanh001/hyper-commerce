@@ -22,13 +22,7 @@
  * Universal hash family: h(x) = ((a*x + b) % p) % m
  * where p is a prime larger than universe, a,b random
  */
-function universalHash(
-  x: number,
-  a: number,
-  b: number,
-  p: number,
-  m: number,
-): number {
+function universalHash(x: number, a: number, b: number, p: number, m: number): number {
   return ((a * x + b) % p) % m;
 }
 
@@ -69,13 +63,7 @@ export class MinHash {
 
       for (let i = 0; i < this.numHashes; i++) {
         const { a, b } = this.hashParams[i];
-        const h = universalHash(
-          itemHash,
-          a,
-          b,
-          MinHash.LARGE_PRIME,
-          MinHash.LARGE_PRIME,
-        );
+        const h = universalHash(itemHash, a, b, MinHash.LARGE_PRIME, MinHash.LARGE_PRIME);
         if (h < sig[i]) sig[i] = h;
       }
     }
@@ -179,10 +167,7 @@ export class LSHIndex {
    * Find all near-duplicate pairs in the index.
    * O(n × b) — faster than brute-force O(n²)
    */
-  findSimilarPairs(
-    minSimilarity: number,
-    minHash: MinHash,
-  ): SimilarPair[] {
+  findSimilarPairs(minSimilarity: number, minHash: MinHash): SimilarPair[] {
     const pairs: SimilarPair[] = [];
     const checked = new Set<string>();
 

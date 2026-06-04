@@ -138,7 +138,7 @@ export function buildUserEmbedding(
 export interface UserItemInteraction {
   userId: string;
   itemId: string;
-  rating: number;   // Implicit: 1=view, 2=like, 3=cart, 5=purchase
+  rating: number; // Implicit: 1=view, 2=like, 3=cart, 5=purchase
   timestamp: number;
 }
 
@@ -223,7 +223,7 @@ export function buildItemSimilarityMatrix(
 
 export function maximalMarginalRelevance(
   candidates: Array<{ id: string; score: number; embedding: number[] }>,
-  lambda = 0.7,  // 0=full diversity, 1=full relevance
+  lambda = 0.7, // 0=full diversity, 1=full relevance
   k = 20,
 ): Array<{ id: string; score: number }> {
   if (candidates.length === 0) return [];

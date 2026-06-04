@@ -17,14 +17,14 @@
 export interface TrieNode {
   children: Map<string, TrieNode>;
   isEnd: boolean;
-  frequency: number;  // How often this term was searched (for ranking)
-  value?: string;     // The complete term at this leaf
+  frequency: number; // How often this term was searched (for ranking)
+  value?: string; // The complete term at this leaf
 }
 
 export interface AutocompleteResult {
   term: string;
   frequency: number;
-  score: number;  // Combined score (frequency + recency boost)
+  score: number; // Combined score (frequency + recency boost)
 }
 
 function createNode(): TrieNode {
@@ -107,11 +107,7 @@ export class Trie {
    * @param maxDistance - Max Levenshtein distance (1 or 2 typically)
    * @param limit - Max results
    */
-  fuzzySearch(
-    query: string,
-    maxDistance = 1,
-    limit = 10,
-  ): AutocompleteResult[] {
+  fuzzySearch(query: string, maxDistance = 1, limit = 10): AutocompleteResult[] {
     const normalized = query.toLowerCase().trim();
     const results: AutocompleteResult[] = [];
 
@@ -131,7 +127,7 @@ export class Trie {
   /** Check if an exact term exists */
   has(term: string): boolean {
     const node = this.findNode(term.toLowerCase().trim());
-    return !!(node?.isEnd);
+    return !!node?.isEnd;
   }
 
   get size(): number {
@@ -147,12 +143,7 @@ export class Trie {
     return node;
   }
 
-  private dfs(
-    node: TrieNode,
-    current: string,
-    results: AutocompleteResult[],
-    limit: number,
-  ): void {
+  private dfs(node: TrieNode, current: string, results: AutocompleteResult[], limit: number): void {
     if (results.length >= limit * 5) return; // Over-collect to allow sort+trim
 
     if (node.isEnd) {
@@ -186,11 +177,7 @@ export class Trie {
       currentRow.push(Math.min(insertCost, deleteCost, replaceCost));
     }
 
-    if (
-      currentRow[currentRow.length - 1] <= maxDistance &&
-      node.isEnd &&
-      currentTerm
-    ) {
+    if (currentRow[currentRow.length - 1] <= maxDistance && node.isEnd && currentTerm) {
       results.push({
         term: currentTerm,
         frequency: node.frequency,
@@ -200,14 +187,7 @@ export class Trie {
 
     if (Math.min(...currentRow) <= maxDistance) {
       for (const [char, child] of node.children) {
-        this.fuzzyDfs(
-          child,
-          currentTerm + char,
-          query,
-          currentRow,
-          maxDistance,
-          results,
-        );
+        this.fuzzyDfs(child, currentTerm + char, query, currentRow, maxDistance, results);
       }
     }
   }

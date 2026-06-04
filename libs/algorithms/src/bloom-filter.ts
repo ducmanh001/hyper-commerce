@@ -81,14 +81,11 @@ export class BloomFilter {
   constructor(options: BloomFilterOptions) {
     // Optimal bit size: m = -n * ln(p) / (ln2)^2
     this.bitSize = Math.ceil(
-      (-options.expectedItems * Math.log(options.falsePositiveRate)) /
-        (Math.LN2 * Math.LN2),
+      (-options.expectedItems * Math.log(options.falsePositiveRate)) / (Math.LN2 * Math.LN2),
     );
 
     // Optimal hash count: k = (m/n) * ln2
-    this.hashCount = Math.ceil(
-      (this.bitSize / options.expectedItems) * Math.LN2,
-    );
+    this.hashCount = Math.ceil((this.bitSize / options.expectedItems) * Math.LN2);
 
     // Uint8Array: 1 byte per 8 bits, fills to zero by default
     this.bitArray = new Uint8Array(Math.ceil(this.bitSize / 8));
@@ -99,7 +96,7 @@ export class BloomFilter {
     for (let i = 0; i < this.hashCount; i++) {
       const pos = murmurhash3_32(item, i) % this.bitSize;
       // Set bit at position pos
-      this.bitArray[Math.floor(pos / 8)] |= 1 << pos % 8;
+      this.bitArray[Math.floor(pos / 8)] |= 1 << (pos % 8);
     }
     this.itemCount++;
   }
@@ -112,7 +109,7 @@ export class BloomFilter {
   has(item: string): boolean {
     for (let i = 0; i < this.hashCount; i++) {
       const pos = murmurhash3_32(item, i) % this.bitSize;
-      if (!(this.bitArray[Math.floor(pos / 8)] & (1 << pos % 8))) {
+      if (!(this.bitArray[Math.floor(pos / 8)] & (1 << (pos % 8)))) {
         return false; // Definite miss
       }
     }
@@ -122,7 +119,7 @@ export class BloomFilter {
   /** Current false positive rate based on actual item count */
   estimatedFalsePositiveRate(): number {
     return Math.pow(
-      1 - Math.exp(-this.hashCount * this.itemCount / this.bitSize),
+      1 - Math.exp((-this.hashCount * this.itemCount) / this.bitSize),
       this.hashCount,
     );
   }
@@ -141,10 +138,7 @@ export class BloomFilter {
   }
 
   /** Restore from Buffer (loaded from Redis) */
-  static fromBuffer(
-    buf: Buffer,
-    options: BloomFilterOptions,
-  ): BloomFilter {
+  static fromBuffer(buf: Buffer, options: BloomFilterOptions): BloomFilter {
     const filter = new BloomFilter(options);
     const src = new Uint8Array(buf.buffer, buf.byteOffset, buf.byteLength);
     filter.bitArray.set(src.slice(0, filter.bitArray.length));
@@ -192,9 +186,7 @@ export class ScalableBloomFilter {
     const current = this.filters[this.filters.length - 1];
     if (current.estimatedFalsePositiveRate() > this.targetFpr * 0.9) {
       // Current filter getting full — grow
-      this.addFilter(
-        this.initialCapacity * Math.pow(this.growthFactor, this.filters.length),
-      );
+      this.addFilter(this.initialCapacity * Math.pow(this.growthFactor, this.filters.length));
     }
     this.filters[this.filters.length - 1].add(item);
   }
