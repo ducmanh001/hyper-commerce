@@ -111,15 +111,17 @@ Multi-vendor social commerce platform. Target: 50M DAU, 500K orders/day, 100K co
 
 Read ONLY what the task needs. Check this table BEFORE loading context:
 
-| Task type                           | Files to read                                    | Skip                 |
-| ----------------------------------- | ------------------------------------------------ | -------------------- |
-| Bug fix · typo · rename             | File mentioned only                              | everything else      |
-| Add endpoint (no new table/event)   | Service file + entity file                       | SCHEMA.md, EVENTS.md |
-| New table + migration               | SCHEMA.md → entity path → entity file            | EVENTS.md            |
-| New Kafka topic/event               | EVENTS.md → events.ts                            | SCHEMA.md            |
-| New NestJS service                  | api-gateway/server.js + this file (ports)        | agent files          |
-| Full feature (table + events + API) | SCHEMA.md + EVENTS.md + entity files + events.ts | —                    |
-| Frontend page/component             | That page + hooks + relevant store               | backend files        |
+| Task type                           | Files to read                                                 | Skip                     |
+| ----------------------------------- | ------------------------------------------------------------- | ------------------------ |
+| Bug fix · typo · rename             | File mentioned only                                           | everything else          |
+| Add endpoint (no new table/event)   | Service file + entity file                                    | SCHEMA.md, EVENTS.md     |
+| New table + migration               | SCHEMA.md → entity path → entity file                         | EVENTS.md                |
+| New Kafka topic/event               | EVENTS.md → events.ts                                         | SCHEMA.md                |
+| New NestJS service                  | api-gateway/server.js + this file (ports)                     | agent files              |
+| Full feature (table + events + API) | SCHEMA.md + EVENTS.md + entity files + events.ts              | —                        |
+| Frontend page/component             | That page + hooks + relevant store                            | backend files            |
+| Security change (guard/middleware)  | File being changed only (security.instructions.md auto-loads) | SCHEMA.md, EVENTS.md     |
+| Infra/deploy (K8s/Docker/CI/Nginx)  | Target infra file only (infra.agent.md auto-loads)            | service files, SCHEMA.md |
 
 **L8 — Context Budget Guard**: If ≥ 8 files already read this session → stop loading more.
 Work with what you have, or state: "Need [file X] to proceed — should I read it?" Never silently truncate.

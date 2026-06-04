@@ -1,6 +1,6 @@
 ---
 description: AI/ML services — recommendation engine, fraud detection, embedding pipelines, vector search, NLP. Use when implementing ai-service, search-service, or libs/algorithms.
-applyTo: 'apps/ai-service/**,apps/search-service/**,apps/analytics-service/**,libs/algorithms/**,libs/ai-agents/**'
+applyTo: 'apps/ai-service/**,apps/search-service/**,libs/algorithms/**,libs/ai-agents/**'
 ---
 
 # AI/ML Agent — Machine Learning & Intelligent Systems
