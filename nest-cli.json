@@ -208,6 +208,33 @@
       "compilerOptions": {
         "tsConfigPath": "libs/queue/tsconfig.lib.json"
       }
+    },
+    "ai-agents": {
+      "type": "library",
+      "root": "libs/ai-agents",
+      "entryFile": "index",
+      "sourceRoot": "libs/ai-agents/src",
+      "compilerOptions": {
+        "tsConfigPath": "libs/ai-agents/tsconfig.lib.json"
+      }
+    },
+    "chat-service": {
+      "type": "application",
+      "root": "apps/chat-service",
+      "entryFile": "main",
+      "sourceRoot": "apps/chat-service/src",
+      "compilerOptions": {
+        "tsConfigPath": "apps/chat-service/tsconfig.app.json"
+      }
+    },
+    "review-service": {
+      "type": "application",
+      "root": "apps/review-service",
+      "entryFile": "main",
+      "sourceRoot": "apps/review-service/src",
+      "compilerOptions": {
+        "tsConfigPath": "apps/review-service/tsconfig.app.json"
+      }
     }
   }
 }

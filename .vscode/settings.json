@@ -1,0 +1,58 @@
+{
+  // ── Formatting ─────────────────────────────────────────────────────────────
+  "editor.formatOnSave": true,
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "editor.tabSize": 2,
+
+  // ── ESLint: auto-fix on every save ─────────────────────────────────────────
+  // This runs `eslint --fix` automatically when you hit Ctrl+S.
+  // Fixes: consistent-type-imports, prefer-const, prettier/prettier, etc.
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": "explicit",
+    "source.organizeImports": "never" // let ESLint handle import ordering
+  },
+
+  // ── ESLint config ──────────────────────────────────────────────────────────
+  "eslint.useFlatConfig": true,
+  "eslint.validate": ["typescript", "javascript"],
+  "eslint.workingDirectories": [{ "mode": "auto" }],
+
+  // ── Prettier config ────────────────────────────────────────────────────────
+  "prettier.requireConfig": true, // only format if .prettierrc exists
+  "prettier.ignorePath": ".prettierignore",
+
+  // ── Per-language overrides ─────────────────────────────────────────────────
+  "[typescript]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.formatOnSave": true
+  },
+  "[json]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.formatOnSave": true
+  },
+  "[yaml]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.formatOnSave": true
+  },
+
+  // ── Next.js web app ────────────────────────────────────────────────────────
+  "[javascriptreact]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[typescriptreact]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+
+  // ── File watcher exclusions (performance) ──────────────────────────────────
+  "files.watcherExclude": {
+    "**/dist/**": true,
+    "**/coverage/**": true,
+    "**/.next/**": true
+  },
+  "search.exclude": {
+    "**/dist": true,
+    "**/coverage": true,
+    "**/.next": true,
+    "**/node_modules": true
+  }
+}

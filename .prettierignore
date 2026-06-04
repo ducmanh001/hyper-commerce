@@ -1,0 +1,24 @@
+# Generated / compiled output
+dist/
+**/dist/
+coverage/
+**/coverage/
+.next/
+**/.next/
+
+# Dependencies
+node_modules/
+**/node_modules/
+
+# Lock files
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Infra / generated files
+infrastructure/postgres/init.sql/
+infrastructure/postgres/migrations/
+infrastructure/terraform/
+
+# Binary / misc
+*.log

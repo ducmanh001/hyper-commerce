@@ -108,6 +108,45 @@ lint-fix: ## Run ESLint with auto-fix
 typecheck: ## TypeScript type check (no emit)
 	npx tsc --noEmit
 
+verify: ## AI output validator — run after Copilot generates code (typecheck + lint + security + wiring)
+	@echo "$(BOLD)── 1/4 TypeScript$(RESET)"
+	@tsc_out=$$(npx tsc --noEmit --project tsconfig.json 2>&1 | grep -v tsbuildinfo); \
+		if [ -n "$$tsc_out" ]; then echo "$$tsc_out"; echo "$(CYAN)✗ TypeScript errors$(RESET)"; exit 1; fi; \
+		echo "  ✓ No TypeScript errors"
+	@echo "$(BOLD)── 2/4 ESLint$(RESET)"
+	@npm run lint 2>&1 | tail -3
+	@echo "$(BOLD)── 3/4 Security scan$(RESET)"
+	@bad=$$(grep -rn "Math\.random()" apps/ libs/ --include="*.ts" \
+		| grep -v "node_modules\|\.spec\.\|\.test\.\|// safe"); \
+		if echo "$$bad" | grep -qi "otp\|token\|session\|secret\|password\|key"; then \
+			echo "$$bad"; echo "$(CYAN)✗ Insecure Math.random() in security path$(RESET)"; exit 1; \
+		fi; echo "  ✓ No insecure random"
+	@mock=$$(grep -rn "MOCK_\|from.*mock-data" apps/ --include="*.ts" --include="*.tsx" \
+		| grep -v "node_modules\|\.spec\.\|\.test\.\|lib/mock-data\.ts"); \
+		if [ -n "$$mock" ]; then echo "$$mock"; echo "$(CYAN)✗ Mock data in production code$(RESET)"; exit 1; fi; \
+		echo "  ✓ No mock data in production paths"
+	@echo "$(BOLD)── 4/4 Wiring checks$(RESET)"
+	@echo "  Entities without TypeOrmModule.forFeature registration..."
+	@for entity in $$(grep -rn "@Entity" apps/ --include="*.entity.ts" \
+		| grep -v "node_modules\|spec" \
+		| grep -oP "(?<=class )[A-Za-z]+(?= )"); do \
+		svc=$$(grep -rl "class $$entity " apps/ --include="*.entity.ts" 2>/dev/null | head -1 | sed 's|apps/||' | cut -d/ -f1); \
+		if [ -n "$$svc" ]; then \
+			registered=$$(grep -r "forFeature" apps/$$svc/src --include="*.ts" 2>/dev/null | grep "$$entity" | wc -l); \
+			if [ "$$registered" -eq 0 ]; then echo "    WARN: $$entity not in forFeature ($$svc)"; fi; \
+		fi; \
+	done; echo "  ✓ Wiring check done"
+	@echo "  Migration sequence check..."
+	@prev=0; \
+	for f in $$(ls infrastructure/postgres/migrations/*.sql 2>/dev/null | sort); do \
+		num=$$(basename $$f | grep -oP '^\d+'); \
+		if [ -n "$$num" ] && [ "$$num" -ne $$((prev + 1)) ] && [ "$$prev" -ne 0 ]; then \
+			echo "    WARN: Migration gap — expected $$(( prev+1 )) but got $$num ($$f)"; \
+		fi; \
+		prev=$$num; \
+	done; echo "  ✓ Migration sequence ok"
+	@echo "$(CYAN)$(BOLD)✓ verify passed$(RESET)"
+
 # ── Database ───────────────────────────────────────────────────
 migrate: ## Run database migrations
 	npm run migration:run

@@ -41,7 +41,12 @@
       "@hypercommerce/grpc": ["libs/grpc/src/index"],
       "@hypercommerce/grpc/*": ["libs/grpc/src/*"],
       "@hypercommerce/queue": ["libs/queue/src/index"],
-      "@hypercommerce/queue/*": ["libs/queue/src/*"]
+      "@hypercommerce/queue/*": ["libs/queue/src/*"],
+      "@app/ai-agents": ["libs/ai-agents/src/index"],
+      "@app/ai-agents/*": ["libs/ai-agents/src/*"],
+      "@app/redis": ["libs/redis/src/index"],
+      "@app/kafka": ["libs/kafka/src/index"],
+      "@app/common": ["libs/common/src/index"]
     }
   }
 }

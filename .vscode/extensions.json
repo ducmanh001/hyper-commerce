@@ -1,0 +1,19 @@
+{
+  "recommendations": [
+    // ── Required: Lint & Format ──────────────────────────────────────────────
+    "dbaeumer.vscode-eslint", // ESLint — auto-fix on save
+    "esbenp.prettier-vscode", // Prettier — format on save
+
+    // ── TypeScript / NestJS ──────────────────────────────────────────────────
+    "ms-vscode.vscode-typescript-next",
+
+    // ── Git / Commit ─────────────────────────────────────────────────────────
+    "mhutchie.git-graph",
+    "eamodio.gitlens",
+
+    // ── DX helpers ───────────────────────────────────────────────────────────
+    "streetsidesoftware.code-spell-checker",
+    "mikestead.dotenv",
+    "humao.rest-client"
+  ]
+}
