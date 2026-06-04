@@ -17,9 +17,8 @@ import {
   SubscribeMessage,
   MessageBody,
   ConnectedSocket,
-  WsException,
 } from '@nestjs/websockets';
-import { Logger, UseGuards } from '@nestjs/common';
+import { Logger } from '@nestjs/common';
 import type { Server, Socket } from 'socket.io';
 import type { JwtService } from '@nestjs/jwt';
 import type { RedisClientService } from '@hypercommerce/redis';

@@ -14,8 +14,6 @@
 
 import type { OnModuleInit, OnModuleDestroy } from '@nestjs/common';
 import { Injectable, Logger } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
 import type { KafkaConsumerService, MessageMetadata } from '@hypercommerce/kafka';
 import { APP_CONSTANTS } from '@hypercommerce/common/constants/app.constants';
 import type { ClickHouseService } from './clickhouse/clickhouse.service';

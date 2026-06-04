@@ -12,7 +12,6 @@ import {
   HttpCode,
   HttpStatus,
   ParseUUIDPipe,
-  ParseIntPipe,
 } from '@nestjs/common';
 import {
   ApiBearerAuth,

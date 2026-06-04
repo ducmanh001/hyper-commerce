@@ -5,7 +5,7 @@ import type { CancelOrderCommand } from '../cancel-order.command';
 import type { OrderRepository } from '../../repositories/order.repository';
 import type { OrderStateMachine } from '../../state-machine/order-state-machine';
 import type { OrderSagaOrchestrator } from '../../saga/order-saga.orchestrator';
-import { ORDER_ERRORS, ORDER_KAFKA_TOPICS, OrderStatus } from '../../constants/order.constants';
+import { ORDER_ERRORS, OrderStatus } from '../../constants/order.constants';
 
 export class OrderNotCancellableError extends Error {
   readonly code = ORDER_ERRORS.INVALID_STATUS_TRANSITION;

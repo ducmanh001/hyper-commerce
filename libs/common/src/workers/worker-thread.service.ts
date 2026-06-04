@@ -27,7 +27,7 @@
 
 import type { OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 import { Injectable, Logger } from '@nestjs/common';
-import { Worker, isMainThread, parentPort, workerData } from 'worker_threads';
+import { Worker } from 'worker_threads';
 import * as os from 'os';
 import * as path from 'path';
 

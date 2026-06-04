@@ -1,13 +1,4 @@
-import {
-  Entity,
-  PrimaryGeneratedColumn,
-  Column,
-  CreateDateColumn,
-  Index,
-  ManyToOne,
-  JoinColumn,
-} from 'typeorm';
-import { Order } from './order.entity';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, Index } from 'typeorm';
 
 @Entity('order_items')
 @Index(['orderId'])

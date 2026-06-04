@@ -18,11 +18,39 @@ node_modules/
 jspm_packages/
 web_modules/
 
-# Loại bỏ các file log lỗi sinh ra trong quá trình chạy node
+# Lock files — KHÔNG gitignore package-lock.json!
+# package-lock.json PHẢI được commit để CI (npm ci) hoạt động đúng.
+# Gitignore yarn/pnpm lock nếu dự án dùng npm.
+yarn.lock
+pnpm-lock.yaml
+
+# ====================================================================
+# 2b. BUILD CACHE & GENERATED FILES
+# ====================================================================
+# TypeScript incremental build info (tsc --incremental tạo ra)
+*.tsbuildinfo
+
+# Jest coverage reports
+coverage/
+
+# Logs
+logs/
+*.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
+
+# ====================================================================
+# 2c. ENVIRONMENT FILES (nhạy cảm — không bao giờ commit)
+# ====================================================================
+.env
+.env.local
+.env.*.local
+.env.test.local
+.env.production.local
+# Cho phép commit .env.example (template không chứa secrets)
+!.env.example
 
 # ====================================================================
 # 3. BẢO MẬT: LOẠI BỎ CÁC FILE CẤU HÌNH MÔI TRƯỜNG (ENV, TOKEN, KEY)
@@ -53,3 +81,4 @@ Desktop.ini
 !.vscode/launch.json
 .history/
 .ionide/
+LCB_TOT_Framework_AI_Agent.docx

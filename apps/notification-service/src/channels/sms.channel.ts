@@ -9,8 +9,6 @@ import type { ConfigService } from '@nestjs/config';
 const Twilio = require('twilio');
 import type { RedisClientService } from '@hypercommerce/redis';
 import type { Redis } from 'ioredis';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
 
 export interface SmsPayload {
   userId: string;

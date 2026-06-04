@@ -3,7 +3,6 @@ import { Injectable, Logger } from '@nestjs/common';
 import type { KafkaConsumerService } from '@hypercommerce/kafka';
 import type { ProductIndexer } from './product.indexer';
 import type { UserIndexer, LiveStreamIndexer } from './user.indexer';
-import { APP_CONSTANTS } from '@hypercommerce/common';
 
 /**
  * SearchIndexerService — Kafka consumer that listens to domain events

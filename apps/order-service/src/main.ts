@@ -14,7 +14,6 @@ import { GlobalExceptionFilter } from '@hypercommerce/common';
 import { LoggingInterceptor } from '@hypercommerce/common';
 import { TransformInterceptor } from '@hypercommerce/common';
 import { StrictValidationPipe } from '@hypercommerce/common';
-import { CorrelationIdMiddleware } from '@hypercommerce/common';
 
 async function bootstrap() {
   const logger = new Logger('Bootstrap');

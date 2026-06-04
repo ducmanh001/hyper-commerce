@@ -8,13 +8,10 @@ import {
   Param,
   Query,
   ParseUUIDPipe,
-  UseGuards,
-  Req,
   ParseIntPipe,
   DefaultValuePipe,
 } from '@nestjs/common';
 import type { ReviewService, CreateReviewDto, ListReviewsQuery } from './review.service';
-import { ReviewStatus } from './entities/review.entity';
 
 /** Minimal auth guard stub — real auth comes from api-gateway JWT validation */
 class BuyerRequest {

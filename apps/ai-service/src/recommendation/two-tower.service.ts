@@ -14,12 +14,7 @@ import type { ConfigService } from '@nestjs/config';
 import type { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
 import type { RedisClientService } from '@hypercommerce/redis';
-import {
-  buildUserEmbedding,
-  maximalMarginalRelevance,
-  cosineSimilarity,
-  l2Normalize,
-} from '@hypercommerce/algorithms';
+import { buildUserEmbedding, maximalMarginalRelevance } from '@hypercommerce/algorithms';
 import { AI_CACHE_KEYS, AI_CACHE_TTL, AI_LIMITS } from '../constants/ai.constants';
 
 export interface TwoTowerRecommendInput {

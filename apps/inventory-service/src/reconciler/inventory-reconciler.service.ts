@@ -14,7 +14,6 @@ import { InjectRepository } from '@nestjs/typeorm';
 import type { Repository } from 'typeorm';
 import type { RedisClientService } from '@hypercommerce/redis';
 import type { Redis } from 'ioredis';
-import { APP_CONSTANTS } from '@hypercommerce/common/constants/app.constants';
 import { ProductStock } from '../entities/product-stock.entity';
 import type { AtomicStockHelper } from '../helpers/atomic-stock.helper';
 

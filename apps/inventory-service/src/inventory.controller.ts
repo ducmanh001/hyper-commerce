@@ -6,7 +6,6 @@ import {
   Param,
   Body,
   Query,
-  ParseUUIDPipe,
   HttpCode,
   HttpStatus,
   UseGuards,

@@ -5,7 +5,6 @@
 // ============================================================
 
 import { createHash, randomBytes, timingSafeEqual, createHmac } from 'crypto';
-import { promisify } from 'util';
 import * as bcrypt from 'bcryptjs';
 
 const SALT_ROUNDS = 12; // OWASP: >= 10 rounds for bcrypt

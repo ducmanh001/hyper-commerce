@@ -1,18 +1,5 @@
-import {
-  Controller,
-  Post,
-  Body,
-  Param,
-  Get,
-  ParseUUIDPipe,
-  HttpCode,
-  HttpStatus,
-  UseGuards,
-  Logger,
-  Headers,
-  Req,
-} from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
+import { Controller, Post, Body, HttpCode, HttpStatus, Logger, Headers, Req } from '@nestjs/common';
+import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import type { PaymentProcessorFactory } from '../processors/payment-processor.factory';
 import type { PaymentRepository } from '../repositories/payment.repository';
 import type { KafkaProducerService } from '@hypercommerce/kafka';

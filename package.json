@@ -41,8 +41,7 @@
     "typecheck": "tsc --noEmit",
     "type-check": "tsc --noEmit --incremental false",
     "prepare": "husky",
-    "start:gateway": "KAFKAJS_NO_PARTITIONER_WARNING=1 node apps/api-gateway/server.js",
-    "prepare": "husky"
+    "start:gateway": "KAFKAJS_NO_PARTITIONER_WARNING=1 node apps/api-gateway/server.js"
   },
   "dependencies": {
     "@casl/ability": "^7.0.0",
@@ -123,6 +122,7 @@
     "eslint": "^9.11.1",
     "eslint-config-prettier": "^9.1.0",
     "eslint-plugin-prettier": "^5.2.1",
+    "eslint-plugin-unused-imports": "^4.4.1",
     "husky": "^9.1.7",
     "jest": "^29.7.0",
     "lint-staged": "^16.4.0",

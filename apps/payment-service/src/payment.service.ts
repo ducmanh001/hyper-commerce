@@ -13,10 +13,7 @@ import type { KafkaConsumerService, MessageMetadata } from '@hypercommerce/kafka
 import type { KafkaProducerService } from '@hypercommerce/kafka';
 import type { RedisClientService } from '@hypercommerce/redis';
 import { APP_CONSTANTS } from '@hypercommerce/common/constants/app.constants';
-import {
-  PaymentDeclinedException,
-  PaymentAlreadyProcessedException,
-} from '@hypercommerce/common/exceptions/domain.exceptions';
+import { PaymentDeclinedException } from '@hypercommerce/common/exceptions/domain.exceptions';
 import { Payment } from './entities/payment.entity';
 import type {
   PaymentProcessorFactory,

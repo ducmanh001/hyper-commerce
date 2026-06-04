@@ -3,16 +3,14 @@ import {
   Get,
   Post,
   Patch,
-  Delete,
   Param,
   Body,
   ParseUUIDPipe,
   HttpCode,
   HttpStatus,
   Headers,
-  Query,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import type { AdsService } from './ads.service';
 import type {
   CreateCampaignDto,

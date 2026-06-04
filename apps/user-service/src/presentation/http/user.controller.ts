@@ -38,7 +38,6 @@ import {
   ParseUUIDPipe,
   DefaultValuePipe,
   ParseIntPipe,
-  Version,
 } from '@nestjs/common';
 import type { CommandBus, QueryBus } from '@nestjs/cqrs';
 import { ApiTags, ApiBearerAuth, ApiOperation, ApiParam, ApiQuery } from '@nestjs/swagger';

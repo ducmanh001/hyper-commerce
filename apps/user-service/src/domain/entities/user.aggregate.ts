@@ -34,8 +34,6 @@ import {
   UserRegisteredEvent,
   UserProfileUpdatedEvent,
   UserEmailVerifiedEvent,
-  UserFollowedEvent,
-  UserUnfollowedEvent,
   UserSuspendedEvent,
   UserDeletedEvent,
 } from '../events/user.events';

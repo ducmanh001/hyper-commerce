@@ -17,10 +17,7 @@ import type { KafkaConsumerService, MessageMetadata } from '@hypercommerce/kafka
 import type { KafkaProducerService } from '@hypercommerce/kafka';
 import type { RedisClientService } from '@hypercommerce/redis';
 import { APP_CONSTANTS } from '@hypercommerce/common/constants/app.constants';
-import {
-  InsufficientStockException,
-  NotFoundException,
-} from '@hypercommerce/common/exceptions/domain.exceptions';
+import { NotFoundException } from '@hypercommerce/common/exceptions/domain.exceptions';
 import { ProductStock } from './entities/product-stock.entity';
 import type { AtomicStockHelper } from './helpers/atomic-stock.helper';
 import type { FlashSaleService } from './flash-sale/flash-sale.service';

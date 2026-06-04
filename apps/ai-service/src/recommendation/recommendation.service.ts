@@ -24,7 +24,6 @@ import type { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
 import type { RedisClientService } from '@hypercommerce/redis';
 import type { Redis } from 'ioredis';
-import { APP_CONSTANTS } from '@hypercommerce/common/constants/app.constants';
 
 export interface RecommendationContext {
   userId: string;

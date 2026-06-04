@@ -13,8 +13,6 @@
 // ============================================================
 
 import { Injectable, Logger } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
 import type { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
 import type { RedisClientService } from '@hypercommerce/redis';

@@ -1,7 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import type { Repository, DataSource } from 'typeorm';
-import { FindOptionsWhere, MoreThanOrEqual, LessThanOrEqual, Between } from 'typeorm';
 import type { OrderStatus } from '../entities/order.entity';
 import { Order } from '../entities/order.entity';
 import type { CursorPaginationDto } from '@hypercommerce/common';

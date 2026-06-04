@@ -18,11 +18,7 @@
 import { Controller, Logger } from '@nestjs/common';
 import { GrpcMethod } from '@nestjs/microservices';
 import type { QueryBus } from '@nestjs/cqrs';
-import {
-  GetUserProfileQuery,
-  GetFollowersQuery,
-  CheckUsernameAvailabilityQuery,
-} from '../../application/queries/user.queries';
+import { GetUserProfileQuery } from '../../application/queries/user.queries';
 
 // gRPC request/response interfaces — must match user.proto message definitions
 interface GetUserRequest {

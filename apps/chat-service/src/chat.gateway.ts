@@ -8,7 +8,7 @@ import {
   WsException,
 } from '@nestjs/websockets';
 import type { Server, Socket } from 'socket.io';
-import { Logger, UseGuards } from '@nestjs/common';
+import { Logger } from '@nestjs/common';
 import type { JwtService } from '@nestjs/jwt';
 import type { ChatService, SendMessageDto } from './chat.service';
 import type { MessageType } from './entities/message.entity';

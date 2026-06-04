@@ -8,7 +8,7 @@ import type { OrderFactory } from '../../factories/order.factory';
 import type { OrderStateMachine } from '../../state-machine/order-state-machine';
 import type { OrderRepository } from '../../repositories/order.repository';
 import type { OrderSagaOrchestrator } from '../../saga/order-saga.orchestrator';
-import { ORDER_LIMITS, ORDER_ERRORS, ORDER_CACHE_KEYS } from '../../constants/order.constants';
+import { ORDER_LIMITS, ORDER_ERRORS } from '../../constants/order.constants';
 import type { OrderStatus } from '../../entities/order.entity';
 
 export class EmptyOrderError extends Error {

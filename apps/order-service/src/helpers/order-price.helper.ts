@@ -1,5 +1,4 @@
 import { Injectable } from '@nestjs/common';
-import { OrderItemDto } from '../dto/order-item.dto';
 
 /**
  * OrderPriceHelper — pure price computation logic.

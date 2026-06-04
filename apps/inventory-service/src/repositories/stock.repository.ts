@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import type { Repository } from 'typeorm';
-import { LessThan, In } from 'typeorm';
+import { In } from 'typeorm';
 import { ProductStock } from '../entities/product-stock.entity';
 
 @Injectable()

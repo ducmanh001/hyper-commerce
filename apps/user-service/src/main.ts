@@ -31,7 +31,6 @@ import {
   TransformInterceptor,
   StrictValidationPipe,
 } from '@hypercommerce/common';
-import { bootstrapWithCluster } from '@hypercommerce/common/cluster/cluster.bootstrap';
 
 async function bootstrap() {
   const logger = new Logger('UserService');

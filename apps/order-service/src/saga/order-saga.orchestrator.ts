@@ -26,7 +26,6 @@ import type { KafkaConsumerService, MessageMetadata } from '@hypercommerce/kafka
 import type { KafkaProducerService } from '@hypercommerce/kafka';
 import { APP_CONSTANTS } from '@hypercommerce/common/constants/app.constants';
 import type { OrderService } from '../order.service';
-import { NotificationTrigger } from '../types/notification.types';
 
 interface StockReservedEvent {
   type: 'STOCK_RESERVED';

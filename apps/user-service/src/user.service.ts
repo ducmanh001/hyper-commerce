@@ -5,8 +5,6 @@
 // ============================================================
 
 import { Injectable, Logger } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, DataSource } from 'typeorm';
 import type { EventEmitter2 } from '@nestjs/event-emitter';
 import type { ConfigService } from '@nestjs/config';
 import type { User } from './entities/user.entity';
@@ -21,7 +19,7 @@ import {
   ForbiddenException,
 } from '@hypercommerce/common/exceptions/domain.exceptions';
 import type { CreateUserDto, UpdateUserDto } from './dto';
-import { UserProfileResponseDto, FollowResponseDto } from './dto';
+import { UserProfileResponseDto } from './dto';
 
 @Injectable()
 export class UserService {

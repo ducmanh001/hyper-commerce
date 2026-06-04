@@ -9,15 +9,8 @@ import {
   UseGuards,
   Logger,
 } from '@nestjs/common';
-import { ApiTags, ApiBearerAuth, ApiOperation, ApiQuery } from '@nestjs/swagger';
-import {
-  JwtAuthGuard,
-  RolesGuard,
-  Public,
-  CurrentUser,
-  JwtPayload,
-  Roles,
-} from '@hypercommerce/common';
+import { ApiTags, ApiOperation, ApiQuery } from '@nestjs/swagger';
+import { JwtAuthGuard, RolesGuard, Public, Roles } from '@hypercommerce/common';
 import type { SearchService } from './search.service';
 import type { SearchAnalyticsService } from './analytics/search-analytics.service';
 

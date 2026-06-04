@@ -29,7 +29,7 @@ import {
 } from '@hypercommerce/common/exceptions/domain.exceptions';
 import { APP_CONSTANTS } from '@hypercommerce/common/constants/app.constants';
 import type { DisputeStatus, ResolutionType } from '../entities/dispute.entity';
-import { Dispute, DisputeReason } from '../entities/dispute.entity';
+import { Dispute } from '../entities/dispute.entity';
 import { Order } from '../entities/order.entity';
 import type {
   CreateDisputeDto,

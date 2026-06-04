@@ -6,7 +6,6 @@ import type { RpcExceptionFilter, ArgumentsHost } from '@nestjs/common';
 import { Catch } from '@nestjs/common';
 import type { Observable } from 'rxjs';
 import { throwError } from 'rxjs';
-import { RpcException } from '@nestjs/microservices';
 import { status } from '@grpc/grpc-js';
 
 interface DomainError {

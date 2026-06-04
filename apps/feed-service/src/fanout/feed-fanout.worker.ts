@@ -10,9 +10,7 @@
 // ============================================================
 
 import { Injectable, Logger } from '@nestjs/common';
-import { Cron, CronExpression } from '@nestjs/schedule';
 import type { MessageHandler, MessageMetadata } from '@hypercommerce/kafka';
-import { KafkaConsumerService } from '@hypercommerce/kafka';
 import { APP_CONSTANTS } from '@hypercommerce/common/constants/app.constants';
 import type { FeedItem } from '../repositories/feed.repository';
 import { FeedRepository } from '../repositories/feed.repository';
