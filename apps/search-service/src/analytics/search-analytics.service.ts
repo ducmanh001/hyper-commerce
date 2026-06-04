@@ -26,8 +26,6 @@ export class SearchAnalyticsService {
   async recordSearch(query: string, userId?: string, resultCount?: number): Promise<void> {
     const normalizedQuery = query.toLowerCase().trim();
     if (!normalizedQuery) return;
-
-    const now = Date.now();
     const hourKey = `trending:${new Date().toISOString().substring(0, 13)}`; // YYYY-MM-DDTHH
 
     // Increment in hourly ZSET for trending

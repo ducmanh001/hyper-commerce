@@ -13,11 +13,6 @@ import {
 } from '@nestjs/common';
 import type { ReviewService, CreateReviewDto, ListReviewsQuery } from './review.service';
 
-/** Minimal auth guard stub — real auth comes from api-gateway JWT validation */
-class BuyerRequest {
-  user: { userId: string; sellerId?: string };
-}
-
 @Controller('reviews')
 export class ReviewController {
   constructor(private readonly reviewService: ReviewService) {}

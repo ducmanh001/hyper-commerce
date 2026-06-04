@@ -54,6 +54,7 @@ export class SearchRankAgentService {
 
       // 5. Build explanations for top 3
       const topExplanations = scored.slice(0, 3).map(({ productId, score }) => {
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         const candidate = input.candidates.find((c) => c.productId === productId)!;
         const reasons: string[] = [];
         if (candidate.rrfScore > 0.6) reasons.push('high relevance score');

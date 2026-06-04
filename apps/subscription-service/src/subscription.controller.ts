@@ -76,7 +76,7 @@ export class SubscriptionController {
   @ApiOperation({ summary: 'Stripe billing webhook (internal)' })
   async stripeWebhook(
     @Req() req: RawBodyRequest<Request>,
-    @Headers('stripe-signature') sig: string,
+    @Headers('stripe-signature') _sig: string,
   ): Promise<{ received: boolean }> {
     // In production: verify using stripe.webhooks.constructEvent(req.rawBody, sig, STRIPE_WEBHOOK_SECRET)
     // Skipping Stripe SDK import here to avoid adding stripe as a dependency to this example

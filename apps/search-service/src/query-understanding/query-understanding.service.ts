@@ -87,7 +87,7 @@ export class QueryUnderstandingService {
    * Full query understanding pipeline.
    * Transforms raw user query into structured, enriched form.
    */
-  async understand(rawQuery: string, userId?: string): Promise<ParsedQuery> {
+  async understand(rawQuery: string, _userId?: string): Promise<ParsedQuery> {
     // 1. Normalize
     const normalized = this.normalize(rawQuery);
 
@@ -282,7 +282,7 @@ export class QueryUnderstandingService {
     return [...expansions];
   }
 
-  private buildBoostTerms(intent: QueryIntent, filters: QueryFilters): string[] {
+  private buildBoostTerms(intent: QueryIntent, _filters: QueryFilters): string[] {
     const boosts: string[] = [];
     if (intent.detectedBrand) boosts.push(intent.detectedBrand);
     if (intent.detectedCategory) boosts.push(intent.detectedCategory);

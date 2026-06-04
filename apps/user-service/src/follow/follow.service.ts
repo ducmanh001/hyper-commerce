@@ -214,7 +214,7 @@ export class FollowService {
    * routing to the correct Citus shard.
    */
   async getFollowers(userId: string, cursor?: string, limit = 20): Promise<FollowerListResult> {
-    const isCelebrity = !!(await this.redis.sismember(
+    const _isCelebrity = !!(await this.redis.sismember(
       APP_CONSTANTS.REDIS_KEYS.CELEBRITY_LIST,
       userId,
     ));

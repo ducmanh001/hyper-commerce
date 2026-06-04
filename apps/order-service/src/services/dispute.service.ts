@@ -89,7 +89,7 @@ export class DisputeService {
 
     // Check dispute window
     if (order.completedAt) {
-      const windowDays = DISPUTE_WINDOW_DAYS.default!;
+      const windowDays = DISPUTE_WINDOW_DAYS.default ?? 7;
       const windowEnd = new Date(order.completedAt);
       windowEnd.setDate(windowEnd.getDate() + windowDays);
       if (new Date() > windowEnd) {

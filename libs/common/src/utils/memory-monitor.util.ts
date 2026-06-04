@@ -14,7 +14,7 @@ import { Logger } from '@nestjs/common';
 import * as v8 from 'v8';
 import { promisify } from 'util';
 
-const gcTimer = promisify(setTimeout);
+const _gcTimer = promisify(setTimeout);
 
 export interface MemorySnapshot {
   heapUsedMb: number;

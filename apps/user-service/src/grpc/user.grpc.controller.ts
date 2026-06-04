@@ -29,18 +29,6 @@ interface GetFollowerCountRequest {
   userId: string;
 }
 
-// Shape of data returned from user service
-interface UserData {
-  id: string;
-  username?: string;
-  email?: string;
-  avatarUrl?: string;
-  displayName?: string;
-  isCelebrity?: boolean;
-  followerCount?: number;
-  createdAt?: Date | string;
-}
-
 @Controller()
 @UseFilters(new GrpcExceptionFilter())
 export class UserGrpcController {
@@ -88,13 +76,13 @@ export class UserGrpcController {
   }
 
   @GrpcMethod('UserService', 'CheckUserExists')
-  async checkUserExists(data: CheckUserExistsRequest) {
+  async checkUserExists(_data: CheckUserExistsRequest) {
     // const exists = await this.userService.exists(data.userId);
     return { exists: true };
   }
 
   @GrpcMethod('UserService', 'GetFollowerCount')
-  async getFollowerCount(data: GetFollowerCountRequest) {
+  async getFollowerCount(_data: GetFollowerCountRequest) {
     // const count = await this.followService.getFollowerCount(data.userId);
     return { count: 0 };
   }

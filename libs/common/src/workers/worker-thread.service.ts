@@ -112,7 +112,7 @@ export class WorkerThreadService implements OnModuleInit, OnModuleDestroy {
     const pw: PoolWorker = { worker, busy: false };
     this.pool.push(pw);
 
-    worker.on('message', (result: { id: string; data: unknown; error?: string }) => {
+    worker.on('message', (_result: { id: string; data: unknown; error?: string }) => {
       // resolved by the pending task's Promise
       pw.busy = false;
       const next = this.queue.shift();

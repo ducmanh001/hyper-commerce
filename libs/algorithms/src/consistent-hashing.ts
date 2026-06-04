@@ -108,6 +108,7 @@ export class ConsistentHashRing {
 
     for (let i = 0; i < this.sortedKeys.length && result.length < replicaCount; i++) {
       const idx = (startIdx + i) % this.sortedKeys.length;
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       const nodeId = this.ring.get(this.sortedKeys[idx])!;
 
       if (!seen.has(nodeId)) {
@@ -135,6 +136,7 @@ export class ConsistentHashRing {
 
   private findSuccessor(hash: number): string {
     const idx = this.findSuccessorIndex(hash);
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     return this.ring.get(this.sortedKeys[idx])!;
   }
 

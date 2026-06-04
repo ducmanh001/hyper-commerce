@@ -48,6 +48,7 @@ export class Trie {
       if (!node.children.has(char)) {
         node.children.set(char, createNode());
       }
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       node = node.children.get(char)!;
     }
 
@@ -138,6 +139,7 @@ export class Trie {
     let node = this.root;
     for (const char of prefix) {
       if (!node.children.has(char)) return null;
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       node = node.children.get(char)!;
     }
     return node;

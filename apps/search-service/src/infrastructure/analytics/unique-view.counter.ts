@@ -163,7 +163,7 @@ export class UniqueViewCounter {
     }
   }
 
-  private scheduleFlush(key: string): void {
+  private scheduleFlush(_key: string): void {
     if (!this.flushTimer) {
       this.flushTimer = setInterval(() => this.flushDirty(), this.FLUSH_INTERVAL_MS);
     }

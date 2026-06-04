@@ -77,7 +77,7 @@ export class TokenBucketRateLimitGuard implements CanActivate {
     private readonly memoryService: MemoryLifecycleService,
     @Inject(algorithmConfig.KEY) private readonly config: AlgorithmConfigProps,
   ) {
-    const { defaultRpm, defaultBurstSize, cleanupIntervalMs } = config.rateLimiter;
+    const { defaultRpm, defaultBurstSize } = config.rateLimiter;
     this.pool = new TokenBucketPool(
       {
         capacity: defaultBurstSize,
@@ -105,7 +105,7 @@ export class TokenBucketRateLimitGuard implements CanActivate {
     if (!clientId) return true; // Anonymous health checks etc.
 
     const rpm = options.rpm ?? this.config.rateLimiter.defaultRpm;
-    const burstSize = options.burstSize ?? Math.max(Math.ceil(rpm / 4), 5);
+    const _burstSize = options.burstSize ?? Math.max(Math.ceil(rpm / 4), 5);
 
     const result = this.pool.consume(clientId, 1);
 
@@ -139,7 +139,7 @@ export class TokenBucketRateLimitGuard implements CanActivate {
     const clientId = req.user?.id ?? this.getClientIp(req);
     if (!clientId) return true;
 
-    const emergencyRpm = Math.max(Math.ceil(this.config.rateLimiter.defaultRpm * 0.1), 1);
+    const _emergencyRpm = Math.max(Math.ceil(this.config.rateLimiter.defaultRpm * 0.1), 1);
     const allowed = this.pool.consume(clientId, 1);
 
     if (!allowed.allowed) {

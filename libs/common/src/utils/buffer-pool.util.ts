@@ -59,6 +59,7 @@ export class BufferPool {
    */
   acquire(): BufferLease {
     if (this.free.length > 0) {
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       const buffer = this.free.pop()!;
       buffer.fill(0); // zero-fill for security
       this.acquiredCount++;

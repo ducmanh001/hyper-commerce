@@ -254,7 +254,7 @@ export class SearchService {
     filters: Record<string, unknown>,
     size: number,
   ): Record<string, unknown> {
-    const { corrected, tokens, expansions, mustBoostTerms } = parsedQuery;
+    const { corrected, tokens: _tokens, expansions, mustBoostTerms: _mustBoostTerms } = parsedQuery;
 
     const must: unknown[] = [
       {
@@ -379,7 +379,7 @@ export class SearchService {
 
   private async hydrateProducts(
     ids: string[],
-    parsedQuery: ParsedQuery,
+    _parsedQuery: ParsedQuery,
   ): Promise<Map<string, ProductHit>> {
     if (!ids.length) return new Map();
 
@@ -527,12 +527,15 @@ export class SearchService {
       mustBoostTerms: [],
     };
     const map = await this.hydrateProducts(
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       hits.map((h) => h._id!),
       emptyQuery,
     );
     return hits.map(
       (h) =>
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         map.get(h._id!) ?? {
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
           id: h._id!,
           name: (h._source?.['name'] as string) ?? '',
           price: (h._source?.['price'] as number) ?? 0,

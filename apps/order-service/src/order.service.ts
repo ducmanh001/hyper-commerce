@@ -340,7 +340,7 @@ export class OrderService {
    * Cancel an order — user-initiated.
    * Only cancellable in PENDING or STOCK_RESERVED state.
    */
-  async cancelOrder(orderId: string, userId: string, reason: string): Promise<Order> {
+  async cancelOrder(orderId: string, userId: string, _reason: string): Promise<Order> {
     const order = await this.orderRepo.findOne({ where: { id: orderId } });
     if (!order) throw new NotFoundException('Order', orderId);
     if (order.userId !== userId) {

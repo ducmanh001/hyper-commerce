@@ -36,12 +36,12 @@ export class SearchController {
   @ApiQuery({ name: 'cursor', required: false })
   async search(
     @Query('q') query: string,
-    @Query('type') type = 'ALL',
+    @Query('type') _type = 'ALL',
     @Query('category') category?: string,
     @Query('minPrice') minPrice?: number,
     @Query('maxPrice') maxPrice?: number,
     @Query('limit') limit = 20,
-    @Query('cursor') cursor?: string,
+    @Query('cursor') _cursor?: string,
   ) {
     return this.searchService.search({
       query,
@@ -57,7 +57,7 @@ export class SearchController {
   @Get('autocomplete')
   @Public()
   @ApiOperation({ summary: 'Autocomplete suggestions (< 50ms target)' })
-  async autocomplete(@Query('q') query: string, @Query('limit') limit = 10) {
+  async autocomplete(@Query('q') query: string, @Query('limit') _limit = 10) {
     return this.searchService.autocomplete(query);
   }
 

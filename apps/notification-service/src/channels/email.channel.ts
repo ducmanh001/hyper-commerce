@@ -49,8 +49,8 @@ export class EmailChannel implements INotificationChannel {
     const toEmail = await this.getUserEmail(payload.userId);
     if (!toEmail) return { channel: 'EMAIL', success: false, errorCode: 'NO_EMAIL' };
 
-    const templateId = (payload.data?.['template'] as string | undefined)
-      ? TEMPLATE_IDS[payload.data!['template'] as string]
+    const templateId = payload.data?.['template']
+      ? TEMPLATE_IDS[payload.data['template'] as string]
       : undefined;
 
     const msg = templateId
@@ -76,7 +76,7 @@ export class EmailChannel implements INotificationChannel {
     return this.initialized;
   }
 
-  private async getUserEmail(userId: string): Promise<string | null> {
+  private async getUserEmail(_userId: string): Promise<string | null> {
     // In production: cache user email in Redis to avoid DB call per notification
     return null;
   }

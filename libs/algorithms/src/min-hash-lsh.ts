@@ -180,6 +180,7 @@ export class LSHIndex {
         if (checked.has(pairKey)) continue;
         checked.add(pairKey);
 
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         const candidateSig = this.signatures.get(candidate)!;
         const similarity = minHash.estimateSimilarity(sig, candidateSig);
 

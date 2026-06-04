@@ -66,7 +66,7 @@ export class TrendingTracker {
     private readonly redis: RedisClientService,
     @Inject(algorithmConfig.KEY) private readonly config: AlgorithmConfigProps,
   ) {
-    const { width, depth, topKWindow } = config.countMinSketch;
+    const { width, depth } = config.countMinSketch;
     this.currentCms = new CountMinSketch(width, depth);
     this.previousCms = new CountMinSketch(width, depth);
     this.topKHeap = new Map();

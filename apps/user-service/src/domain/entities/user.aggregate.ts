@@ -309,7 +309,7 @@ export class UserAggregate extends BaseAggregateRoot {
 
   // ── Guard helper ──────────────────────────────────────────────────────────
 
-  private assertActive(action: string): void {
+  private assertActive(_action: string): void {
     if (this._status === UserStatus.SUSPENDED) {
       throw new UserSuspendedException(this.id);
     }

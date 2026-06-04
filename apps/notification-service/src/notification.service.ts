@@ -248,7 +248,7 @@ export class NotificationService implements OnModuleInit {
 
   private async onNotificationDispatch(
     event: Record<string, unknown>,
-    meta: MessageMetadata,
+    _meta: MessageMetadata,
   ): Promise<void> {
     if (event.type === 'FLASH_SALE_RESULT') {
       const won = event.won as boolean;
@@ -269,7 +269,7 @@ export class NotificationService implements OnModuleInit {
 
   private async onOrderConfirmed(
     event: Record<string, unknown>,
-    meta: MessageMetadata,
+    _meta: MessageMetadata,
   ): Promise<void> {
     if (event.type !== 'ORDER_CONFIRMED') return;
     // Fetch order details to get userId — cross-service call via HTTP/gRPC
@@ -278,15 +278,15 @@ export class NotificationService implements OnModuleInit {
   }
 
   private async onOrderCancelled(
-    event: Record<string, unknown>,
-    meta: MessageMetadata,
+    _event: Record<string, unknown>,
+    _meta: MessageMetadata,
   ): Promise<void> {
     // Similar pattern...
   }
 
   private async onPaymentFailed(
-    event: Record<string, unknown>,
-    meta: MessageMetadata,
+    _event: Record<string, unknown>,
+    _meta: MessageMetadata,
   ): Promise<void> {
     // Similar pattern...
   }

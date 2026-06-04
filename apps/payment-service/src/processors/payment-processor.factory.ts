@@ -32,8 +32,10 @@ export class PaymentProcessorFactory {
   getProcessor(type: PaymentMethodType, currency?: string): IPaymentProcessor {
     if (!type || !this.processors.has(type)) {
       const fallback = currency === 'VND' ? 'VNPAY' : 'STRIPE';
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       return this.processors.get(fallback)!;
     }
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     return this.processors.get(type)!;
   }
 

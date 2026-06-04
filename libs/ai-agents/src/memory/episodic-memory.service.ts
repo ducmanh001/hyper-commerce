@@ -46,7 +46,6 @@ export class EpisodicMemoryService {
     );
 
     // Vectorize and store in Qdrant for semantic similarity search
-    const content = `${episode.summary}${episode.learnings ? ` Learnings: ${episode.learnings}` : ''}`;
     await this.vector.storeDecision(
       episode.agentType,
       episode.summary,

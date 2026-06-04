@@ -151,6 +151,7 @@ export class ContentModerationAgentService {
             retryCount: 0,
           };
           const result = await this.moderate(task);
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
           return { contentId: item.contentId, output: result.output! };
         }),
       );

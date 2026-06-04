@@ -18,13 +18,6 @@ interface GetOrderBatchRequest {
   orderIds: string[];
 }
 
-interface UpdateOrderStatusRequest {
-  orderId: string;
-  status: string;
-  reason?: string;
-  updatedBy: string;
-}
-
 interface GetOrdersByUserRequest {
   userId: string;
   page: number;

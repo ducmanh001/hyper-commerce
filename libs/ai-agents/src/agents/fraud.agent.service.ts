@@ -16,13 +16,6 @@ import { AgentType, TaskStatus } from '../types';
 import type { RedisMemoryService } from '../memory/redis-memory.service';
 import type { EpisodicMemoryService } from '../memory/episodic-memory.service';
 
-interface VelocityData {
-  ordersLastHour: number;
-  ordersLastDay: number;
-  failedPaymentsLastDay: number;
-  uniqueDevicesLastWeek: number;
-}
-
 @Injectable()
 export class FraudAgentService {
   private readonly logger = new Logger(FraudAgentService.name);
