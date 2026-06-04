@@ -1,8 +1,8 @@
 # BullMQ Queue & Job Catalog
 
-> On-demand reference — read when adding/modifying BullMQ processors or job dispatchers.
-> Source of truth: `libs/queue/src/constants/queue.constants.ts`
-> **Update this file when adding new QUEUE_NAMES or JOB_NAMES constants.**
+> Auto-generated from `libs/queue/src/constants/queue.constants.ts`
+> Last updated: 2026-06-04 — do not edit manually, changes will be overwritten.
+> Source of truth: `queue.constants.ts`
 
 ---
 
@@ -25,7 +25,7 @@
 | `SEARCH_BULK_INDEX`       | `search:bulk-index`       | BEST_EFFORT  | search-service       |
 | `AI_RECOMMENDATION`       | `ai:recommendation`       | NON_CRITICAL | ai-service           |
 | `AI_FRAUD_CHECK`          | `ai:fraud-check`          | NON_CRITICAL | ai-service           |
-| `AI_EMBEDDING_GENERATE`   | `ai:embedding-generate`   | BEST_EFFORT  | ai-service           |
+| `AI_EMBEDDING_GENERATE`   | `ai:embedding-generate`   | NON_CRITICAL | ai-service           |
 | `ANALYTICS_INGEST`        | `analytics:ingest`        | BEST_EFFORT  | analytics-service    |
 | `REVIEW_PROCESSING`       | `review:processing`       | NON_CRITICAL | review-service       |
 | `MEDIA_RESIZE`            | `media:resize`            | BEST_EFFORT  | —                    |
@@ -67,22 +67,11 @@
 | `RELEASE_EXPIRED_RESERVATIONS` | `release-expired-reservations` | STOCK_RECONCILE         | inventory-service    |
 | `PROCESS_REVIEW`               | `process-review`               | REVIEW_PROCESSING       | review-service       |
 | `UPDATE_PRODUCT_RATING`        | `update-product-rating`        | REVIEW_PROCESSING       | review-service       |
-| `NOTIFY_SELLER_REVIEW`         | `notify-seller-review`         | NOTIFICATION_IN_APP     | review-service       |
+| `NOTIFY_SELLER_REVIEW`         | `notify-seller-review`         | NOTIFICATION_IN_APP     | notification-service |
 
 ---
 
-## Job Options — `JOB_DEFAULT_OPTIONS`
-
-| Profile        | Retries | Backoff        | Use for                   |
-| -------------- | ------- | -------------- | ------------------------- |
-| `CRITICAL`     | 3       | exponential 1s | order, payment, stock     |
-| `NON_CRITICAL` | 5       | exponential 2s | notifications, AI, review |
-| `BEST_EFFORT`  | 2       | fixed 5s       | feed, search index, media |
-| `SCHEDULED`    | 1       | none           | cron / delayed jobs       |
-
----
-
-## Concurrency Settings
+## Concurrency Settings (descending)
 
 | Queue                | Max concurrent workers |
 | -------------------- | ---------------------- |
@@ -90,11 +79,22 @@
 | `analytics:ingest`   | 500                    |
 | `notification:email` | 200                    |
 | `search:index`       | 200                    |
-| `notification:sms`   | 100                    |
 | `payment:charge`     | 100                    |
-| `ai:fraud-check`     | 50                     |
-| `feed:fanout`        | 50                     |
+| `notification:sms`   | 100                    |
 | `order:processing`   | 50                     |
+| `feed:fanout`        | 50                     |
+| `ai:fraud-check`     | 50                     |
 | `payment:refund`     | 20                     |
 | `ai:recommendation`  | 20                     |
 | `stock:reconcile`    | 10                     |
+
+---
+
+## Job Options Profiles
+
+| Profile        | Retries | Backoff        | Use for                   |
+| -------------- | ------- | -------------- | ------------------------- |
+| `CRITICAL`     | 3       | exponential 1s | order, payment, stock     |
+| `NON_CRITICAL` | 5       | exponential 2s | notifications, AI, review |
+| `BEST_EFFORT`  | 2       | fixed 5s       | feed, search index, media |
+| `SCHEDULED`    | 1       | none           | cron / delayed jobs       |

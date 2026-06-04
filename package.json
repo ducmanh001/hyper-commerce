@@ -42,7 +42,10 @@
     "type-check": "tsc --noEmit --incremental false",
     "prepare": "husky",
     "ci:local": "npm run lint:check && npm run type-check && npm run format:check && npm audit --audit-level=critical --omit=dev && echo '✅ All CI checks passed locally'",
-    "start:gateway": "KAFKAJS_NO_PARTITIONER_WARNING=1 node apps/api-gateway/server.js"
+    "start:gateway": "KAFKAJS_NO_PARTITIONER_WARNING=1 node apps/api-gateway/server.js",
+    "context:index": "node scripts/gen-context-index.js",
+    "context:catalogs": "node scripts/gen-queues-catalog.js && node scripts/gen-protos-catalog.js",
+    "context:refresh": "npm run context:index && npm run context:catalogs"
   },
   "dependencies": {
     "@casl/ability": "^7.0.0",
@@ -167,6 +170,16 @@
     }
   },
   "lint-staged": {
+    "libs/queue/src/constants/queue.constants.ts": [
+      "eslint --fix --max-warnings=0",
+      "prettier --write",
+      "node scripts/gen-queues-catalog.js",
+      "git add libs/queue/QUEUES.md"
+    ],
+    "libs/grpc/src/proto/*.proto": [
+      "node scripts/gen-protos-catalog.js",
+      "git add libs/grpc/PROTOS.md"
+    ],
     "**/*.{ts,tsx}": [
       "eslint --fix --max-warnings=0",
       "prettier --write"

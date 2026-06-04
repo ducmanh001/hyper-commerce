@@ -1,124 +1,109 @@
 # gRPC Services Catalog
 
-> On-demand reference — read when writing gRPC client stubs or server implementations.
-> Proto files: `libs/grpc/src/proto/*.proto`
-> Package prefix: `hypercommerce.{service}`
+> Auto-generated from `libs/grpc/src/proto/*.proto`
+> Last updated: 2026-06-04 — do not edit manually, changes will be overwritten.
 
 ---
 
 ## Routing Table
 
-| Service            | Proto file        | Implements                 | Called by                                |
-| ------------------ | ----------------- | -------------------------- | ---------------------------------------- |
-| `InventoryService` | `inventory.proto` | inventory-service `:50052` | order-service, flash-sale                |
-| `OrderService`     | `order.proto`     | order-service `:50053`     | payment-service, analytics               |
-| `PaymentService`   | `payment.proto`   | payment-service `:50054`   | order-service, admin-service             |
-| `SearchService`    | `search.proto`    | search-service `:50055`    | api-gateway, feed-service                |
-| `UserService`      | `user.proto`      | user-service `:50051`      | feed-service, live-service, notification |
+| Service            | Proto file        | Port     | Implements        | Called by                                |
+| ------------------ | ----------------- | -------- | ----------------- | ---------------------------------------- |
+| `InventoryService` | `inventory.proto` | `:50052` | inventory-service | order-service, flash-sale                |
+| `OrderService`     | `order.proto`     | `:50053` | order-service     | payment-service, analytics               |
+| `PaymentService`   | `payment.proto`   | `:50054` | payment-service   | order-service, admin-service             |
+| `SearchService`    | `search.proto`    | `:50055` | search-service    | api-gateway, feed-service                |
+| `UserService`      | `user.proto`      | `:50051` | user-service      | feed-service, live-service, notification |
 
 ---
 
 ## InventoryService — `hypercommerce.inventory`
 
-| Method               | Request → Response                                                                 | Notes                                 |
-| -------------------- | ---------------------------------------------------------------------------------- | ------------------------------------- |
-| `CheckStock`         | `(productId, variantId, quantity)` → `(available, availableQty, isFlashSale)`      | Single item check                     |
-| `CheckStockBatch`    | `(items[])` → `(results[], allAvailable)`                                          | Batch check — use for cart validation |
-| `ReserveStock`       | `(orderId, items[], ttlSeconds)` → `(success, reservationId, insufficientItems[])` | Default TTL=600s (10min)              |
-| `ReleaseReservation` | `(reservationId, orderId)` → `(success)`                                           | Call on order cancel                  |
-| `CommitReservation`  | `(reservationId, orderId)` → `(success)`                                           | Call on payment confirmed             |
-| `GetFlashSaleStock`  | `(flashSaleId)` → `(remaining, total, active, endsAt)`                             | Real-time countdown                   |
+| Method               | Request                                                | Response                     | Notes                                      |
+| -------------------- | ------------------------------------------------------ | ---------------------------- | ------------------------------------------ |
+| `CheckStock`         | `CheckStockRequest` (product_id, variant_id, quantity) | `CheckStockResponse`         |                                            |
+| `CheckStockBatch`    | `CheckStockBatchRequest` (items)                       | `CheckStockBatchResponse`    |                                            |
+| `ReserveStock`       | `ReserveStockRequest` (order_id, items, ttl_seconds)   | `ReserveStockResponse`       | how long to hold reservation (default 600) |
+| `ReleaseReservation` | `ReleaseReservationRequest` (reservation_id, order_id) | `ReleaseReservationResponse` |                                            |
+| `CommitReservation`  | `CommitReservationRequest` (reservation_id, order_id)  | `CommitReservationResponse`  |                                            |
+| `GetFlashSaleStock`  | `GetFlashSaleStockRequest` (flash_sale_id)             | `GetFlashSaleStockResponse`  |                                            |
 
 ---
 
 ## OrderService — `hypercommerce.order`
 
-| Method              | Request → Response                                                      | Notes                                                                 |
-| ------------------- | ----------------------------------------------------------------------- | --------------------------------------------------------------------- |
-| `GetOrder`          | `(orderId)` → `OrderResponse`                                           | Single order lookup                                                   |
-| `GetOrderBatch`     | `(orderIds[])` → `(orders[])`                                           | Batch — use for analytics/admin                                       |
-| `UpdateOrderStatus` | `(orderId, status, reason, updatedBy)` → `(success, newStatus)`         | status: PENDING\|CONFIRMED\|PROCESSING\|SHIPPED\|DELIVERED\|CANCELLED |
-| `GetOrdersByUser`   | `(userId, page, pageSize, statusFilter)` → `(orders[], total, hasMore)` | Paginated                                                             |
-| `CancelOrder`       | `(orderId, userId, reason)` → `(success, message)`                      | User-initiated cancel                                                 |
-
-**OrderResponse fields:** `id, userId, status, totalAmount (VND), currency, items[], shippingAddressJson, createdAt, paymentId`
+| Method              | Request                                               | Response                    | Notes                              |
+| ------------------- | ----------------------------------------------------- | --------------------------- | ---------------------------------- |
+| `GetOrder`          | `GetOrderRequest` (order_id)                          | `OrderResponse`             |                                    |
+| `GetOrderBatch`     | `GetOrderBatchRequest` (order_ids)                    | `GetOrderBatchResponse`     |                                    |
+| `UpdateOrderStatus` | `UpdateOrderStatusRequest` (order_id, status, reason) | `UpdateOrderStatusResponse` | optional reason (for cancellation) |
+| `GetOrdersByUser`   | `GetOrdersByUserRequest` (user_id, page, page_size)   | `GetOrdersByUserResponse`   | optional status filter             |
+| `CancelOrder`       | `CancelOrderRequest` (order_id, user_id, reason)      | `CancelOrderResponse`       |                                    |
 
 ---
 
 ## PaymentService — `hypercommerce.payment`
 
-| Method              | Request → Response                                                 | Notes                  |
-| ------------------- | ------------------------------------------------------------------ | ---------------------- |
-| `GetPaymentStatus`  | `(paymentId)` → `PaymentStatusResponse`                            | By payment ID          |
-| `GetPaymentByOrder` | `(orderId)` → `PaymentStatusResponse`                              | By order ID            |
-| `RefundPayment`     | `(paymentId, amount, reason, requestedBy)` → `(success, refundId)` | amount=0 → full refund |
-
-**PaymentStatusResponse fields:** `paymentId, orderId, status (PENDING\|PROCESSING\|COMPLETED\|FAILED\|REFUNDED), method (stripe\|vnpay\|momo\|cod), amount (VND), gatewayTransactionId`
+| Method              | Request                                             | Response                | Notes                                   |
+| ------------------- | --------------------------------------------------- | ----------------------- | --------------------------------------- |
+| `GetPaymentStatus`  | `GetPaymentStatusRequest` (payment_id)              | `PaymentStatusResponse` |                                         |
+| `GetPaymentByOrder` | `GetPaymentByOrderRequest` (order_id)               | `PaymentStatusResponse` |                                         |
+| `RefundPayment`     | `RefundPaymentRequest` (payment_id, amount, reason) | `RefundPaymentResponse` | partial refund amount (0 = full refund) |
 
 ---
 
 ## SearchService — `hypercommerce.search`
 
-| Method         | Request → Response                                                                                                                                  | Notes                                   |
-| -------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------- |
-| `Search`       | `(query, userId, categories[], minPrice, maxPrice, page, pageSize, sortBy, useVectorSearch, useRRF)` → `(hits[], total, pages, queryId, latencyMs)` | Full text + optional semantic           |
-| `Autocomplete` | `(prefix, limit, userId)` → `(suggestions[])`                                                                                                       | Type: keyword\|product\|category\|brand |
-| `Suggest`      | `(productId, userId, limit)` → `(products[])`                                                                                                       | Related products                        |
-| `IndexProduct` | `(productId, title, description, category, price, tags[], brand, isActive)` → `(success, indexId)`                                                  | Call from product-service on upsert     |
-
-**SearchHit fields:** `productId, title, price, thumbnailUrl, category, relevanceScore, rrfScore, isFlashSale, stock`
+| Method         | Request                                                | Response               | Notes                         |
+| -------------- | ------------------------------------------------------ | ---------------------- | ----------------------------- |
+| `Search`       | `SearchRequest` (query, user_id, categories)           | `SearchResponse`       | for personalized ranking      |
+| `Autocomplete` | `AutocompleteRequest` (prefix, limit, user_id)         | `AutocompleteResponse` | for personalized autocomplete |
+| `Suggest`      | `SuggestRequest` (product_id, user_id, limit)          | `SuggestResponse`      |                               |
+| `IndexProduct` | `IndexProductRequest` (product_id, title, description) | `IndexProductResponse` |                               |
 
 ---
 
 ## UserService — `hypercommerce.user`
 
-| Method             | Request → Response                                                                 | Notes                                            |
-| ------------------ | ---------------------------------------------------------------------------------- | ------------------------------------------------ |
-| `GetUser`          | `(userId, fields[])` → `UserResponse`                                              | fields = field mask — request only needed fields |
-| `GetUserBatch`     | `(userIds[], fields[])` → `(users[])`                                              | Batch lookup — use for feed/notification         |
-| `GetUserProfile`   | `(userId, viewerId)` → `(user, isFollowing, isBlocked, postCount, followingCount)` | viewerId for personalized response               |
-| `CheckUserExists`  | `(userId)` → `(exists)`                                                            | Lightweight existence check                      |
-| `GetFollowerCount` | `(userId)` → `(count)`                                                             | For celebrity detection (>10K = celebrity)       |
-
-**UserResponse fields:** `id, username, email, avatarUrl, displayName, isCelebrity, followerCount, createdAt`
+| Method             | Request                                      | Response                   | Notes                                          |
+| ------------------ | -------------------------------------------- | -------------------------- | ---------------------------------------------- |
+| `GetUser`          | `GetUserRequest` (user_id, fields)           | `UserResponse`             | field mask — only return requested fields      |
+| `GetUserBatch`     | `GetUserBatchRequest` (user_ids, fields)     | `GetUserBatchResponse`     |                                                |
+| `GetUserProfile`   | `GetUserProfileRequest` (user_id, viewer_id) | `UserProfileResponse`      | for personalized response (is_following, etc.) |
+| `CheckUserExists`  | `CheckUserExistsRequest` (user_id)           | `CheckUserExistsResponse`  |                                                |
+| `GetFollowerCount` | `GetFollowerCountRequest` (user_id)          | `GetFollowerCountResponse` |                                                |
 
 ---
 
 ## Client Usage Pattern
 
 ```typescript
-// In a service that calls InventoryService
 @Client({
   transport: Transport.GRPC,
   options: {
-    package: 'hypercommerce.inventory',
-    protoPath: join(__dirname, '../proto/inventory.proto'),
-    url: 'localhost:50052',
+    package: 'hypercommerce.{service}',
+    protoPath: join(__dirname, '../proto/{service}.proto'),
+    url: 'localhost:{port}',
   },
 })
-private inventoryClient: ClientGrpc;
-
-private inventoryService: InventoryService;
+private grpcClient: ClientGrpc;
 
 onModuleInit() {
-  this.inventoryService = this.inventoryClient
-    .getService<InventoryService>('InventoryService');
+  this.svc = this.grpcClient.getService<ServiceInterface>('{ServiceName}');
 }
 
-// Call:
-const result = await firstValueFrom(
-  this.inventoryService.checkStock({ productId, variantId, quantity: 1 })
-);
+// Call (returns Observable — wrap with firstValueFrom):
+const result = await firstValueFrom(this.svc.methodName(request));
 ```
 
 ---
 
-## Error Codes (gRPC status)
+## gRPC Status → HTTP mapping
 
-| Scenario            | gRPC Status               | HTTP equivalent |
-| ------------------- | ------------------------- | --------------- |
-| Resource not found  | `NOT_FOUND (5)`           | 404             |
-| Invalid input       | `INVALID_ARGUMENT (3)`    | 400             |
-| Insufficient stock  | `FAILED_PRECONDITION (9)` | 409             |
-| Unauthorized        | `UNAUTHENTICATED (16)`    | 401             |
-| Service unavailable | `UNAVAILABLE (14)`        | 503             |
+| gRPC Status               | HTTP | Scenario                      |
+| ------------------------- | ---- | ----------------------------- |
+| `NOT_FOUND (5)`           | 404  | Resource not found            |
+| `INVALID_ARGUMENT (3)`    | 400  | Bad input                     |
+| `FAILED_PRECONDITION (9)` | 409  | Insufficient stock / conflict |
+| `UNAUTHENTICATED (16)`    | 401  | Missing/invalid token         |
+| `UNAVAILABLE (14)`        | 503  | Service down                  |

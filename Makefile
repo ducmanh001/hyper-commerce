@@ -160,8 +160,14 @@ migrate-revert: ## Revert the last migration
 seeds: ## Seed development data
 	npm run db:seed
 
-context\:index: ## Regenerate SCHEMA.md table map + migration number from live code
+context\:index: ## Regenerate SCHEMA.md from live entities
 	node scripts/gen-context-index.js
+
+context\:catalogs: ## Regenerate QUEUES.md + PROTOS.md from source
+	node scripts/gen-queues-catalog.js
+	node scripts/gen-protos-catalog.js
+
+context\:refresh: context\:index context\:catalogs ## Regenerate ALL catalog .md files
 
 context\:audit: ## Audit AI context token budget — check all context files vs size limits
 	@echo "$(BOLD)── AI Context Token Budget Audit ──$(RESET)"
