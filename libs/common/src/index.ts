@@ -7,12 +7,19 @@ export * from './interceptors/timeout.interceptor';
 export * from './utils/retry.util';
 export * from './utils/pagination.util';
 export * from './utils/crypto.util';
-export { CircuitBreakerOptions, CircuitCallResult, CircuitBreakerService } from './utils/circuit-breaker.util';
+export {
+  CircuitBreakerOptions,
+  CircuitCallResult,
+  CircuitBreakerService,
+} from './utils/circuit-breaker.util';
 export * from './utils/stale-while-revalidate.util';
 export * from './guards/rate-limit.guard';
 export * from './guards/roles.guard';
 export * from './guards/jwt-auth.guard';
-export { TokenBucketRateLimitGuard, RateLimitOptions } from './guards/token-bucket-rate-limit.guard';
+export {
+  TokenBucketRateLimitGuard,
+  RateLimitOptions,
+} from './guards/token-bucket-rate-limit.guard';
 export * from './metrics/metrics.service';
 export { CurrentUser } from './decorators/current-user.decorator';
 export * from './decorators/roles.decorator';
@@ -28,9 +35,9 @@ export * from './domain/base.aggregate-root';
 export * from './domain/domain-event.base';
 // Typed config
 export { default as algorithmConfig } from './config/algorithm.config';
-export type { AlgorithmConfigProps }  from './config/algorithm.config';
-export { default as hardwareConfig }  from './config/hardware.config';
-export type { HardwareConfigProps }   from './config/hardware.config';
+export type { AlgorithmConfigProps } from './config/algorithm.config';
+export { default as hardwareConfig } from './config/hardware.config';
+export type { HardwareConfigProps } from './config/hardware.config';
 // Lifecycle module
 export * from './lifecycle/app-lifecycle.module';
 export * from './lifecycle/memory-lifecycle.service';
@@ -44,4 +51,3 @@ export * from './feature-flags/index';
 // Worker threads
 export * from './workers/worker-thread.service';
 export * from './workers/worker-thread.module';
-

@@ -3,6 +3,6 @@ import { WorkerThreadService } from './worker-thread.service';
 
 @Module({
   providers: [WorkerThreadService],
-  exports:   [WorkerThreadService],
+  exports: [WorkerThreadService],
 })
 export class WorkerThreadModule {}

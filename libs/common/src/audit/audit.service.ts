@@ -12,21 +12,22 @@
 
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { AuditLog, AuditAction } from './audit.entity';
+import type { Repository } from 'typeorm';
+import type { AuditAction } from './audit.entity';
+import { AuditLog } from './audit.entity';
 
 export interface CreateAuditInput {
-  actorId:     string;
-  actorEmail:  string;
-  actorRole:   string;
-  action:      AuditAction;
-  resource:    string;
+  actorId: string;
+  actorEmail: string;
+  actorRole: string;
+  action: AuditAction;
+  resource: string;
   resourceId?: string;
-  changes?:    Record<string, unknown>;
-  ipAddress?:  string;
-  userAgent?:  string;
-  traceId?:    string;
-  success?:    boolean;
+  changes?: Record<string, unknown>;
+  ipAddress?: string;
+  userAgent?: string;
+  traceId?: string;
+  success?: boolean;
   errorMessage?: string;
 }
 
@@ -47,19 +48,18 @@ export class AuditService {
   log(input: CreateAuditInput): void {
     setImmediate(async () => {
       try {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         await this.repo.insert({
-          actorId:      input.actorId,
-          actorEmail:   input.actorEmail,
-          actorRole:    input.actorRole,
-          action:       input.action,
-          resource:     input.resource,
-          resourceId:   input.resourceId,
-          changes:      input.changes as any,
-          ipAddress:    input.ipAddress,
-          userAgent:    input.userAgent,
-          traceId:      input.traceId,
-          success:      input.success ?? true,
+          actorId: input.actorId,
+          actorEmail: input.actorEmail,
+          actorRole: input.actorRole,
+          action: input.action,
+          resource: input.resource,
+          resourceId: input.resourceId,
+          changes: input.changes as any,
+          ipAddress: input.ipAddress,
+          userAgent: input.userAgent,
+          traceId: input.traceId,
+          success: input.success ?? true,
           errorMessage: input.errorMessage,
         });
       } catch (err) {
@@ -70,26 +70,29 @@ export class AuditService {
 
   /** Paginated query for admin audit log viewer */
   async findMany(opts: {
-    actorId?:  string;
+    actorId?: string;
     resource?: string;
-    action?:   AuditAction;
-    from?:     Date;
-    to?:       Date;
-    page?:     number;
-    limit?:    number;
+    action?: AuditAction;
+    from?: Date;
+    to?: Date;
+    page?: number;
+    limit?: number;
   }): Promise<{ items: AuditLog[]; total: number }> {
-    const page  = opts.page  ?? 1;
+    const page = opts.page ?? 1;
     const limit = Math.min(opts.limit ?? 50, 200);
 
     const qb = this.repo.createQueryBuilder('al').orderBy('al.createdAt', 'DESC');
 
-    if (opts.actorId)  qb.andWhere('al.actorId = :actorId',   { actorId:  opts.actorId });
+    if (opts.actorId) qb.andWhere('al.actorId = :actorId', { actorId: opts.actorId });
     if (opts.resource) qb.andWhere('al.resource = :resource', { resource: opts.resource });
-    if (opts.action)   qb.andWhere('al.action = :action',     { action:   opts.action });
-    if (opts.from)     qb.andWhere('al.createdAt >= :from',   { from:     opts.from });
-    if (opts.to)       qb.andWhere('al.createdAt <= :to',     { to:       opts.to });
+    if (opts.action) qb.andWhere('al.action = :action', { action: opts.action });
+    if (opts.from) qb.andWhere('al.createdAt >= :from', { from: opts.from });
+    if (opts.to) qb.andWhere('al.createdAt <= :to', { to: opts.to });
 
-    const [items, total] = await qb.skip((page - 1) * limit).take(limit).getManyAndCount();
+    const [items, total] = await qb
+      .skip((page - 1) * limit)
+      .take(limit)
+      .getManyAndCount();
     return { items, total };
   }
 }

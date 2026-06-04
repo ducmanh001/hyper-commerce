@@ -3,15 +3,11 @@
 // Structured JSON log for every request: latency, trace, user
 // ============================================================
 
-import {
-  CallHandler,
-  ExecutionContext,
-  Injectable,
-  Logger,
-  NestInterceptor,
-} from '@nestjs/common';
-import { Request, Response } from 'express';
-import { Observable, tap } from 'rxjs';
+import type { CallHandler, ExecutionContext, NestInterceptor } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
+import type { Request, Response } from 'express';
+import type { Observable } from 'rxjs';
+import { tap } from 'rxjs';
 
 @Injectable()
 export class LoggingInterceptor implements NestInterceptor {

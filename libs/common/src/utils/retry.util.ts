@@ -8,8 +8,8 @@ export interface RetryOptions {
   maxAttempts: number;
   baseDelayMs: number;
   maxDelayMs: number;
-  factor?: number;        // default 2 (exponential)
-  jitter?: boolean;       // default true (full jitter)
+  factor?: number; // default 2 (exponential)
+  jitter?: boolean; // default true (full jitter)
   retryIf?: (error: unknown) => boolean; // default: always retry
   onRetry?: (error: unknown, attempt: number, delayMs: number) => void;
 }
@@ -74,8 +74,8 @@ function sleep(ms: number): Promise<void> {
 // ── Circuit Breaker ──────────────────────────────────────────
 // Simple in-process circuit breaker — for distributed use Redis-based
 export enum CircuitState {
-  CLOSED = 'CLOSED',   // Normal operation
-  OPEN = 'OPEN',       // Failing — reject all calls
+  CLOSED = 'CLOSED', // Normal operation
+  OPEN = 'OPEN', // Failing — reject all calls
   HALF_OPEN = 'HALF_OPEN', // Testing if recovered
 }
 
@@ -88,9 +88,9 @@ export class CircuitBreaker<T = unknown> {
   constructor(
     private readonly name: string,
     private readonly options: {
-      failureThreshold: number;  // consecutive failures to open
-      successThreshold: number;  // successes in half-open to close
-      openTimeoutMs: number;     // time before trying half-open
+      failureThreshold: number; // consecutive failures to open
+      successThreshold: number; // successes in half-open to close
+      openTimeoutMs: number; // time before trying half-open
     },
   ) {}
 
@@ -100,9 +100,7 @@ export class CircuitBreaker<T = unknown> {
         this.state = CircuitState.HALF_OPEN;
         this.successCount = 0;
       } else {
-        throw new Error(
-          `Circuit breaker '${this.name}' is OPEN — rejecting call`,
-        );
+        throw new Error(`Circuit breaker '${this.name}' is OPEN — rejecting call`);
       }
     }
 

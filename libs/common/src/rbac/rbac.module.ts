@@ -16,6 +16,6 @@ import { CaslAbilityGuard } from './casl-ability.guard';
 
 @Module({
   providers: [AbilityFactory, CaslAbilityGuard],
-  exports:   [AbilityFactory, CaslAbilityGuard],
+  exports: [AbilityFactory, CaslAbilityGuard],
 })
 export class PermissionsModule {}

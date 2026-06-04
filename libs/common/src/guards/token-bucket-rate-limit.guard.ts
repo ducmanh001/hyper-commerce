@@ -48,31 +48,29 @@
  *   @Post('expensive-operation')
  *   async expensiveOp() {}
  */
-import {
-  CanActivate, ExecutionContext, Injectable,
-  HttpException, HttpStatus, SetMetadata, Logger, Inject,
-} from '@nestjs/common';
-import { Reflector } from '@nestjs/core';
-import { Request } from 'express';
+import type { CanActivate, ExecutionContext } from '@nestjs/common';
+import { Injectable, HttpException, HttpStatus, SetMetadata, Logger, Inject } from '@nestjs/common';
+import type { Reflector } from '@nestjs/core';
+import type { Request } from 'express';
 import { TokenBucketPool } from '@hypercommerce/algorithms';
-import { MemoryLifecycleService } from '../lifecycle/memory-lifecycle.service';
-import algorithmConfig, { AlgorithmConfigProps } from '../config/algorithm.config';
+import type { MemoryLifecycleService } from '../lifecycle/memory-lifecycle.service';
+import type { AlgorithmConfigProps } from '../config/algorithm.config';
+import algorithmConfig from '../config/algorithm.config';
 
 export const RATE_LIMIT_KEY = 'rateLimit';
 
 export interface RateLimitOptions {
-  rpm?:       number;   // Requests per minute
-  burstSize?: number;   // Max burst tokens (default = rpm/4)
-  skipAuth?:  boolean;  // If true, rate limit unauthenticated users only
+  rpm?: number; // Requests per minute
+  burstSize?: number; // Max burst tokens (default = rpm/4)
+  skipAuth?: boolean; // If true, rate limit unauthenticated users only
 }
 
-export const RateLimit = (options: RateLimitOptions) =>
-  SetMetadata(RATE_LIMIT_KEY, options);
+export const RateLimit = (options: RateLimitOptions) => SetMetadata(RATE_LIMIT_KEY, options);
 
 @Injectable()
 export class TokenBucketRateLimitGuard implements CanActivate {
-  private readonly logger  = new Logger(TokenBucketRateLimitGuard.name);
-  private readonly pool:   TokenBucketPool;
+  private readonly logger = new Logger(TokenBucketRateLimitGuard.name);
+  private readonly pool: TokenBucketPool;
 
   constructor(
     private readonly reflector: Reflector,
@@ -83,7 +81,7 @@ export class TokenBucketRateLimitGuard implements CanActivate {
     this.pool = new TokenBucketPool(
       {
         capacity: defaultBurstSize,
-        refillRate: defaultRpm / 60,  // RPM → requests/second
+        refillRate: defaultRpm / 60, // RPM → requests/second
       },
       10_000, // Max unique users tracked in memory
     );
@@ -95,17 +93,18 @@ export class TokenBucketRateLimitGuard implements CanActivate {
       return this.enforceEmergencyLimit(ctx);
     }
 
-    const options = this.reflector.getAllAndOverride<RateLimitOptions>(RATE_LIMIT_KEY, [
-      ctx.getHandler(),
-      ctx.getClass(),
-    ]) ?? {};
+    const options =
+      this.reflector.getAllAndOverride<RateLimitOptions>(RATE_LIMIT_KEY, [
+        ctx.getHandler(),
+        ctx.getClass(),
+      ]) ?? {};
 
-    const req      = ctx.switchToHttp().getRequest<Request & { user?: { id: string } }>();
+    const req = ctx.switchToHttp().getRequest<Request & { user?: { id: string } }>();
     const clientId = req.user?.id ?? this.getClientIp(req);
 
-    if (!clientId) return true;  // Anonymous health checks etc.
+    if (!clientId) return true; // Anonymous health checks etc.
 
-    const rpm       = options.rpm       ?? this.config.rateLimiter.defaultRpm;
+    const rpm = options.rpm ?? this.config.rateLimiter.defaultRpm;
     const burstSize = options.burstSize ?? Math.max(Math.ceil(rpm / 4), 5);
 
     const result = this.pool.consume(clientId, 1);
@@ -113,17 +112,17 @@ export class TokenBucketRateLimitGuard implements CanActivate {
     if (!result.allowed) {
       const retryAfter = Math.ceil(60 / rpm);
       this.logger.warn({
-        event:     'rate_limit_exceeded',
-        clientId:  clientId.slice(0, 8) + '***',
-        endpoint:  req.path,
+        event: 'rate_limit_exceeded',
+        clientId: clientId.slice(0, 8) + '***',
+        endpoint: req.path,
         rpm,
       });
 
       throw new HttpException(
         {
           statusCode: HttpStatus.TOO_MANY_REQUESTS,
-          error:      'Too Many Requests',
-          message:    `Rate limit exceeded. Try again in ${retryAfter}s.`,
+          error: 'Too Many Requests',
+          message: `Rate limit exceeded. Try again in ${retryAfter}s.`,
           retryAfter,
         },
         HttpStatus.TOO_MANY_REQUESTS,
@@ -141,13 +140,13 @@ export class TokenBucketRateLimitGuard implements CanActivate {
     if (!clientId) return true;
 
     const emergencyRpm = Math.max(Math.ceil(this.config.rateLimiter.defaultRpm * 0.1), 1);
-    const allowed      = this.pool.consume(clientId, 1);
+    const allowed = this.pool.consume(clientId, 1);
 
     if (!allowed.allowed) {
       throw new HttpException(
         {
           statusCode: HttpStatus.TOO_MANY_REQUESTS,
-          message:    'Service temporarily under load. Please try again later.',
+          message: 'Service temporarily under load. Please try again later.',
         },
         HttpStatus.TOO_MANY_REQUESTS,
       );

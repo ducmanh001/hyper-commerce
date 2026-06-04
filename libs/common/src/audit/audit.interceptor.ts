@@ -12,25 +12,21 @@
  * { provide: APP_INTERCEPTOR, useClass: AuditInterceptor }
  */
 
-import {
-  Injectable,
-  NestInterceptor,
-  ExecutionContext,
-  CallHandler,
-  Logger,
-} from '@nestjs/common';
+import type { NestInterceptor, ExecutionContext, CallHandler } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { Observable, tap, catchError, throwError } from 'rxjs';
-import { Request } from 'express';
-import { AuditService } from './audit.service';
-import { AuditAction } from './audit.entity';
-import { JwtPayload } from '../rbac/permissions';
+import type { Observable } from 'rxjs';
+import { tap, catchError, throwError } from 'rxjs';
+import type { Request } from 'express';
+import type { AuditService } from './audit.service';
+import type { AuditAction } from './audit.entity';
+import type { JwtPayload } from '../rbac/permissions';
 
 /** Map HTTP method → AuditAction */
 const METHOD_ACTION: Record<string, AuditAction> = {
-  POST:   'CREATE',
-  PUT:    'UPDATE',
-  PATCH:  'UPDATE',
+  POST: 'CREATE',
+  PUT: 'UPDATE',
+  PATCH: 'UPDATE',
   DELETE: 'DELETE',
 };
 
@@ -55,15 +51,15 @@ export class AuditInterceptor implements NestInterceptor {
 
     if (skip) return next.handle();
 
-    const req    = context.switchToHttp().getRequest<Request>();
+    const req = context.switchToHttp().getRequest<Request>();
     const method = req.method.toUpperCase();
 
     // Only audit mutating requests
     if (!METHOD_ACTION[method]) return next.handle();
 
-    const action   = METHOD_ACTION[method];
-    const user     = (req as unknown as Record<string, unknown>)['user'] as JwtPayload | undefined;
-    const traceId  = req.headers['x-trace-id'] as string | undefined;
+    const action = METHOD_ACTION[method];
+    const user = (req as unknown as Record<string, unknown>)['user'] as JwtPayload | undefined;
+    const traceId = req.headers['x-trace-id'] as string | undefined;
     const segments = req.path.split('/').filter(Boolean);
     const resource = segments[1] ?? segments[0] ?? 'unknown';
     const resourceId = segments[2];
@@ -75,36 +71,36 @@ export class AuditInterceptor implements NestInterceptor {
     return next.handle().pipe(
       tap(() => {
         this.auditService.log({
-          actorId:    user.sub,
+          actorId: user.sub,
           actorEmail: user.email,
-          actorRole:  user.role,
+          actorRole: user.role,
           action,
           resource,
           resourceId,
-          ipAddress:  req.ip,
-          userAgent:  req.get('user-agent'),
+          ipAddress: req.ip,
+          userAgent: req.get('user-agent'),
           traceId,
-          success:    true,
-          changes:    {
+          success: true,
+          changes: {
             method,
-            path:    req.path,
-            body:    this.sanitiseBody(req.body as Record<string, unknown>),
-            ms:      Date.now() - startAt,
+            path: req.path,
+            body: this.sanitiseBody(req.body as Record<string, unknown>),
+            ms: Date.now() - startAt,
           },
         });
       }),
       catchError((err: Error) => {
         this.auditService.log({
-          actorId:      user.sub,
-          actorEmail:   user.email,
-          actorRole:    user.role,
+          actorId: user.sub,
+          actorEmail: user.email,
+          actorRole: user.role,
           action,
           resource,
           resourceId,
-          ipAddress:    req.ip,
-          userAgent:    req.get('user-agent'),
+          ipAddress: req.ip,
+          userAgent: req.get('user-agent'),
           traceId,
-          success:      false,
+          success: false,
           errorMessage: err.message,
         });
         return throwError(() => err);

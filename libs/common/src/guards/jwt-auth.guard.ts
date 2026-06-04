@@ -1,14 +1,10 @@
-import {
-  Injectable,
-  CanActivate,
-  ExecutionContext,
-  UnauthorizedException,
-} from '@nestjs/common';
-import { Reflector } from '@nestjs/core';
+import type { CanActivate, ExecutionContext } from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
+import type { Reflector } from '@nestjs/core';
 import { IS_PUBLIC_KEY } from '../decorators/public.decorator';
 import * as jwt from 'jsonwebtoken';
-import { JwtPayload } from '../decorators/current-user.decorator';
-import { Request } from 'express';
+import type { JwtPayload } from '../decorators/current-user.decorator';
+import type { Request } from 'express';
 
 /**
  * JwtAuthGuard

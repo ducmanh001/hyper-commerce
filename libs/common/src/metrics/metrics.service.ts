@@ -4,7 +4,8 @@
 // Exported at /metrics endpoint for Prometheus scraping.
 // ============================================================
 
-import { Injectable, OnModuleInit } from '@nestjs/common';
+import type { OnModuleInit } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { Registry, Counter, Histogram, Gauge, collectDefaultMetrics } from 'prom-client';
 
 @Injectable()

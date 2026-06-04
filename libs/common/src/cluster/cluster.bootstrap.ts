@@ -62,9 +62,7 @@ export function bootstrapWithCluster(
   const options = { ...DEFAULT_CLUSTER_OPTS, ...opts };
 
   if (cluster.isPrimary) {
-    logger.log(
-      `Primary process ${process.pid} starting ${options.workers} workers`,
-    );
+    logger.log(`Primary process ${process.pid} starting ${options.workers} workers`);
 
     // Track respawn delays per worker (for exponential backoff)
     const respawnDelays = new Map<number, number>();
@@ -81,9 +79,7 @@ export function bootstrapWithCluster(
 
     cluster.on('exit', (worker, code, signal) => {
       const reason = signal || `exit code ${code}`;
-      logger.error(
-        `Worker ${worker.process.pid} died (${reason})`,
-      );
+      logger.error(`Worker ${worker.process.pid} died (${reason})`);
 
       if (!options.autoRespawn) return;
       if (code === 0) return; // Graceful exit — don't respawn
@@ -107,7 +103,6 @@ export function bootstrapWithCluster(
         worker?.kill('SIGTERM');
       }
     });
-
   } else {
     // Worker process: run the NestJS app
     logger.log(`Worker ${process.pid} started`);

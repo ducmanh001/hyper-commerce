@@ -5,8 +5,8 @@ import { FeatureFlagService } from './feature-flag.service';
 import { FeatureGateGuard } from './feature-gate.guard';
 
 @Module({
-  imports:   [TypeOrmModule.forFeature([FeatureFlag])],
+  imports: [TypeOrmModule.forFeature([FeatureFlag])],
   providers: [FeatureFlagService, FeatureGateGuard],
-  exports:   [FeatureFlagService, FeatureGateGuard, TypeOrmModule],
+  exports: [FeatureFlagService, FeatureGateGuard, TypeOrmModule],
 })
 export class FeatureFlagsModule {}

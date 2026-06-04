@@ -5,8 +5,8 @@ import { AuditService } from './audit.service';
 import { AuditInterceptor } from './audit.interceptor';
 
 @Module({
-  imports:   [TypeOrmModule.forFeature([AuditLog])],
+  imports: [TypeOrmModule.forFeature([AuditLog])],
   providers: [AuditService, AuditInterceptor],
-  exports:   [AuditService, AuditInterceptor, TypeOrmModule],
+  exports: [AuditService, AuditInterceptor, TypeOrmModule],
 })
 export class AuditModule {}

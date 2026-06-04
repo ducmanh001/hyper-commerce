@@ -45,7 +45,7 @@ export class OffsetPaginationDto {
 export interface CursorPage<T> {
   data: T[];
   meta: {
-    cursor: string | null;      // null = last page
+    cursor: string | null; // null = last page
     hasMore: boolean;
     count: number;
   };
@@ -99,9 +99,7 @@ export function buildCursorPage<T>(
   const data = hasMore ? items.slice(0, limit) : items;
 
   const cursor =
-    hasMore && data.length > 0
-      ? encodeCursor(cursorExtractor(data[data.length - 1]))
-      : null;
+    hasMore && data.length > 0 ? encodeCursor(cursorExtractor(data[data.length - 1])) : null;
 
   return {
     data,

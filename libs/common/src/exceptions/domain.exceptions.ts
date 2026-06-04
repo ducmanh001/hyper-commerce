@@ -18,12 +18,7 @@ export class DomainException extends HttpException {
   public readonly context: ExceptionContext;
   public readonly timestamp: Date;
 
-  constructor(
-    message: string,
-    code: string,
-    status: HttpStatus,
-    context: ExceptionContext = {},
-  ) {
+  constructor(message: string, code: string, status: HttpStatus, context: ExceptionContext = {}) {
     super({ message, code, context }, status);
     this.code = code;
     this.context = context;
@@ -52,12 +47,10 @@ export class ForbiddenException extends DomainException {
 // ── Resource ──────────────────────────────────────────────────
 export class NotFoundException extends DomainException {
   constructor(resource: string, id: string, context?: ExceptionContext) {
-    super(
-      `${resource} with id '${id}' not found`,
-      'NOT_FOUND',
-      HttpStatus.NOT_FOUND,
-      { ...context, resourceId: id },
-    );
+    super(`${resource} with id '${id}' not found`, 'NOT_FOUND', HttpStatus.NOT_FOUND, {
+      ...context,
+      resourceId: id,
+    });
   }
 }
 
@@ -160,12 +153,9 @@ export class FeedGenerationException extends DomainException {
 // ── Live ──────────────────────────────────────────────────────
 export class StreamNotFoundException extends DomainException {
   constructor(streamId: string) {
-    super(
-      `Livestream ${streamId} not found or ended`,
-      'STREAM_NOT_FOUND',
-      HttpStatus.NOT_FOUND,
-      { resourceId: streamId },
-    );
+    super(`Livestream ${streamId} not found or ended`, 'STREAM_NOT_FOUND', HttpStatus.NOT_FOUND, {
+      resourceId: streamId,
+    });
   }
 }
 
@@ -211,12 +201,9 @@ export class ValidationException extends DomainException {
   public readonly fields: Record<string, string[]>;
 
   constructor(fields: Record<string, string[]>) {
-    super(
-      'Request validation failed',
-      'VALIDATION_FAILED',
-      HttpStatus.UNPROCESSABLE_ENTITY,
-      { metadata: { fields } },
-    );
+    super('Request validation failed', 'VALIDATION_FAILED', HttpStatus.UNPROCESSABLE_ENTITY, {
+      metadata: { fields },
+    });
     this.fields = fields;
   }
 }
@@ -238,10 +225,7 @@ export class PriceMismatchException extends DomainException {
     detail?: string,
     context?: ExceptionContext,
   ) {
-    const pct =
-      serverPrice > 0
-        ? (Math.abs(clientPrice - serverPrice) / serverPrice) * 100
-        : 0;
+    const pct = serverPrice > 0 ? (Math.abs(clientPrice - serverPrice) / serverPrice) * 100 : 0;
     super(
       detail ??
         `Price mismatch for product ${productId}: client=${clientPrice}, catalog=${serverPrice} (${pct.toFixed(1)}% diff)`,

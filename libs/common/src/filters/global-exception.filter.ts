@@ -3,15 +3,9 @@
 // Normalises all exceptions into structured JSON + emits metrics
 // ============================================================
 
-import {
-  ArgumentsHost,
-  Catch,
-  ExceptionFilter,
-  HttpException,
-  HttpStatus,
-  Logger,
-} from '@nestjs/common';
-import { Request, Response } from 'express';
+import type { ArgumentsHost, ExceptionFilter } from '@nestjs/common';
+import { Catch, HttpException, HttpStatus, Logger } from '@nestjs/common';
+import type { Request, Response } from 'express';
 import { DomainException } from '../exceptions/domain.exceptions';
 
 export interface ErrorResponse {
@@ -42,11 +36,7 @@ export class GlobalExceptionFilter implements ExceptionFilter {
     response.status(body.statusCode).json(body);
   }
 
-  private buildErrorResponse(
-    exception: unknown,
-    traceId: string,
-    path: string,
-  ): ErrorResponse {
+  private buildErrorResponse(exception: unknown, traceId: string, path: string): ErrorResponse {
     if (exception instanceof DomainException) {
       return {
         statusCode: exception.getStatus(),
@@ -64,7 +54,7 @@ export class GlobalExceptionFilter implements ExceptionFilter {
       const message =
         typeof res === 'object' && 'message' in res
           ? Array.isArray((res as { message: unknown }).message)
-            ? ((res as { message: string[] }).message).join(', ')
+            ? (res as { message: string[] }).message.join(', ')
             : (res as { message: string }).message
           : exception.message;
 
@@ -89,11 +79,7 @@ export class GlobalExceptionFilter implements ExceptionFilter {
     };
   }
 
-  private logException(
-    exception: unknown,
-    body: ErrorResponse,
-    request: Request,
-  ): void {
+  private logException(exception: unknown, body: ErrorResponse, request: Request): void {
     const logContext = {
       traceId: body.traceId,
       statusCode: body.statusCode,

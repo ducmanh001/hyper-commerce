@@ -23,10 +23,7 @@ export async function hashPassword(plaintext: string): Promise<string> {
  * Verify password using constant-time comparison.
  * Prevents timing attacks.
  */
-export async function verifyPassword(
-  plaintext: string,
-  hash: string,
-): Promise<boolean> {
+export async function verifyPassword(plaintext: string, hash: string): Promise<boolean> {
   return bcrypt.compare(plaintext, hash);
 }
 
@@ -58,17 +55,12 @@ export function verifyWebhookSignature(
   signature: string,
   secret: string,
 ): boolean {
-  const expected = createHmac('sha256', secret)
-    .update(payload, 'utf8')
-    .digest('hex');
+  const expected = createHmac('sha256', secret).update(payload, 'utf8').digest('hex');
 
   // timingSafeEqual requires same-length buffers
   if (expected.length !== signature.length) return false;
 
-  return timingSafeEqual(
-    Buffer.from(expected, 'hex'),
-    Buffer.from(signature, 'hex'),
-  );
+  return timingSafeEqual(Buffer.from(expected, 'hex'), Buffer.from(signature, 'hex'));
 }
 
 /**

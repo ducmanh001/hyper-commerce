@@ -32,16 +32,8 @@ import hardwareConfig from '../config/hardware.config';
 
 @Global()
 @Module({
-  imports: [
-    ConfigModule.forFeature(hardwareConfig),
-  ],
-  providers: [
-    MemoryLifecycleService,
-    BufferPoolLifecycleService,
-  ],
-  exports: [
-    MemoryLifecycleService,
-    BufferPoolLifecycleService,
-  ],
+  imports: [ConfigModule.forFeature(hardwareConfig)],
+  providers: [MemoryLifecycleService, BufferPoolLifecycleService],
+  exports: [MemoryLifecycleService, BufferPoolLifecycleService],
 })
 export class AppLifecycleModule {}

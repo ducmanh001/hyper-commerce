@@ -1,14 +1,9 @@
-import {
-  Injectable,
-  NestInterceptor,
-  ExecutionContext,
-  CallHandler,
-  Logger,
-} from '@nestjs/common';
-import { Observable } from 'rxjs';
+import type { NestInterceptor, ExecutionContext, CallHandler } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
+import type { Observable } from 'rxjs';
 import { tap, catchError } from 'rxjs/operators';
 import { throwError } from 'rxjs';
-import { Request, Response } from 'express';
+import type { Request, Response } from 'express';
 
 /**
  * TimeoutInterceptor — kills slow requests after configurable timeout.

@@ -25,7 +25,7 @@
 // ============================================================
 
 import { Injectable, Logger } from '@nestjs/common';
-import { RedisClientService } from '@hypercommerce/redis';
+import type { RedisClientService } from '@hypercommerce/redis';
 import { APP_CONSTANTS } from '@hypercommerce/common/constants/app.constants';
 
 export type CircuitState = 'CLOSED' | 'OPEN' | 'HALF_OPEN';
@@ -148,10 +148,15 @@ export class CircuitBreakerService {
     const failureKey = `${APP_CONSTANTS.REDIS_KEYS.CIRCUIT_BREAKER}${opts.name}:failures`;
     const failures = await this.redis.getClient().incr(failureKey);
     // TTL auto-cleanup after 2× open timeout
-    await this.redis.getClient().expire(failureKey, Math.ceil(opts.openTimeoutMs * 2 / 1000));
+    await this.redis.getClient().expire(failureKey, Math.ceil((opts.openTimeoutMs * 2) / 1000));
 
     this.logger.warn(
-      JSON.stringify({ event: 'circuit_failure', name: opts.name, failures, threshold: opts.failureThreshold }),
+      JSON.stringify({
+        event: 'circuit_failure',
+        name: opts.name,
+        failures,
+        threshold: opts.failureThreshold,
+      }),
     );
 
     if (failures >= opts.failureThreshold) {
@@ -159,7 +164,7 @@ export class CircuitBreakerService {
       await this.redis.set(
         `${APP_CONSTANTS.REDIS_KEYS.CIRCUIT_BREAKER}${opts.name}:opened_at`,
         String(Date.now()),
-        Math.ceil(opts.openTimeoutMs * 3 / 1000),
+        Math.ceil((opts.openTimeoutMs * 3) / 1000),
       );
       this.logger.error(`Circuit OPEN: ${opts.name} (${failures} consecutive failures)`);
     }
@@ -168,7 +173,7 @@ export class CircuitBreakerService {
   private async shouldAttemptHalfOpen(name: string): Promise<boolean> {
     const key = `${APP_CONSTANTS.REDIS_KEYS.CIRCUIT_BREAKER}${name}:opened_at`;
     const openedAt = await this.redis.get(key);
-    if (!openedAt) return true;  // no timestamp → allow
+    if (!openedAt) return true; // no timestamp → allow
 
     const elapsed = Date.now() - parseInt(openedAt, 10);
     return elapsed >= this.OPEN_TIMEOUT_MS;
@@ -176,7 +181,7 @@ export class CircuitBreakerService {
 
   private async setState(name: string, state: CircuitState): Promise<void> {
     const key = `${APP_CONSTANTS.REDIS_KEYS.CIRCUIT_BREAKER}${name}:state`;
-    await this.redis.set(key, state, 3600);  // 1 hour max TTL
+    await this.redis.set(key, state, 3600); // 1 hour max TTL
   }
 
   private async clearCounters(name: string): Promise<void> {
@@ -187,7 +192,10 @@ export class CircuitBreakerService {
     await pipeline.exec();
   }
 
-  private mergeOptions(name: string, opts?: Partial<CircuitBreakerOptions>): Required<CircuitBreakerOptions> {
+  private mergeOptions(
+    name: string,
+    opts?: Partial<CircuitBreakerOptions>,
+  ): Required<CircuitBreakerOptions> {
     return {
       name,
       failureThreshold: opts?.failureThreshold ?? this.FAILURE_THRESHOLD,

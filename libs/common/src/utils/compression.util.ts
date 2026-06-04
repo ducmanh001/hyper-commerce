@@ -61,15 +61,16 @@ export async function compress(
 /**
  * Decompress a Buffer.
  */
-export async function decompress(
-  data: Buffer,
-  algorithm: CompressionAlgorithm,
-): Promise<Buffer> {
+export async function decompress(data: Buffer, algorithm: CompressionAlgorithm): Promise<Buffer> {
   switch (algorithm) {
-    case 'brotli': return brotliDecompress(data);
-    case 'gzip': return gzipDecompress(data);
-    case 'deflate': return deflateDecompress(data);
-    default: throw new Error(`Unsupported decompression algorithm: ${algorithm}`);
+    case 'brotli':
+      return brotliDecompress(data);
+    case 'gzip':
+      return gzipDecompress(data);
+    case 'deflate':
+      return deflateDecompress(data);
+    default:
+      throw new Error(`Unsupported decompression algorithm: ${algorithm}`);
   }
 }
 
@@ -77,9 +78,7 @@ export async function decompress(
  * Detect compression algorithm from magic bytes.
  * Useful for decompressing stored blobs without metadata.
  */
-export function detectCompression(
-  buf: Buffer,
-): CompressionAlgorithm | null {
+export function detectCompression(buf: Buffer): CompressionAlgorithm | null {
   if (buf.length < 3) return null;
 
   // Brotli: no universal magic bytes (application-specific)

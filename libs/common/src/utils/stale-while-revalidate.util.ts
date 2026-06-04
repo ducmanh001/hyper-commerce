@@ -35,7 +35,7 @@
 // ============================================================
 
 import { Logger } from '@nestjs/common';
-import { RedisClientService } from '@hypercommerce/redis';
+import type { RedisClientService } from '@hypercommerce/redis';
 
 export interface SWROptions {
   /** Seconds to serve fresh (no revalidation needed) */
@@ -48,9 +48,9 @@ export interface SWROptions {
 
 interface SWRRecord<T> {
   value: T;
-  storedAt: number;    // Unix timestamp ms
-  freshUntil: number;  // Unix timestamp ms
-  staleUntil: number;  // Unix timestamp ms
+  storedAt: number; // Unix timestamp ms
+  freshUntil: number; // Unix timestamp ms
+  staleUntil: number; // Unix timestamp ms
 }
 
 const logger = new Logger('SWRCache');
@@ -69,7 +69,7 @@ const logger = new Logger('SWRCache');
  * ```
  */
 export class StaleWhileRevalidateCache {
-  private readonly refreshing = new Set<string>();  // in-process dedup
+  private readonly refreshing = new Set<string>(); // in-process dedup
 
   constructor(private readonly redis: RedisClientService) {}
 
@@ -80,11 +80,7 @@ export class StaleWhileRevalidateCache {
    * @param fetcher   Async function to refresh the value
    * @param options   TTL configuration
    */
-  async get<T>(
-    key: string,
-    fetcher: () => Promise<T>,
-    options: SWROptions,
-  ): Promise<T> {
+  async get<T>(key: string, fetcher: () => Promise<T>, options: SWROptions): Promise<T> {
     const fullKey = `${options.keyPrefix ?? 'swr:'}${key}`;
     const now = Date.now();
 
@@ -129,11 +125,7 @@ export class StaleWhileRevalidateCache {
    * Write-through: update cache immediately on write.
    * Prevents stale reads right after an update.
    */
-  async set<T>(
-    key: string,
-    value: T,
-    options: SWROptions,
-  ): Promise<void> {
+  async set<T>(key: string, value: T, options: SWROptions): Promise<void> {
     const fullKey = `${options.keyPrefix ?? 'swr:'}${key}`;
     const now = Date.now();
 
@@ -171,9 +163,7 @@ export class StaleWhileRevalidateCache {
     this.refreshing.add(fullKey);
 
     this.fetchAndStore(key, fullKey, fetcher, options)
-      .catch((err) =>
-        logger.warn(`SWR background refresh failed for ${key}: ${String(err)}`),
-      )
+      .catch((err) => logger.warn(`SWR background refresh failed for ${key}: ${String(err)}`))
       .finally(() => this.refreshing.delete(fullKey));
   }
 }
@@ -194,7 +184,10 @@ export function SWRCached(options: SWROptions & { redis?: RedisClientService }) 
   return function (_target: object, _propertyKey: string, descriptor: PropertyDescriptor) {
     const original = descriptor.value as (...args: unknown[]) => Promise<unknown>;
 
-    descriptor.value = async function (this: { _swrCache?: StaleWhileRevalidateCache; redis?: RedisClientService }, ...args: unknown[]) {
+    descriptor.value = async function (
+      this: { _swrCache?: StaleWhileRevalidateCache; redis?: RedisClientService },
+      ...args: unknown[]
+    ) {
       const redisClient = options.redis ?? this.redis;
       if (!redisClient) {
         // No Redis client — skip caching, call original

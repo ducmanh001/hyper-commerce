@@ -24,9 +24,11 @@
  *   by setting a shared flag that rate-limit guards check.
  *   This is "shed load before you crash" — much better than OOM kill.
  */
-import { Injectable, Logger, OnApplicationBootstrap, OnApplicationShutdown, Inject } from '@nestjs/common';
+import type { OnApplicationBootstrap, OnApplicationShutdown } from '@nestjs/common';
+import { Injectable, Logger, Inject } from '@nestjs/common';
 import { MemoryMonitor } from '../utils/memory-monitor.util';
-import hardwareConfig, { HardwareConfigProps } from '../config/hardware.config';
+import type { HardwareConfigProps } from '../config/hardware.config';
+import hardwareConfig from '../config/hardware.config';
 
 @Injectable()
 export class MemoryLifecycleService implements OnApplicationBootstrap, OnApplicationShutdown {
@@ -36,9 +38,7 @@ export class MemoryLifecycleService implements OnApplicationBootstrap, OnApplica
   /** Public flag read by rate-limit guards to shed load under memory pressure */
   isUnderPressure = false;
 
-  constructor(
-    @Inject(hardwareConfig.KEY) private readonly config: HardwareConfigProps,
-  ) {
+  constructor(@Inject(hardwareConfig.KEY) private readonly config: HardwareConfigProps) {
     this.monitor = new MemoryMonitor({
       warnThresholdMb: config.memory.heapWarnPercent ? undefined : undefined,
       criticalThresholdMb: config.memory.heapCriticalPercent ? undefined : undefined,
@@ -58,13 +58,13 @@ export class MemoryLifecycleService implements OnApplicationBootstrap, OnApplica
       if (ratio >= heapCriticalPercent) {
         this.logger.error(
           `MEMORY CRITICAL: heap ${snap.heapUsedMb.toFixed(0)}MB / ${snap.heapTotalMb.toFixed(0)}MB ` +
-          `(${(ratio * 100).toFixed(1)}%) — shedding load`,
+            `(${(ratio * 100).toFixed(1)}%) — shedding load`,
         );
         this.isUnderPressure = true;
       } else if (ratio >= heapWarnPercent) {
         this.logger.warn(
           `MEMORY WARNING: heap ${snap.heapUsedMb.toFixed(0)}MB / ${snap.heapTotalMb.toFixed(0)}MB ` +
-          `(${(ratio * 100).toFixed(1)}%)`,
+            `(${(ratio * 100).toFixed(1)}%)`,
         );
         this.isUnderPressure = false;
       } else {
@@ -78,7 +78,7 @@ export class MemoryLifecycleService implements OnApplicationBootstrap, OnApplica
 
     this.logger.log(
       `Memory monitoring started (interval=${monitorIntervalMs}ms, ` +
-      `warn=${heapWarnPercent * 100}%, critical=${heapCriticalPercent * 100}%)`,
+        `warn=${heapWarnPercent * 100}%, critical=${heapCriticalPercent * 100}%)`,
     );
   }
 

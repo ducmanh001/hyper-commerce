@@ -21,7 +21,7 @@
  *       Cross-aggregate consistency is EVENTUAL (via events).
  */
 import { BaseEntity } from './base.entity';
-import { DomainEvent } from './domain-event.base';
+import type { DomainEvent } from './domain-event.base';
 
 export abstract class BaseAggregateRoot extends BaseEntity {
   private readonly _domainEvents: DomainEvent[] = [];
@@ -44,7 +44,7 @@ export abstract class BaseAggregateRoot extends BaseEntity {
    */
   collectDomainEvents(): DomainEvent[] {
     const events = [...this._domainEvents];
-    this._domainEvents.length = 0;   // Drain in-place (no GC pressure)
+    this._domainEvents.length = 0; // Drain in-place (no GC pressure)
     return events;
   }
 

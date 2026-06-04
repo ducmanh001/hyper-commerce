@@ -7,8 +7,8 @@
  */
 
 import { SetMetadata } from '@nestjs/common';
-import { AppAbility } from './ability.factory';
-import { AppActions, AppSubjects } from './permissions';
+import type { AppAbility } from './ability.factory';
+import type { AppActions, AppSubjects } from './permissions';
 
 export const CHECK_ABILITY_KEY = 'CHECK_ABILITY';
 

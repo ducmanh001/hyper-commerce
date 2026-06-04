@@ -17,8 +17,8 @@
 
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { Redis } from 'ioredis';
+import type { Repository } from 'typeorm';
+import type { Redis } from 'ioredis';
 import { InjectRedis } from '@nestjs-modules/ioredis';
 import { FeatureFlag } from './feature-flag.entity';
 
@@ -80,7 +80,7 @@ export class FeatureFlagService {
 
   private async getFlag(key: string): Promise<FeatureFlag | null> {
     const cacheKey = `hc:ff:${key}`;
-    const cached   = await this.redis.get(cacheKey);
+    const cached = await this.redis.get(cacheKey);
 
     if (cached !== null) {
       return cached === 'null' ? null : (JSON.parse(cached) as FeatureFlag);
@@ -95,11 +95,7 @@ export class FeatureFlagService {
     await this.redis.del(`hc:ff:${key}`);
   }
 
-  private evaluate(
-    flag: FeatureFlag,
-    userId?: string,
-    sellerId?: string,
-  ): boolean {
+  private evaluate(flag: FeatureFlag, userId?: string, sellerId?: string): boolean {
     if (!flag.enabled) return false;
 
     // Environment gate
@@ -111,7 +107,7 @@ export class FeatureFlagService {
     if (flag.expiresAt && new Date(flag.expiresAt) < new Date()) return false;
 
     // Explicit allowlists always win
-    if (userId   && flag.allowedUserIds?.includes(userId))     return true;
+    if (userId && flag.allowedUserIds?.includes(userId)) return true;
     if (sellerId && flag.allowedSellerIds?.includes(sellerId)) return true;
 
     // Percentage rollout (deterministic)

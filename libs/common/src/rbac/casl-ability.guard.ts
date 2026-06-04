@@ -18,22 +18,14 @@
  *   async deleteUser(...)
  */
 
-import {
-  Injectable,
-  CanActivate,
-  ExecutionContext,
-  ForbiddenException,
-} from '@nestjs/common';
-import { Reflector } from '@nestjs/core';
-import { Request } from 'express';
-import { AbilityFactory, AppAbility } from './ability.factory';
-import {
-  CHECK_ABILITY_KEY,
-  AbilityCheck,
-  RequiredRule,
-  PolicyHandler,
-} from './ability.decorator';
-import { JwtPayload } from './permissions';
+import type { CanActivate, ExecutionContext } from '@nestjs/common';
+import { Injectable, ForbiddenException } from '@nestjs/common';
+import type { Reflector } from '@nestjs/core';
+import type { Request } from 'express';
+import type { AbilityFactory, AppAbility } from './ability.factory';
+import type { AbilityCheck, RequiredRule, PolicyHandler } from './ability.decorator';
+import { CHECK_ABILITY_KEY } from './ability.decorator';
+import type { JwtPayload } from './permissions';
 
 /** Narrow from union */
 function isRequiredRule(check: AbilityCheck): check is RequiredRule {
@@ -48,10 +40,10 @@ export class CaslAbilityGuard implements CanActivate {
   ) {}
 
   canActivate(context: ExecutionContext): boolean {
-    const checks = this.reflector.getAllAndOverride<AbilityCheck[]>(
-      CHECK_ABILITY_KEY,
-      [context.getHandler(), context.getClass()],
-    );
+    const checks = this.reflector.getAllAndOverride<AbilityCheck[]>(CHECK_ABILITY_KEY, [
+      context.getHandler(),
+      context.getClass(),
+    ]);
 
     // No @CheckAbility() on this handler — allow through (open endpoint).
     if (!checks || checks.length === 0) return true;
@@ -76,9 +68,7 @@ export class CaslAbilityGuard implements CanActivate {
     });
 
     if (!allPassed) {
-      throw new ForbiddenException(
-        `Insufficient permissions for this operation`,
-      );
+      throw new ForbiddenException(`Insufficient permissions for this operation`);
     }
 
     return true;

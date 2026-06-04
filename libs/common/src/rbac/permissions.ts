@@ -19,7 +19,7 @@ export type AppSubjects =
   | 'OrderItem'
   | 'Dispute'
   | 'Product'
-  | 'Campaign'         // ads
+  | 'Campaign' // ads
   | 'AdImpression'
   | 'Subscription'
   | 'Payment'
@@ -30,58 +30,66 @@ export type AppSubjects =
   | 'FeatureFlag'
   | 'Report'
   | 'SystemConfig'
-  | 'all';             // CASL wildcard — "everything"
+  | 'all'; // CASL wildcard — "everything"
 
 /** Coarse actions — expanded from CRUD to cover business operations */
 export type AppActions =
-  | 'manage'      // wildcard: all actions
+  | 'manage' // wildcard: all actions
   | 'create'
   | 'read'
   | 'update'
   | 'delete'
-  | 'approve'     // seller verification, dispute resolution
+  | 'approve' // seller verification, dispute resolution
   | 'reject'
-  | 'ban'         // suspend user / seller
+  | 'ban' // suspend user / seller
   | 'unban'
-  | 'export'      // download CSV/Excel
+  | 'export' // download CSV/Excel
   | 'impersonate' // support: log in as another user
   | 'refund'
   | 'payout'
-  | 'configure';  // system config / feature flags
+  | 'configure'; // system config / feature flags
 
 /**
  * Platform roles — ordered from most to least privileged.
  * SUPER_ADMIN: granted out-of-band (env var); never stored in DB.
  */
 export enum Role {
-  SUPER_ADMIN   = 'SUPER_ADMIN',
-  ADMIN         = 'ADMIN',
-  OPS           = 'OPS',             // operations / CS team
-  FINANCE       = 'FINANCE',
-  TRUST_SAFETY  = 'TRUST_SAFETY',    // content moderation + fraud
-  SELLER        = 'SELLER',
-  BUYER         = 'BUYER',
-  GUEST         = 'GUEST',
+  SUPER_ADMIN = 'SUPER_ADMIN',
+  ADMIN = 'ADMIN',
+  OPS = 'OPS', // operations / CS team
+  FINANCE = 'FINANCE',
+  TRUST_SAFETY = 'TRUST_SAFETY', // content moderation + fraud
+  SELLER = 'SELLER',
+  BUYER = 'BUYER',
+  GUEST = 'GUEST',
 }
 
 /** Hierarchy: higher index ≥ lower index permissions */
 export const ROLE_HIERARCHY: Record<Role, Role[]> = {
-  [Role.SUPER_ADMIN]:  Object.values(Role),
-  [Role.ADMIN]:        [Role.ADMIN, Role.OPS, Role.FINANCE, Role.TRUST_SAFETY, Role.SELLER, Role.BUYER, Role.GUEST],
-  [Role.OPS]:          [Role.OPS, Role.SELLER, Role.BUYER, Role.GUEST],
-  [Role.FINANCE]:      [Role.FINANCE],
+  [Role.SUPER_ADMIN]: Object.values(Role),
+  [Role.ADMIN]: [
+    Role.ADMIN,
+    Role.OPS,
+    Role.FINANCE,
+    Role.TRUST_SAFETY,
+    Role.SELLER,
+    Role.BUYER,
+    Role.GUEST,
+  ],
+  [Role.OPS]: [Role.OPS, Role.SELLER, Role.BUYER, Role.GUEST],
+  [Role.FINANCE]: [Role.FINANCE],
   [Role.TRUST_SAFETY]: [Role.TRUST_SAFETY],
-  [Role.SELLER]:       [Role.SELLER],
-  [Role.BUYER]:        [Role.BUYER],
-  [Role.GUEST]:        [Role.GUEST],
+  [Role.SELLER]: [Role.SELLER],
+  [Role.BUYER]: [Role.BUYER],
+  [Role.GUEST]: [Role.GUEST],
 };
 
 /** JWT payload shape — extended with RBAC fields */
 export interface JwtPayload {
-  sub: string;         // userId
+  sub: string; // userId
   email: string;
   role: Role;
-  sellerId?: string;   // present when role === SELLER
+  sellerId?: string; // present when role === SELLER
   permissions?: string[]; // optional fine-grained overrides (stored in DB)
   iat?: number;
   exp?: number;

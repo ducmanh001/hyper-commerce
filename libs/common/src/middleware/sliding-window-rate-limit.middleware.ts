@@ -34,9 +34,10 @@
 // for a user lands on the same shard → atomic Lua works correctly.
 // ============================================================
 
-import { Injectable, Logger, NestMiddleware } from '@nestjs/common';
-import { Request, Response, NextFunction } from 'express';
-import { RedisClientService } from '@hypercommerce/redis';
+import type { NestMiddleware } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
+import type { Request, Response, NextFunction } from 'express';
+import type { RedisClientService } from '@hypercommerce/redis';
 import { APP_CONSTANTS } from '@hypercommerce/common/constants/app.constants';
 import { RateLimitExceededException } from '@hypercommerce/common/exceptions/domain.exceptions';
 
@@ -181,9 +182,7 @@ export class SlidingWindowRateLimitMiddleware implements NestMiddleware {
       .replace(/\/\d+/g, '/:id');
   }
 
-  private getConfigForTier(
-    tier: keyof typeof APP_CONSTANTS.RATE_LIMITS,
-  ): RateLimitConfig {
+  private getConfigForTier(tier: keyof typeof APP_CONSTANTS.RATE_LIMITS): RateLimitConfig {
     const limits = APP_CONSTANTS.RATE_LIMITS[tier];
     return {
       limit: limits.rpm,

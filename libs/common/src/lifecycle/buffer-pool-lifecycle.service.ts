@@ -31,42 +31,39 @@
  *     SMALL_BUFFER_POOL.release(buf);
  *   }
  */
-import { Injectable, Logger, OnApplicationBootstrap, OnApplicationShutdown, Inject } from '@nestjs/common';
+import type { OnApplicationBootstrap, OnApplicationShutdown } from '@nestjs/common';
+import { Injectable, Logger, Inject } from '@nestjs/common';
 import { BufferPool } from '../utils/buffer-pool.util';
-import hardwareConfig, { HardwareConfigProps } from '../config/hardware.config';
+import type { HardwareConfigProps } from '../config/hardware.config';
+import hardwareConfig from '../config/hardware.config';
 
 @Injectable()
 export class BufferPoolLifecycleService implements OnApplicationBootstrap, OnApplicationShutdown {
   private readonly logger = new Logger(BufferPoolLifecycleService.name);
 
-  smallPool!:  BufferPool;
+  smallPool!: BufferPool;
   mediumPool!: BufferPool;
-  largePool!:  BufferPool;
+  largePool!: BufferPool;
 
-  constructor(
-    @Inject(hardwareConfig.KEY) private readonly config: HardwareConfigProps,
-  ) {}
+  constructor(@Inject(hardwareConfig.KEY) private readonly config: HardwareConfigProps) {}
 
   onApplicationBootstrap(): void {
     const { smallSize, smallCount, mediumSize, mediumCount, largeSize, largeCount } =
       this.config.bufferPool;
 
-    this.smallPool  = new BufferPool({ blockSize: smallSize,  maxBlocks: smallCount });
+    this.smallPool = new BufferPool({ blockSize: smallSize, maxBlocks: smallCount });
     this.mediumPool = new BufferPool({ blockSize: mediumSize, maxBlocks: mediumCount });
-    this.largePool  = new BufferPool({ blockSize: largeSize,  maxBlocks: largeCount });
+    this.largePool = new BufferPool({ blockSize: largeSize, maxBlocks: largeCount });
 
-    const totalMb = (
-      smallSize  * smallCount  +
-      mediumSize * mediumCount +
-      largeSize  * largeCount
-    ) / 1024 / 1024;
+    const totalMb =
+      (smallSize * smallCount + mediumSize * mediumCount + largeSize * largeCount) / 1024 / 1024;
 
     this.logger.log(
       `Buffer pools initialized — ` +
-      `small: ${smallCount}×${smallSize / 1024}KB, ` +
-      `medium: ${mediumCount}×${mediumSize / 1024}KB, ` +
-      `large: ${largeCount}×${largeSize / 1024 / 1024}MB ` +
-      `(total reserved: ${totalMb.toFixed(1)}MB)`,
+        `small: ${smallCount}×${smallSize / 1024}KB, ` +
+        `medium: ${mediumCount}×${mediumSize / 1024}KB, ` +
+        `large: ${largeCount}×${largeSize / 1024 / 1024}MB ` +
+        `(total reserved: ${totalMb.toFixed(1)}MB)`,
     );
   }
 
@@ -78,9 +75,9 @@ export class BufferPoolLifecycleService implements OnApplicationBootstrap, OnApp
   /** Stats for health-check endpoint */
   getStats() {
     return {
-      small:  this.smallPool?.stats,
+      small: this.smallPool?.stats,
       medium: this.mediumPool?.stats,
-      large:  this.largePool?.stats,
+      large: this.largePool?.stats,
     };
   }
 }

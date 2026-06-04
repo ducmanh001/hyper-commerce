@@ -11,22 +11,18 @@
 // Lua script ensures atomicity: check AND consume in one operation.
 // ============================================================
 
-import {
-  Injectable,
-  CanActivate,
-  ExecutionContext,
-  HttpException,
-  HttpStatus,
-} from '@nestjs/common';
-import { Reflector } from '@nestjs/core';
-import { Request, Response } from 'express';
-import { RedisClientService } from '@hypercommerce/redis';
+import type { CanActivate, ExecutionContext } from '@nestjs/common';
+import { Injectable, HttpException, HttpStatus } from '@nestjs/common';
+import type { Reflector } from '@nestjs/core';
+import type { Request, Response } from 'express';
+import type { RedisClientService } from '@hypercommerce/redis';
+import type { Redis } from 'ioredis';
 
 export const RATE_LIMIT_KEY = 'RATE_LIMIT';
 
 export interface RateLimitConfig {
-  limit: number;    // Max tokens
-  window: number;   // Window in seconds
+  limit: number; // Max tokens
+  window: number; // Window in seconds
   keyBy?: 'ip' | 'user' | 'custom';
 }
 
@@ -66,10 +62,10 @@ export class RateLimitGuard implements CanActivate {
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    const config = this.reflector.getAllAndOverride<RateLimitConfig>(
-      RATE_LIMIT_KEY,
-      [context.getHandler(), context.getClass()],
-    );
+    const config = this.reflector.getAllAndOverride<RateLimitConfig>(RATE_LIMIT_KEY, [
+      context.getHandler(),
+      context.getClass(),
+    ]);
 
     // Default: 100 requests per minute
     const { limit = 100, window = 60, keyBy = 'ip' } = config ?? {};
@@ -80,15 +76,15 @@ export class RateLimitGuard implements CanActivate {
     const identifier = this.getIdentifier(req, keyBy);
     const bucketKey = `ratelimit:${identifier}`;
 
-    const result = await (this.redis.getClient() as import('ioredis').Redis).eval(
+    const result = (await (this.redis.getClient() as Redis).eval(
       TOKEN_BUCKET_LUA,
       1,
       bucketKey,
       limit,
       limit / window, // refill rate = limit/window tokens per second
       Date.now(),
-      1,              // cost = 1 token per request
-    ) as [number, number];
+      1, // cost = 1 token per request
+    )) as [number, number];
 
     const [allowed, remaining] = result;
 
@@ -113,10 +109,7 @@ export class RateLimitGuard implements CanActivate {
     return true;
   }
 
-  private getIdentifier(
-    req: Request & { userId?: string },
-    keyBy: string,
-  ): string {
+  private getIdentifier(req: Request & { userId?: string }, keyBy: string): string {
     switch (keyBy) {
       case 'user':
         return req.userId ?? this.getIp(req);

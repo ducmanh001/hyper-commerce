@@ -79,13 +79,13 @@ export class BufferPool {
       buffer.fill(0);
       return {
         buffer,
-        release: () => { /* no-op: overflow buffers are GC'd */ },
+        release: () => {
+          /* no-op: overflow buffers are GC'd */
+        },
       };
     }
 
-    throw new Error(
-      `BufferPool exhausted: ${this.maxBlocks} blocks all in use`,
-    );
+    throw new Error(`BufferPool exhausted: ${this.maxBlocks} blocks all in use`);
   }
 
   get stats() {
@@ -94,9 +94,7 @@ export class BufferPool {
       freeBlocks: this.free.length,
       acquiredBlocks: this.acquiredCount,
       overflowAllocations: this.overflowCount,
-      utilizationPct: Math.round(
-        (this.acquiredCount / this.allocatedCount) * 100,
-      ),
+      utilizationPct: Math.round((this.acquiredCount / this.allocatedCount) * 100),
     };
   }
 }
@@ -106,16 +104,16 @@ export class BufferPool {
  * Import and use directly — no instantiation needed.
  */
 export const SMALL_BUFFER_POOL = new BufferPool({
-  blockSize: 4_096,  // 4KB: small JSON payloads
+  blockSize: 4_096, // 4KB: small JSON payloads
   maxBlocks: 500,
 });
 
 export const MEDIUM_BUFFER_POOL = new BufferPool({
-  blockSize: 65_536,  // 64KB: typical API responses
+  blockSize: 65_536, // 64KB: typical API responses
   maxBlocks: 200,
 });
 
 export const LARGE_BUFFER_POOL = new BufferPool({
-  blockSize: 1_048_576,  // 1MB: file uploads, images
+  blockSize: 1_048_576, // 1MB: file uploads, images
   maxBlocks: 20,
 });

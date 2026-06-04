@@ -15,14 +15,10 @@
  */
 
 import { Injectable } from '@nestjs/common';
-import {
-  AbilityBuilder,
-  createMongoAbility,
-  MongoAbility,
-  ExtractSubjectType,
-  InferSubjects,
-} from '@casl/ability';
-import { AppActions, AppSubjects, JwtPayload, Role } from './permissions';
+import type { MongoAbility, ExtractSubjectType, InferSubjects } from '@casl/ability';
+import { AbilityBuilder, createMongoAbility } from '@casl/ability';
+import type { AppActions, AppSubjects, JwtPayload } from './permissions';
+import { Role } from './permissions';
 
 export type AppAbility = MongoAbility<[AppActions, AppSubjects]>;
 
@@ -56,9 +52,9 @@ export class AbilityFactory {
         can('manage', 'AuditLog');
         can('manage', 'FeatureFlag');
         can('manage', 'Report');
-        can('read',   'SystemConfig');
+        can('read', 'SystemConfig');
         cannot('configure', 'SystemConfig'); // only SUPER_ADMIN
-        cannot('impersonate', 'User');       // sensitive — SUPER_ADMIN only
+        cannot('impersonate', 'User'); // sensitive — SUPER_ADMIN only
         break;
 
       // ── OPS (Customer Service) ───────────────────────────────────────────
@@ -74,16 +70,16 @@ export class AbilityFactory {
         can(['read'], 'Notification');
         can(['read'], 'AuditLog');
         cannot('delete', 'User');
-        cannot('ban',    'User');
+        cannot('ban', 'User');
         break;
 
       // ── FINANCE ──────────────────────────────────────────────────────────
       case Role.FINANCE:
         can(['read', 'export'], 'Report');
         can(['read', 'payout'], 'Payout');
-        can(['read'],           'Commission');
-        can(['read'],           'Payment');
-        can(['read'],           'Subscription');
+        can(['read'], 'Commission');
+        can(['read'], 'Payment');
+        can(['read'], 'Subscription');
         cannot('update', 'User');
         cannot('update', 'Order');
         break;
@@ -104,33 +100,33 @@ export class AbilityFactory {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         can(['create', 'read', 'update', 'delete'], 'Product', { sellerId: user.sellerId } as any);
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        can(['create', 'read', 'update'], 'Campaign',          { sellerId: user.sellerId } as any);
+        can(['create', 'read', 'update'], 'Campaign', { sellerId: user.sellerId } as any);
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        can(['read'],                     'Order',              { sellerId: user.sellerId } as any);
+        can(['read'], 'Order', { sellerId: user.sellerId } as any);
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        can(['read', 'update'],           'Dispute',            { sellerId: user.sellerId } as any);
+        can(['read', 'update'], 'Dispute', { sellerId: user.sellerId } as any);
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        can(['read'],                     'Commission',          { sellerId: user.sellerId } as any);
+        can(['read'], 'Commission', { sellerId: user.sellerId } as any);
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        can(['read', 'update'],           'Subscription',       { sellerId: user.sellerId } as any);
+        can(['read', 'update'], 'Subscription', { sellerId: user.sellerId } as any);
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        can(['read'],                     'Payout',             { sellerId: user.sellerId } as any);
+        can(['read'], 'Payout', { sellerId: user.sellerId } as any);
         break;
 
       // ── BUYER (default authenticated user) ──────────────────────────────
       case Role.BUYER:
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        can(['create', 'read'], 'Order',       { userId: user.sub } as any);
+        can(['create', 'read'], 'Order', { userId: user.sub } as any);
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        can(['read'],           'OrderItem',   { userId: user.sub } as any);
+        can(['read'], 'OrderItem', { userId: user.sub } as any);
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        can(['create', 'read'], 'Dispute',     { userId: user.sub } as any);
-        can(['read'],           'Product');
-        can(['read'],           'Seller');
+        can(['create', 'read'], 'Dispute', { userId: user.sub } as any);
+        can(['read'], 'Product');
+        can(['read'], 'Seller');
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        can(['read', 'update'], 'User',        { id: user.sub } as any);
+        can(['read', 'update'], 'User', { id: user.sub } as any);
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        can(['read', 'update'], 'Notification',{ userId: user.sub } as any);
+        can(['read', 'update'], 'Notification', { userId: user.sub } as any);
         break;
 
       // ── GUEST ────────────────────────────────────────────────────────────
@@ -149,7 +145,6 @@ export class AbilityFactory {
     }
 
     return build({
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       detectSubjectType: (item: Record<PropertyKey, unknown>) =>
         item.constructor as unknown as ExtractSubjectType<InferSubjects<AppSubjects>>,
     });

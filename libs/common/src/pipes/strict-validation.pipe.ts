@@ -1,9 +1,5 @@
-import {
-  PipeTransform,
-  Injectable,
-  ArgumentMetadata,
-  BadRequestException,
-} from '@nestjs/common';
+import type { PipeTransform, ArgumentMetadata } from '@nestjs/common';
+import { Injectable, BadRequestException } from '@nestjs/common';
 import { validate } from 'class-validator';
 import { plainToInstance } from 'class-transformer';
 
@@ -32,9 +28,7 @@ export class StrictValidationPipe implements PipeTransform<unknown> {
     });
 
     if (errors.length > 0) {
-      const messages = errors.flatMap((err) =>
-        Object.values(err.constraints ?? {}),
-      );
+      const messages = errors.flatMap((err) => Object.values(err.constraints ?? {}));
       throw new BadRequestException({
         statusCode: 400,
         message: 'Validation failed',
@@ -47,7 +41,11 @@ export class StrictValidationPipe implements PipeTransform<unknown> {
 
   private toValidate(metatype: new (...args: unknown[]) => unknown): boolean {
     const primitives: Array<new (...args: unknown[]) => unknown> = [
-      String, Boolean, Number, Array, Object,
+      String,
+      Boolean,
+      Number,
+      Array,
+      Object,
     ];
     return !primitives.includes(metatype);
   }

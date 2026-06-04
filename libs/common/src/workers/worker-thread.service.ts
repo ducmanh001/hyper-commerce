@@ -25,7 +25,8 @@
  *   - 'COMPRESS_BATCH': gzip a batch of records before S3 upload (CPU: zlib)
  */
 
-import { Injectable, Logger, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
+import type { OnModuleDestroy, OnModuleInit } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { Worker, isMainThread, parentPort, workerData } from 'worker_threads';
 import * as os from 'os';
 import * as path from 'path';
@@ -38,19 +39,19 @@ export type WorkerTaskType =
   | 'COMPRESS_BATCH';
 
 export interface WorkerTask<T = unknown> {
-  type:    WorkerTaskType;
+  type: WorkerTaskType;
   payload: T;
 }
 
 interface PendingTask {
-  task:    WorkerTask;
+  task: WorkerTask;
   resolve: (value: unknown) => void;
-  reject:  (reason: unknown) => void;
+  reject: (reason: unknown) => void;
 }
 
 interface PoolWorker {
   worker: Worker;
-  busy:   boolean;
+  busy: boolean;
 }
 
 @Injectable()
@@ -61,8 +62,8 @@ export class WorkerThreadService implements OnModuleInit, OnModuleDestroy {
   private queue: PendingTask[] = [];
 
   constructor() {
-    this.poolSize = parseInt(process.env['WORKER_POOL_SIZE'] ?? '0', 10)
-      || Math.max(1, os.cpus().length - 1);
+    this.poolSize =
+      parseInt(process.env['WORKER_POOL_SIZE'] ?? '0', 10) || Math.max(1, os.cpus().length - 1);
   }
 
   onModuleInit(): void {
@@ -91,7 +92,9 @@ export class WorkerThreadService implements OnModuleInit, OnModuleDestroy {
         this.dispatch(idle, { task, resolve: resolve as (v: unknown) => void, reject });
       } else {
         this.queue.push({ task, resolve: resolve as (v: unknown) => void, reject });
-        this.logger.warn(`Worker pool saturated — task ${task.type} queued (queue=${this.queue.length})`);
+        this.logger.warn(
+          `Worker pool saturated — task ${task.type} queued (queue=${this.queue.length})`,
+        );
       }
     });
   }

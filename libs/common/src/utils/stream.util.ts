@@ -8,7 +8,8 @@
 //   - Stream ClickHouse query results to HTTP response
 //   - Pipeline: read DB → transform → gzip → S3 upload
 
-import { Transform, Readable, Writable, pipeline, TransformOptions } from 'stream';
+import type { Writable, TransformOptions } from 'stream';
+import { Transform, Readable, pipeline } from 'stream';
 import { promisify } from 'util';
 import zlib from 'zlib';
 
@@ -29,11 +30,7 @@ export class BatchTransform<T, R> extends Transform {
     super({ objectMode: true, ...opts });
   }
 
-  _transform(
-    chunk: T,
-    _encoding: string,
-    callback: (error?: Error | null) => void,
-  ): void {
+  _transform(chunk: T, _encoding: string, callback: (error?: Error | null) => void): void {
     this.batch.push(chunk);
 
     if (this.batch.length >= this.batchSize) {
@@ -79,11 +76,7 @@ export class NdJsonTransform extends Transform {
     super({ objectMode: true });
   }
 
-  _transform(
-    obj: unknown,
-    _encoding: string,
-    callback: () => void,
-  ): void {
+  _transform(obj: unknown, _encoding: string, callback: () => void): void {
     this.push(JSON.stringify(obj) + '\n');
     callback();
   }
@@ -97,11 +90,7 @@ export class CsvTransform extends Transform {
     super({ objectMode: true });
   }
 
-  _transform(
-    row: Record<string, unknown>,
-    _encoding: string,
-    callback: () => void,
-  ): void {
+  _transform(row: Record<string, unknown>, _encoding: string, callback: () => void): void {
     if (this.isFirst) {
       this.push(this.headers.join(',') + '\n');
       this.isFirst = false;
@@ -139,9 +128,7 @@ export function createGzipPipeline(): Transform {
  * Create a readable stream from an async generator.
  * Useful for streaming DB cursor results without loading all into memory.
  */
-export function readableFromAsyncGenerator<T>(
-  gen: AsyncGenerator<T>,
-): Readable {
+export function readableFromAsyncGenerator<T>(gen: AsyncGenerator<T>): Readable {
   return new Readable({
     objectMode: true,
     async read() {

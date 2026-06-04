@@ -10,25 +10,29 @@
  *   CREATE TABLE audit_logs PARTITION BY RANGE (created_at);
  */
 
-import {
-  Entity,
-  PrimaryGeneratedColumn,
-  Column,
-  Index,
-  CreateDateColumn,
-} from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, Index, CreateDateColumn } from 'typeorm';
 
 export type AuditAction =
-  | 'CREATE' | 'READ' | 'UPDATE' | 'DELETE'
-  | 'LOGIN'  | 'LOGOUT'
-  | 'APPROVE' | 'REJECT' | 'BAN' | 'UNBAN'
-  | 'REFUND'  | 'PAYOUT' | 'EXPORT'
-  | 'IMPERSONATE' | 'CONFIGURE';
+  | 'CREATE'
+  | 'READ'
+  | 'UPDATE'
+  | 'DELETE'
+  | 'LOGIN'
+  | 'LOGOUT'
+  | 'APPROVE'
+  | 'REJECT'
+  | 'BAN'
+  | 'UNBAN'
+  | 'REFUND'
+  | 'PAYOUT'
+  | 'EXPORT'
+  | 'IMPERSONATE'
+  | 'CONFIGURE';
 
 @Entity('audit_logs')
-@Index(['actorId',  'createdAt'])
+@Index(['actorId', 'createdAt'])
 @Index(['resource', 'resourceId'])
-@Index(['action',   'createdAt'])
+@Index(['action', 'createdAt'])
 export class AuditLog {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
