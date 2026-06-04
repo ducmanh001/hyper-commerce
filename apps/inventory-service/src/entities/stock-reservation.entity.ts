@@ -1,6 +1,10 @@
 import {
-  Entity, PrimaryGeneratedColumn, Column,
-  CreateDateColumn, UpdateDateColumn, Index,
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  UpdateDateColumn,
+  Index,
 } from 'typeorm';
 
 /**
@@ -17,7 +21,7 @@ import {
 @Entity('stock_reservations')
 @Index(['orderId'])
 @Index(['productId', 'variantId'])
-@Index(['expiresAt'], { where: "status = 'PENDING'" })  // Partial index for expiry queries
+@Index(['expiresAt'], { where: "status = 'PENDING'" }) // Partial index for expiry queries
 export class StockReservation {
   @PrimaryGeneratedColumn('uuid')
   id!: string;

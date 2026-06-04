@@ -1,11 +1,22 @@
 import {
-  Controller, Get, Post, Patch, Param, Body, Query,
-  ParseUUIDPipe, HttpCode, HttpStatus, UseGuards, Logger,
+  Controller,
+  Get,
+  Post,
+  Patch,
+  Param,
+  Body,
+  Query,
+  ParseUUIDPipe,
+  HttpCode,
+  HttpStatus,
+  UseGuards,
+  Logger,
 } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
-import { JwtAuthGuard, RolesGuard, CurrentUser, JwtPayload, Roles } from '@hypercommerce/common';
-import { InventoryService } from './inventory.service';
-import { StockRepository } from './repositories/stock.repository';
+import type { JwtPayload } from '@hypercommerce/common';
+import { JwtAuthGuard, RolesGuard, CurrentUser, Roles } from '@hypercommerce/common';
+import type { InventoryService } from './inventory.service';
+import type { StockRepository } from './repositories/stock.repository';
 
 @ApiTags('inventory')
 @ApiBearerAuth()
@@ -28,10 +39,7 @@ export class InventoryController {
 
   @Get('product/:productId')
   @ApiOperation({ summary: 'Get stock for a specific product' })
-  async getStock(
-    @Param('productId') productId: string,
-    @Query('variantId') variantId?: string,
-  ) {
+  async getStock(@Param('productId') productId: string, @Query('variantId') variantId?: string) {
     return this.stockRepo.findByProductId(productId, variantId);
   }
 
@@ -46,7 +54,8 @@ export class InventoryController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Reserve stock for an order (internal — called by order-service)' })
   async reserveStock(
-    @Body() body: {
+    @Body()
+    body: {
       orderId: string;
       items: Array<{ productId: string; variantId?: string; quantity: number }>;
       idempotencyKey: string;

@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, LessThan, In } from 'typeorm';
+import type { Repository } from 'typeorm';
+import { LessThan, In } from 'typeorm';
 import { ProductStock } from '../entities/product-stock.entity';
 
 @Injectable()
@@ -29,7 +30,10 @@ export class StockRepository {
       .getMany();
   }
 
-  async findAll(opts: { page: number; limit: number }): Promise<{ items: ProductStock[]; total: number }> {
+  async findAll(opts: {
+    page: number;
+    limit: number;
+  }): Promise<{ items: ProductStock[]; total: number }> {
     const [items, total] = await this.repo.findAndCount({
       where: { isActive: true },
       skip: (opts.page - 1) * opts.limit,
@@ -74,7 +78,11 @@ export class StockRepository {
     return (result.affected ?? 0) > 0;
   }
 
-  async incrementAvailable(productId: string, variantId: string | undefined, amount: number): Promise<void> {
+  async incrementAvailable(
+    productId: string,
+    variantId: string | undefined,
+    amount: number,
+  ): Promise<void> {
     await this.repo
       .createQueryBuilder()
       .update(ProductStock)

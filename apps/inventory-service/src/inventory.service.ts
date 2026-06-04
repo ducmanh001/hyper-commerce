@@ -9,20 +9,21 @@
 // Tier 3: PostgreSQL source of truth — reconciled every 5min
 // ============================================================
 
-import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
+import type { OnModuleInit } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { KafkaConsumerService, MessageMetadata } from '@hypercommerce/kafka';
-import { KafkaProducerService } from '@hypercommerce/kafka';
-import { RedisClientService } from '@hypercommerce/redis';
+import type { Repository } from 'typeorm';
+import type { KafkaConsumerService, MessageMetadata } from '@hypercommerce/kafka';
+import type { KafkaProducerService } from '@hypercommerce/kafka';
+import type { RedisClientService } from '@hypercommerce/redis';
 import { APP_CONSTANTS } from '@hypercommerce/common/constants/app.constants';
 import {
   InsufficientStockException,
   NotFoundException,
 } from '@hypercommerce/common/exceptions/domain.exceptions';
 import { ProductStock } from './entities/product-stock.entity';
-import { AtomicStockHelper } from './helpers/atomic-stock.helper';
-import { FlashSaleService } from './flash-sale/flash-sale.service';
+import type { AtomicStockHelper } from './helpers/atomic-stock.helper';
+import type { FlashSaleService } from './flash-sale/flash-sale.service';
 
 export interface ReserveStockRequest {
   orderId: string;
@@ -51,10 +52,7 @@ export class InventoryService implements OnModuleInit {
     // Listen for order events to reserve/release stock
     await this.consumer.registerConsumer({
       groupId: 'inventory-consumer',
-      topics: [
-        APP_CONSTANTS.KAFKA_TOPICS.ORDER_EVENTS,
-        APP_CONSTANTS.KAFKA_TOPICS.ORDER_CANCELLED,
-      ],
+      topics: [APP_CONSTANTS.KAFKA_TOPICS.ORDER_EVENTS, APP_CONSTANTS.KAFKA_TOPICS.ORDER_CANCELLED],
       handlers: [
         {
           topic: APP_CONSTANTS.KAFKA_TOPICS.ORDER_EVENTS,
@@ -123,9 +121,7 @@ export class InventoryService implements OnModuleInit {
           type: 'STOCK_RESERVED',
           orderId: request.orderId,
           reservationIds: reservedItems,
-          expiresAt: new Date(
-            Date.now() + APP_CONSTANTS.STOCK_RESERVE_TTL * 1000,
-          ).toISOString(),
+          expiresAt: new Date(Date.now() + APP_CONSTANTS.STOCK_RESERVE_TTL * 1000).toISOString(),
         },
       });
 
@@ -149,9 +145,7 @@ export class InventoryService implements OnModuleInit {
    */
   async commitReservation(orderId: string): Promise<void> {
     await this.atomicStock.commitAllReservations(orderId);
-    this.logger.log(
-      JSON.stringify({ event: 'reservation_committed', orderId }),
-    );
+    this.logger.log(JSON.stringify({ event: 'reservation_committed', orderId }));
   }
 
   /**
@@ -171,16 +165,17 @@ export class InventoryService implements OnModuleInit {
       },
     });
 
-    this.logger.log(
-      JSON.stringify({ event: 'reservation_released', orderId }),
-    );
+    this.logger.log(JSON.stringify({ event: 'reservation_released', orderId }));
   }
 
   /**
    * Get real-time stock level.
    * Returns Redis value (fastest) with DB fallback.
    */
-  async getStock(productId: string, variantId?: string): Promise<{
+  async getStock(
+    productId: string,
+    variantId?: string,
+  ): Promise<{
     available: number;
     reserved: number;
     total: number;
@@ -221,10 +216,7 @@ export class InventoryService implements OnModuleInit {
 
   // ── Kafka Event Handlers ──────────────────────────────────
 
-  private async onOrderEvent(
-    event: Record<string, unknown>,
-    meta: MessageMetadata,
-  ): Promise<void> {
+  private async onOrderEvent(event: Record<string, unknown>, meta: MessageMetadata): Promise<void> {
     if (event.type !== 'ORDER_CREATED') return;
 
     const request: ReserveStockRequest = {
@@ -245,26 +237,17 @@ export class InventoryService implements OnModuleInit {
 
   // ── Internal ──────────────────────────────────────────────
 
-  private async rollbackReservations(
-    orderId: string,
-    productIds: string[],
-  ): Promise<void> {
+  private async rollbackReservations(orderId: string, productIds: string[]): Promise<void> {
     await Promise.all(
       productIds.map((productId) =>
         this.atomicStock
           .releaseReservation(productId, undefined, orderId)
-          .catch((err) =>
-            this.logger.error(
-              `Rollback failed for ${productId}: ${String(err)}`,
-            ),
-          ),
+          .catch((err) => this.logger.error(`Rollback failed for ${productId}: ${String(err)}`)),
       ),
     );
   }
 
-  private async persistReservations(
-    request: ReserveStockRequest,
-  ): Promise<void> {
+  private async persistReservations(request: ReserveStockRequest): Promise<void> {
     // Upsert reservation records — idempotent
     await Promise.all(
       request.items.map((item) =>
@@ -277,9 +260,7 @@ export class InventoryService implements OnModuleInit {
             productId: item.productId,
             variantId: item.variantId,
             quantity: item.quantity,
-            expiresAt: new Date(
-              Date.now() + APP_CONSTANTS.STOCK_RESERVE_TTL * 1000,
-            ),
+            expiresAt: new Date(Date.now() + APP_CONSTANTS.STOCK_RESERVE_TTL * 1000),
           })
           .orIgnore() // Idempotent
           .execute(),

@@ -18,20 +18,20 @@
 
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import type { Repository } from 'typeorm';
 import { v4 as uuidv4 } from 'uuid';
-import { RedisClientService } from '@hypercommerce/redis';
-import { KafkaProducerService } from '@hypercommerce/kafka';
+import type { RedisClientService } from '@hypercommerce/redis';
+import type { KafkaProducerService } from '@hypercommerce/kafka';
 import { APP_CONSTANTS } from '@hypercommerce/common/constants/app.constants';
 import { FlashSale } from './entities/flash-sale.entity';
-import { AtomicStockHelper } from '../helpers/atomic-stock.helper';
+import type { AtomicStockHelper } from '../helpers/atomic-stock.helper';
 
 export interface FlashSaleRequest {
   saleId: string;
   userId: string;
   productId: string;
   quantity: number;
-  requestId: string;  // For idempotency
+  requestId: string; // For idempotency
   requestedAt: number; // Unix timestamp ms — for FIFO ordering
 }
 
@@ -74,9 +74,7 @@ export class FlashSaleService {
     const dedupKey = `${this.QUEUE_PREFIX}dedup:${req.saleId}:${req.userId}`;
 
     // Deduplication — one request per user per sale
-    const alreadyQueued = await this.redis
-      .getClient()
-      .set(dedupKey, '1', 'EX', 3600, 'NX');
+    const alreadyQueued = await this.redis.getClient().set(dedupKey, '1', 'EX', 3600, 'NX');
 
     if (alreadyQueued !== 'OK') {
       return { queued: false, position: -1 };
@@ -160,10 +158,7 @@ export class FlashSaleService {
         result.position = requests.indexOf(req) + 1;
 
         // Track winner for dedup
-        await this.redis.sadd(
-          `${this.WINNERS_PREFIX}${saleId}`,
-          req.userId,
-        );
+        await this.redis.sadd(`${this.WINNERS_PREFIX}${saleId}`, req.userId);
 
         await this.kafka.publish({
           topic: APP_CONSTANTS.KAFKA_TOPICS.ORDER_EVENTS,

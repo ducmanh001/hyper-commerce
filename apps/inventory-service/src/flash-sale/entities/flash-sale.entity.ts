@@ -1,6 +1,10 @@
 import {
-  Entity, PrimaryGeneratedColumn, Column,
-  CreateDateColumn, UpdateDateColumn, Index,
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  UpdateDateColumn,
+  Index,
 } from 'typeorm';
 
 export type FlashSaleStatus = 'SCHEDULED' | 'ACTIVE' | 'ENDED' | 'CANCELLED';
@@ -29,13 +33,17 @@ export class FlashSale {
   salePrice!: number;
 
   /** Alias for backwards-compat with service code */
-  get flashPrice(): number { return this.salePrice; }
+  get flashPrice(): number {
+    return this.salePrice;
+  }
 
   @Column({ name: 'allocated_stock', type: 'int' })
   allocatedStock!: number;
 
   /** Alias for backwards-compat with service code */
-  get quantity(): number { return this.allocatedStock; }
+  get quantity(): number {
+    return this.allocatedStock;
+  }
 
   @Column({ name: 'sold_count', type: 'int', default: 0 })
   soldCount!: number;
@@ -43,7 +51,11 @@ export class FlashSale {
   @Column({ name: 'per_user_limit', type: 'int', default: 1 })
   perUserLimit!: number;
 
-  @Column({ type: 'enum', enum: ['SCHEDULED', 'ACTIVE', 'ENDED', 'CANCELLED'], default: 'SCHEDULED' })
+  @Column({
+    type: 'enum',
+    enum: ['SCHEDULED', 'ACTIVE', 'ENDED', 'CANCELLED'],
+    default: 'SCHEDULED',
+  })
   status!: FlashSaleStatus;
 
   @Column({ name: 'start_time', type: 'timestamptz' })

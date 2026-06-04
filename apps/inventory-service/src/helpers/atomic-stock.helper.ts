@@ -5,7 +5,8 @@
 // ============================================================
 
 import { Injectable, Logger } from '@nestjs/common';
-import { RedisClientService } from '@hypercommerce/redis';
+import type { RedisClientService } from '@hypercommerce/redis';
+import type { Redis } from 'ioredis';
 import { APP_CONSTANTS } from '@hypercommerce/common/constants/app.constants';
 
 export interface StockReserveResult {
@@ -108,7 +109,10 @@ export class AtomicStockHelper {
         // Extract stock key from reservation key
         // Format: inv:reserved:{productId}:{orderId}
         const stockKey = reservationKey
-          .replace(APP_CONSTANTS.REDIS_KEYS.PRODUCT_RESERVED, APP_CONSTANTS.REDIS_KEYS.PRODUCT_STOCK)
+          .replace(
+            APP_CONSTANTS.REDIS_KEYS.PRODUCT_RESERVED,
+            APP_CONSTANTS.REDIS_KEYS.PRODUCT_STOCK,
+          )
           .replace(`:${orderId}`, '');
 
         await this.redis.releaseReservation(stockKey, reservationKey);
@@ -180,11 +184,7 @@ export class AtomicStockHelper {
     return variantId ? `${base}:${variantId}` : base;
   }
 
-  buildReservationKey(
-    productId: string,
-    variantId: string | undefined,
-    orderId: string,
-  ): string {
+  buildReservationKey(productId: string, variantId: string | undefined, orderId: string): string {
     const base = `${APP_CONSTANTS.REDIS_KEYS.PRODUCT_RESERVED}${productId}`;
     const withVariant = variantId ? `${base}:${variantId}` : base;
     return `${withVariant}:${orderId}`;
@@ -198,18 +198,12 @@ export class AtomicStockHelper {
    * Used only on write paths (cancellation) — not hot read paths.
    */
   private async scanKeys(pattern: string): Promise<string[]> {
-    const client = this.redis.getClient() as import('ioredis').Redis;
+    const client = this.redis.getClient() as Redis;
     const keys: string[] = [];
     let cursor = '0';
 
     do {
-      const [newCursor, batch] = await client.scan(
-        cursor,
-        'MATCH',
-        pattern,
-        'COUNT',
-        100,
-      );
+      const [newCursor, batch] = await client.scan(cursor, 'MATCH', pattern, 'COUNT', 100);
       cursor = newCursor;
       keys.push(...batch);
     } while (cursor !== '0');

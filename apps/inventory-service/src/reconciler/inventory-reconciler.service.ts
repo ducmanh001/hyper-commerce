@@ -11,11 +11,12 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { RedisClientService } from '@hypercommerce/redis';
+import type { Repository } from 'typeorm';
+import type { RedisClientService } from '@hypercommerce/redis';
+import type { Redis } from 'ioredis';
 import { APP_CONSTANTS } from '@hypercommerce/common/constants/app.constants';
 import { ProductStock } from '../entities/product-stock.entity';
-import { AtomicStockHelper } from '../helpers/atomic-stock.helper';
+import type { AtomicStockHelper } from '../helpers/atomic-stock.helper';
 
 interface DiscrepancyReport {
   productId: string;
@@ -146,22 +147,16 @@ export class InventoryReconcilerService {
     const report = this.detectDiscrepancy(dbStock, redisValue);
     if (report) {
       await this.correctRedis(report);
-      this.logger.log(
-        JSON.stringify({ event: 'manual_reconcile', productId, report }),
-      );
+      this.logger.log(JSON.stringify({ event: 'manual_reconcile', productId, report }));
     }
   }
 
   // ── Internal ──────────────────────────────────────────────
 
-  private async fetchRedisStockBatch(
-    stocks: ProductStock[],
-  ): Promise<Map<string, number | null>> {
+  private async fetchRedisStockBatch(stocks: ProductStock[]): Promise<Map<string, number | null>> {
     const client = this.redis.getClient();
-    const pipeline = (client as import('ioredis').Redis).pipeline();
-    const keys = stocks.map((s) =>
-      this.atomicStock.buildStockKey(s.productId, s.variantId),
-    );
+    const pipeline = (client as Redis).pipeline();
+    const keys = stocks.map((s) => this.atomicStock.buildStockKey(s.productId, s.variantId));
 
     for (const key of keys) {
       pipeline.get(key);

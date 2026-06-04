@@ -64,9 +64,7 @@ export class InventoryGrpcController {
 
   @GrpcMethod('InventoryService', 'CheckStockBatch')
   async checkStockBatch(data: CheckStockBatchRequest) {
-    const results = await Promise.all(
-      data.items.map((item) => this.checkStock(item)),
-    );
+    const results = await Promise.all(data.items.map((item) => this.checkStock(item)));
 
     return {
       results: data.items.map((item, idx) => ({

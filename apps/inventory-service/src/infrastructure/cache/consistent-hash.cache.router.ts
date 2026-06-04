@@ -34,11 +34,12 @@
  */
 import { Injectable, Logger, Inject } from '@nestjs/common';
 import { ConsistentHashRing } from '@hypercommerce/algorithms';
-import { RedisClientService } from '@hypercommerce/redis';
-import algorithmConfig, { AlgorithmConfigProps } from '@hypercommerce/common/config/algorithm.config';
+import type { RedisClientService } from '@hypercommerce/redis';
+import type { AlgorithmConfigProps } from '@hypercommerce/common/config/algorithm.config';
+import algorithmConfig from '@hypercommerce/common/config/algorithm.config';
 
 export interface CacheNode {
-  id:   string;  // e.g., "redis-1", "redis-2"
+  id: string; // e.g., "redis-1", "redis-2"
   host: string;
   port: number;
 }
