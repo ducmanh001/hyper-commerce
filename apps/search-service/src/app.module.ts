@@ -3,9 +3,6 @@ import { ConfigModule } from '@nestjs/config';
 import { SearchModule } from './search.module';
 
 @Module({
-  imports: [
-    ConfigModule.forRoot({ isGlobal: true }),
-    SearchModule,
-  ],
+  imports: [ConfigModule.forRoot({ isGlobal: true }), SearchModule],
 })
 export class AppModule {}

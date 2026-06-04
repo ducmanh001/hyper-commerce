@@ -1,7 +1,8 @@
-import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
-import { KafkaConsumerService } from '@hypercommerce/kafka';
-import { ProductIndexer } from './product.indexer';
-import { UserIndexer, LiveStreamIndexer } from './user.indexer';
+import type { OnModuleInit } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
+import type { KafkaConsumerService } from '@hypercommerce/kafka';
+import type { ProductIndexer } from './product.indexer';
+import type { UserIndexer, LiveStreamIndexer } from './user.indexer';
 import { APP_CONSTANTS } from '@hypercommerce/common';
 
 /**
@@ -30,29 +31,67 @@ export class SearchIndexerService implements OnModuleInit {
   ) {}
 
   async onModuleInit(): Promise<void> {
-    await this.productIndexer.ensureIndex().catch((err: Error) => this.logger.warn(`ES index init failed: ${err.message}`));
+    await this.productIndexer
+      .ensureIndex()
+      .catch((err: Error) => this.logger.warn(`ES index init failed: ${err.message}`));
 
-    this.kafka.registerConsumer({
-      groupId: 'search-indexer',
-      topics: [
-        'product.created', 'product.updated', 'product.deleted',
-        'user.registered', 'user.updated',
-        'live.started', 'live.ended',
-      ],
-      handlers: [
-        { topic: 'product.created', handle: this.onProductCreated.bind(this) as (m: Record<string, unknown>) => Promise<void> },
-        { topic: 'product.updated', handle: this.onProductUpdated.bind(this) as (m: Record<string, unknown>) => Promise<void> },
-        { topic: 'product.deleted', handle: this.onProductDeleted.bind(this) as (m: Record<string, unknown>) => Promise<void> },
-        { topic: 'user.registered', handle: this.onUserRegistered.bind(this) as (m: Record<string, unknown>) => Promise<void> },
-        { topic: 'live.started',    handle: this.onLiveStarted.bind(this) as (m: Record<string, unknown>) => Promise<void> },
-        { topic: 'live.ended',      handle: this.onLiveEnded.bind(this) as (m: Record<string, unknown>) => Promise<void> },
-      ],
-    }).catch((err: Error) => this.logger.warn(`Kafka consumer registration failed: ${err.message}`));
+    this.kafka
+      .registerConsumer({
+        groupId: 'search-indexer',
+        topics: [
+          'product.created',
+          'product.updated',
+          'product.deleted',
+          'user.registered',
+          'user.updated',
+          'live.started',
+          'live.ended',
+        ],
+        handlers: [
+          {
+            topic: 'product.created',
+            handle: this.onProductCreated.bind(this) as (
+              m: Record<string, unknown>,
+            ) => Promise<void>,
+          },
+          {
+            topic: 'product.updated',
+            handle: this.onProductUpdated.bind(this) as (
+              m: Record<string, unknown>,
+            ) => Promise<void>,
+          },
+          {
+            topic: 'product.deleted',
+            handle: this.onProductDeleted.bind(this) as (
+              m: Record<string, unknown>,
+            ) => Promise<void>,
+          },
+          {
+            topic: 'user.registered',
+            handle: this.onUserRegistered.bind(this) as (
+              m: Record<string, unknown>,
+            ) => Promise<void>,
+          },
+          {
+            topic: 'live.started',
+            handle: this.onLiveStarted.bind(this) as (m: Record<string, unknown>) => Promise<void>,
+          },
+          {
+            topic: 'live.ended',
+            handle: this.onLiveEnded.bind(this) as (m: Record<string, unknown>) => Promise<void>,
+          },
+        ],
+      })
+      .catch((err: Error) =>
+        this.logger.warn(`Kafka consumer registration failed: ${err.message}`),
+      );
   }
 
   private async onProductCreated(event: Record<string, unknown>): Promise<void> {
     this.logger.log(`Indexing new product: ${event['productId']}`);
-    await this.productIndexer.index(event as unknown as Parameters<typeof this.productIndexer.index>[0]);
+    await this.productIndexer.index(
+      event as unknown as Parameters<typeof this.productIndexer.index>[0],
+    );
   }
 
   private async onProductUpdated(event: Record<string, unknown>): Promise<void> {

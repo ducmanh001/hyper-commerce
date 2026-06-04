@@ -43,7 +43,8 @@
  */
 import { Injectable, Logger, Inject } from '@nestjs/common';
 import { MinHash, LSHIndex } from '@hypercommerce/algorithms';
-import algorithmConfig, { AlgorithmConfigProps } from '@hypercommerce/common/config/algorithm.config';
+import type { AlgorithmConfigProps } from '@hypercommerce/common/config/algorithm.config';
+import algorithmConfig from '@hypercommerce/common/config/algorithm.config';
 
 export interface DuplicateCandidate {
   existingProductId: string;
@@ -60,9 +61,7 @@ export class NearDuplicateDetector {
   private readonly signatures = new Map<string, number[]>();
   private readonly SHINGLE_SIZE = 3; // character trigrams
 
-  constructor(
-    @Inject(algorithmConfig.KEY) private readonly config: AlgorithmConfigProps,
-  ) {
+  constructor(@Inject(algorithmConfig.KEY) private readonly config: AlgorithmConfigProps) {
     const { numPermutations, bands, rowsPerBand } = config.minHash;
 
     this.minHash = new MinHash({ numHashes: numPermutations });
@@ -75,11 +74,8 @@ export class NearDuplicateDetector {
    *
    * @returns Array of candidate duplicates, sorted by similarity descending
    */
-  findDuplicates(
-    productId: string,
-    productText: string,
-  ): DuplicateCandidate[] {
-    const shingles  = [...this.shingle(productText)];
+  findDuplicates(productId: string, productText: string): DuplicateCandidate[] {
+    const shingles = [...this.shingle(productText)];
     const signature = this.minHash.signature(shingles);
 
     const candidateIds = [...this.lshIndex.query(signature)];
@@ -115,7 +111,7 @@ export class NearDuplicateDetector {
    * Called when indexing a product — enables future duplicate detection.
    */
   indexProduct(productId: string, productText: string): void {
-    const shingles  = [...this.shingle(productText)];
+    const shingles = [...this.shingle(productText)];
     const signature = this.minHash.signature(shingles);
     this.lshIndex.insert(productId, signature);
     this.signatures.set(productId, signature);

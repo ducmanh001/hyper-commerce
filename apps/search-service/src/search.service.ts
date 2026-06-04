@@ -5,13 +5,17 @@
 // ============================================================
 
 import { Injectable, Logger } from '@nestjs/common';
-import { ElasticsearchService } from '@nestjs/elasticsearch';
-import { ConfigService } from '@nestjs/config';
-import { RedisClientService } from '@hypercommerce/redis';
+import type { ElasticsearchService } from '@nestjs/elasticsearch';
+import type { ConfigService } from '@nestjs/config';
+import type { RedisClientService } from '@hypercommerce/redis';
 import { APP_CONSTANTS } from '@hypercommerce/common/constants/app.constants';
-import { QueryUnderstandingService, ParsedQuery } from './query-understanding/query-understanding.service';
-import { VectorSearchService } from './vector/vector-search.service';
-import { ReciprocalRankFusionHelper, RankedResult } from './ranking/reciprocal-rank-fusion.helper';
+import type {
+  QueryUnderstandingService,
+  ParsedQuery,
+} from './query-understanding/query-understanding.service';
+import type { VectorSearchService } from './vector/vector-search.service';
+import type { RankedResult } from './ranking/reciprocal-rank-fusion.helper';
+import { ReciprocalRankFusionHelper } from './ranking/reciprocal-rank-fusion.helper';
 
 export interface SearchRequest {
   query: string;
@@ -42,7 +46,7 @@ export interface SearchResult {
   };
   facets?: SearchFacets;
   debug?: SearchDebugInfo;
-  searchId: string;   // For click-through rate tracking
+  searchId: string; // For click-through rate tracking
 }
 
 export interface ProductHit {
@@ -58,7 +62,7 @@ export interface ProductHit {
   reviewCount: number;
   soldCount: number;
   inStock: boolean;
-  highlightedName?: string;   // ES highlight
+  highlightedName?: string; // ES highlight
   score: number;
   rrfScore?: number;
   bm25Rank?: number;
@@ -118,10 +122,7 @@ export class SearchService {
     const from = page * limit;
 
     // 1. Query understanding
-    const parsedQuery = await this.queryUnderstanding.understand(
-      req.query,
-      req.userId,
-    );
+    const parsedQuery = await this.queryUnderstanding.understand(req.query, req.userId);
 
     // Merge intent-detected filters with explicit filters
     const mergedFilters = this.mergeFilters(req.filters, parsedQuery);
@@ -132,14 +133,20 @@ export class SearchService {
       this.bm25Search(parsedQuery, mergedFilters, from + limit * 3), // Fetch 3x for fusion
       // Generate query embedding is done inside VectorSearchService; we pass empty vector as placeholder
       // In production: embed parsedQuery.corrected via OpenAI → pass vector
-      this.vectorSearch.search([], {
-        index: this.INDEX,
-        topK: this.VECTOR_CANDIDATES,
-      }).catch(() => [] as Array<{ id: string; score: number }>),
+      this.vectorSearch
+        .search([], {
+          index: this.INDEX,
+          topK: this.VECTOR_CANDIDATES,
+        })
+        .catch(() => [] as Array<{ id: string; score: number }>),
     ]);
 
     // Map vectorHits to RankedResult[]
-    const vectorRanked: RankedResult[] = vectorHits.map((h, idx) => ({ id: h.id, score: h.score, rank: idx + 1 }));
+    const vectorRanked: RankedResult[] = vectorHits.map((h, idx) => ({
+      id: h.id,
+      score: h.score,
+      rank: idx + 1,
+    }));
 
     // 4. RRF fusion
     const [bm25Weight, vectorWeight] = this.rrfHelper.computeAdaptiveWeights(
@@ -189,9 +196,8 @@ export class SearchService {
       total: bm25Results.total + vectorRanked.length, // Approximate
       query: {
         original: req.query,
-        corrected: parsedQuery.corrected !== parsedQuery.normalized
-          ? parsedQuery.corrected
-          : undefined,
+        corrected:
+          parsedQuery.corrected !== parsedQuery.normalized ? parsedQuery.corrected : undefined,
         expansions: parsedQuery.expansions.length ? parsedQuery.expansions : undefined,
         intent: parsedQuery.intent.sortHint,
       },
@@ -223,9 +229,16 @@ export class SearchService {
       body,
     } as Parameters<typeof this.esService.search>[0]);
 
-    const rawHits = (response as unknown as { body?: { hits?: unknown } }).body?.hits
-      ?? (response.hits as unknown as { total: { value: number }; hits: Array<{ _id: string; _score: number }> });
-    const hits = rawHits as { total: { value: number }; hits: Array<{ _id: string; _score: number }> };
+    const rawHits =
+      (response as unknown as { body?: { hits?: unknown } }).body?.hits ??
+      (response.hits as unknown as {
+        total: { value: number };
+        hits: Array<{ _id: string; _score: number }>;
+      });
+    const hits = rawHits as {
+      total: { value: number };
+      hits: Array<{ _id: string; _score: number }>;
+    };
 
     const ranked: RankedResult[] = hits.hits.map((hit, idx) => ({
       id: hit._id,
@@ -248,16 +261,16 @@ export class SearchService {
         multi_match: {
           query: corrected,
           fields: [
-            'name^3',            // Title boost
+            'name^3', // Title boost
             'brand_name^2',
             'category_name^2',
             'description',
             'tags',
-            'search_text',       // Denormalized search field
+            'search_text', // Denormalized search field
           ],
           type: 'best_fields',
           operator: 'or',
-          fuzziness: 'AUTO',    // Auto-detect typo tolerance by term length
+          fuzziness: 'AUTO', // Auto-detect typo tolerance by term length
           minimum_should_match: '60%', // At least 60% of terms must match
         },
       },
@@ -288,9 +301,20 @@ export class SearchService {
         pre_tags: ['<mark>'],
         post_tags: ['</mark>'],
       },
-      _source: ['id', 'name', 'price', 'original_price', 'image_url',
-                 'seller_id', 'seller_name', 'rating', 'review_count',
-                 'sold_count', 'in_stock', 'discount_percent'],
+      _source: [
+        'id',
+        'name',
+        'price',
+        'original_price',
+        'image_url',
+        'seller_id',
+        'seller_name',
+        'rating',
+        'review_count',
+        'sold_count',
+        'in_stock',
+        'discount_percent',
+      ],
     };
   }
 
@@ -298,8 +322,10 @@ export class SearchService {
     const esFilters: unknown[] = [];
 
     if (filters.inStock) esFilters.push({ term: { in_stock: true } });
-    if (Array.isArray(filters.brandNames) && filters.brandNames.length) esFilters.push({ terms: { brand_name: filters.brandNames } });
-    if (Array.isArray(filters.categoryIds) && filters.categoryIds.length) esFilters.push({ terms: { category_id: filters.categoryIds } });
+    if (Array.isArray(filters.brandNames) && filters.brandNames.length)
+      esFilters.push({ terms: { brand_name: filters.brandNames } });
+    if (Array.isArray(filters.categoryIds) && filters.categoryIds.length)
+      esFilters.push({ terms: { category_id: filters.categoryIds } });
     if (filters.sellerId) esFilters.push({ term: { seller_id: filters.sellerId } });
     if (filters.priceMin !== undefined || filters.priceMax !== undefined) {
       const rangeFilter: Record<string, number> = {};
@@ -367,8 +393,11 @@ export class SearchService {
       },
     } as Parameters<typeof this.esService.search>[0]);
 
-    const rawHydrateHits = (hydrateResponse as unknown as { body?: { hits?: { hits: Array<Record<string, unknown>> } } }).body?.hits?.hits
-      ?? (hydrateResponse.hits?.hits as unknown as Array<Record<string, unknown>> ?? []);
+    const rawHydrateHits =
+      (hydrateResponse as unknown as { body?: { hits?: { hits: Array<Record<string, unknown>> } } })
+        .body?.hits?.hits ??
+      (hydrateResponse.hits?.hits as unknown as Array<Record<string, unknown>>) ??
+      [];
     const hydrateHits = rawHydrateHits;
     const map = new Map<string, ProductHit>();
 
@@ -450,8 +479,11 @@ export class SearchService {
       },
     } as Parameters<typeof this.esService.search>[0]);
 
-    const suggestions = ((result as unknown as Record<string, unknown>)['suggest'] as Record<string, unknown> | undefined)
-      ?.['suggestions'] as Array<{ options?: Array<{ text?: string }> }> | undefined;
+    const suggestions = (
+      (result as unknown as Record<string, unknown>)['suggest'] as
+        | Record<string, unknown>
+        | undefined
+    )?.['suggestions'] as Array<{ options?: Array<{ text?: string }> }> | undefined;
     const texts = suggestions?.[0]?.options?.map((o) => o.text ?? '') ?? [];
 
     await this.redis.set(cacheKey, JSON.stringify(texts), 30);
@@ -484,21 +516,36 @@ export class SearchService {
     });
 
     const hits = result.hits.hits;
-    const emptyQuery: ParsedQuery = { raw: '', normalized: '', corrected: '', tokens: [], intent: { isBrandSearch: false, isPriceFilter: false, isCategorySearch: false }, filters: {}, expansions: [], mustBoostTerms: [] };
-    const map = await this.hydrateProducts(hits.map((h) => h._id!), emptyQuery);
-    return hits.map((h) => map.get(h._id!) ?? {
-      id: h._id!,
-      name: (h._source?.['name'] as string) ?? '',
-      price: (h._source?.['price'] as number) ?? 0,
-      imageUrl: '',
-      sellerId: '',
-      sellerName: '',
-      rating: 0,
-      reviewCount: 0,
-      soldCount: 0,
-      inStock: false,
-      score: h._score ?? 0,
-    });
+    const emptyQuery: ParsedQuery = {
+      raw: '',
+      normalized: '',
+      corrected: '',
+      tokens: [],
+      intent: { isBrandSearch: false, isPriceFilter: false, isCategorySearch: false },
+      filters: {},
+      expansions: [],
+      mustBoostTerms: [],
+    };
+    const map = await this.hydrateProducts(
+      hits.map((h) => h._id!),
+      emptyQuery,
+    );
+    return hits.map(
+      (h) =>
+        map.get(h._id!) ?? {
+          id: h._id!,
+          name: (h._source?.['name'] as string) ?? '',
+          price: (h._source?.['price'] as number) ?? 0,
+          imageUrl: '',
+          sellerId: '',
+          sellerName: '',
+          rating: 0,
+          reviewCount: 0,
+          soldCount: 0,
+          inStock: false,
+          score: h._score ?? 0,
+        },
+    );
   }
 
   async indexProduct(product: Record<string, unknown>): Promise<void> {

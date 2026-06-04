@@ -11,7 +11,7 @@
 // ============================================================
 
 import { Injectable, Logger } from '@nestjs/common';
-import { ElasticsearchService } from '@nestjs/elasticsearch';
+import type { ElasticsearchService } from '@nestjs/elasticsearch';
 
 export interface ParsedQuery {
   raw: string;
@@ -44,9 +44,18 @@ export interface QueryFilters {
 
 // Brand name → canonical brand ID mapping
 const BRAND_ALIASES: Record<string, string> = {
-  'nike': 'Nike', 'nike vn': 'Nike', 'adidas': 'Adidas', 'adi': 'Adidas',
-  'apple': 'Apple', 'iphone': 'Apple', 'samsung': 'Samsung', 'ss': 'Samsung',
-  'xiaomi': 'Xiaomi', 'mi': 'Xiaomi', 'oppo': 'OPPO', 'vivo': 'Vivo',
+  nike: 'Nike',
+  'nike vn': 'Nike',
+  adidas: 'Adidas',
+  adi: 'Adidas',
+  apple: 'Apple',
+  iphone: 'Apple',
+  samsung: 'Samsung',
+  ss: 'Samsung',
+  xiaomi: 'Xiaomi',
+  mi: 'Xiaomi',
+  oppo: 'OPPO',
+  vivo: 'Vivo',
 };
 
 // Price intent patterns
@@ -108,9 +117,7 @@ export class QueryUnderstandingService {
       mustBoostTerms,
     };
 
-    this.logger.debug(
-      JSON.stringify({ event: 'query_understood', ...result }),
-    );
+    this.logger.debug(JSON.stringify({ event: 'query_understood', ...result }));
 
     return result;
   }
@@ -123,8 +130,8 @@ export class QueryUnderstandingService {
     return query
       .toLowerCase()
       .trim()
-      .replace(/\s+/g, ' ')          // Collapse multiple spaces
-      .replace(/[^\p{L}\p{N}\s]/gu, ' ')  // Remove punctuation, keep letters+digits
+      .replace(/\s+/g, ' ') // Collapse multiple spaces
+      .replace(/[^\p{L}\p{N}\s]/gu, ' ') // Remove punctuation, keep letters+digits
       .trim();
   }
 
@@ -212,7 +219,10 @@ export class QueryUnderstandingService {
         },
       });
 
-      const suggestions = (response as unknown as Record<string, unknown>).suggest as Record<string, Array<{ options: Array<{ text: string }> }>>;
+      const suggestions = (response as unknown as Record<string, unknown>).suggest as Record<
+        string,
+        Array<{ options: Array<{ text: string }> }>
+      >;
       if (!suggestions?.spell_correction) return query;
 
       // Build corrected query by replacing each token suggestion
@@ -221,10 +231,7 @@ export class QueryUnderstandingService {
         if (suggestion.options?.[0]?.text) {
           // Only apply if confidence is high enough
           const original = suggestion.options[0].text;
-          corrected = corrected.replace(
-            new RegExp(`\\b${this.escapeRegex(query)}\\b`),
-            original,
-          );
+          corrected = corrected.replace(new RegExp(`\\b${this.escapeRegex(query)}\\b`), original);
         }
       }
 
@@ -243,7 +250,7 @@ export class QueryUnderstandingService {
   private tokenize(query: string): string[] {
     return query
       .split(/\s+/)
-      .filter((token) => token.length >= 2)  // Skip single chars
+      .filter((token) => token.length >= 2) // Skip single chars
       .filter((token) => !this.isStopWord(token));
   }
 
@@ -263,8 +270,8 @@ export class QueryUnderstandingService {
 
     // Token-level expansions (abbreviated to key ones)
     const tokenExpansions: Record<string, string[]> = {
-      'iphone': ['apple', 'ios', 'smartphone'],
-      'laptop': ['máy tính xách tay', 'notebook', 'macbook'],
+      iphone: ['apple', 'ios', 'smartphone'],
+      laptop: ['máy tính xách tay', 'notebook', 'macbook'],
     };
 
     for (const token of tokens) {
@@ -283,8 +290,24 @@ export class QueryUnderstandingService {
   }
 
   private readonly STOP_WORDS = new Set([
-    'và', 'hoặc', 'với', 'của', 'cho', 'từ', 'đến', 'là', 'có', 'không',
-    'the', 'a', 'an', 'and', 'or', 'of', 'in', 'for',
+    'và',
+    'hoặc',
+    'với',
+    'của',
+    'cho',
+    'từ',
+    'đến',
+    'là',
+    'có',
+    'không',
+    'the',
+    'a',
+    'an',
+    'and',
+    'or',
+    'of',
+    'in',
+    'for',
   ]);
 
   private isStopWord(token: string): boolean {

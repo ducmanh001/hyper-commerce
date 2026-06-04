@@ -1,11 +1,25 @@
 import {
-  Controller, Get, Query, Post, Body,
-  HttpCode, HttpStatus, UseGuards, Logger,
+  Controller,
+  Get,
+  Query,
+  Post,
+  Body,
+  HttpCode,
+  HttpStatus,
+  UseGuards,
+  Logger,
 } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation, ApiQuery } from '@nestjs/swagger';
-import { JwtAuthGuard, RolesGuard, Public, CurrentUser, JwtPayload, Roles } from '@hypercommerce/common';
-import { SearchService } from './search.service';
-import { SearchAnalyticsService } from './analytics/search-analytics.service';
+import {
+  JwtAuthGuard,
+  RolesGuard,
+  Public,
+  CurrentUser,
+  JwtPayload,
+  Roles,
+} from '@hypercommerce/common';
+import type { SearchService } from './search.service';
+import type { SearchAnalyticsService } from './analytics/search-analytics.service';
 
 @ApiTags('search')
 @Controller('search')
@@ -38,7 +52,11 @@ export class SearchController {
   ) {
     return this.searchService.search({
       query,
-      filters: { categoryIds: category ? [category] : undefined, priceMin: minPrice ? Number(minPrice) : undefined, priceMax: maxPrice ? Number(maxPrice) : undefined },
+      filters: {
+        categoryIds: category ? [category] : undefined,
+        priceMin: minPrice ? Number(minPrice) : undefined,
+        priceMax: maxPrice ? Number(maxPrice) : undefined,
+      },
       limit: Number(limit),
     });
   }

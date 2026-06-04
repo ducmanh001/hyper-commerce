@@ -37,26 +37,27 @@
  */
 import { Injectable, Logger, Inject } from '@nestjs/common';
 import { CountMinSketch } from '@hypercommerce/algorithms';
-import { RedisClientService } from '@hypercommerce/redis';
-import algorithmConfig, { AlgorithmConfigProps } from '@hypercommerce/common/config/algorithm.config';
+import type { RedisClientService } from '@hypercommerce/redis';
+import type { AlgorithmConfigProps } from '@hypercommerce/common/config/algorithm.config';
+import algorithmConfig from '@hypercommerce/common/config/algorithm.config';
 
-const WINDOW_MINUTES = 15;  // Rotate every 15 minutes
-const DECAY_CURRENT  = 0.7; // Current window weight
+const WINDOW_MINUTES = 15; // Rotate every 15 minutes
+const DECAY_CURRENT = 0.7; // Current window weight
 const DECAY_PREVIOUS = 0.3; // Previous window weight
 
 export interface TrendingItem {
-  productId:       string;
-  score:           number;  // Weighted trending score
-  estimatedCount:  number;  // Approximate view/click count
+  productId: string;
+  score: number; // Weighted trending score
+  estimatedCount: number; // Approximate view/click count
 }
 
 @Injectable()
 export class TrendingTracker {
   private readonly logger = new Logger(TrendingTracker.name);
 
-  private currentCms:  CountMinSketch;
+  private currentCms: CountMinSketch;
   private previousCms: CountMinSketch;
-  private topKHeap:    Map<string, number>;  // productId → score
+  private topKHeap: Map<string, number>; // productId → score
 
   private readonly WINDOW_MS: number;
   private windowTimer?: NodeJS.Timeout;
@@ -66,10 +67,10 @@ export class TrendingTracker {
     @Inject(algorithmConfig.KEY) private readonly config: AlgorithmConfigProps,
   ) {
     const { width, depth, topKWindow } = config.countMinSketch;
-    this.currentCms  = new CountMinSketch(width, depth);
+    this.currentCms = new CountMinSketch(width, depth);
     this.previousCms = new CountMinSketch(width, depth);
-    this.topKHeap    = new Map();
-    this.WINDOW_MS   = WINDOW_MINUTES * 60 * 1000;
+    this.topKHeap = new Map();
+    this.WINDOW_MS = WINDOW_MINUTES * 60 * 1000;
   }
 
   /**
@@ -84,8 +85,8 @@ export class TrendingTracker {
    */
   track(productId: string, eventType: 'view' | 'click' | 'add_cart' | 'purchase'): void {
     const WEIGHT: Record<typeof eventType, number> = {
-      view:     1,
-      click:    3,
+      view: 1,
+      click: 3,
       add_cart: 5,
       purchase: 10,
     };
@@ -95,8 +96,8 @@ export class TrendingTracker {
 
     // Update top-K heap
     const currentScore = this.currentCms.query(productId);
-    const prevScore    = this.previousCms.query(productId);
-    const trendScore   = DECAY_CURRENT * currentScore + DECAY_PREVIOUS * prevScore;
+    const prevScore = this.previousCms.query(productId);
+    const trendScore = DECAY_CURRENT * currentScore + DECAY_PREVIOUS * prevScore;
 
     this.topKHeap.set(productId, trendScore);
 
@@ -129,14 +130,14 @@ export class TrendingTracker {
    * Used in search ranking to boost trending items.
    */
   getTrendingScore(productId: string): number {
-    const current  = this.currentCms.query(productId);
+    const current = this.currentCms.query(productId);
     const previous = this.previousCms.query(productId);
     return DECAY_CURRENT * current + DECAY_PREVIOUS * previous;
   }
 
   /** Normalize trending score to [0, 1] for use as a ranking feature */
   getNormalizedTrendingScore(productId: string): number {
-    const score   = this.getTrendingScore(productId);
+    const score = this.getTrendingScore(productId);
     const topItem = this.getTopK(1)[0];
     if (!topItem || topItem.score === 0) return 0;
     return Math.min(score / topItem.score, 1.0);
@@ -158,7 +159,7 @@ export class TrendingTracker {
 
   private rotateWindow(): void {
     this.previousCms = this.currentCms;
-    this.currentCms  = new CountMinSketch(
+    this.currentCms = new CountMinSketch(
       this.config.countMinSketch.width,
       this.config.countMinSketch.depth,
     );
@@ -166,9 +167,9 @@ export class TrendingTracker {
   }
 
   private evictBottomHalf(): void {
-    const sorted  = Array.from(this.topKHeap.entries()).sort((a, b) => b[1] - a[1]);
-    const keepN   = this.config.countMinSketch.topKWindow;
-    const toKeep  = new Map(sorted.slice(0, keepN));
+    const sorted = Array.from(this.topKHeap.entries()).sort((a, b) => b[1] - a[1]);
+    const keepN = this.config.countMinSketch.topKWindow;
+    const toKeep = new Map(sorted.slice(0, keepN));
     this.topKHeap = toKeep;
   }
 }

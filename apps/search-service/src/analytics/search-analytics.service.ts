@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { RedisClientService } from '@hypercommerce/redis';
+import type { RedisClientService } from '@hypercommerce/redis';
 
 /**
  * SearchAnalyticsService — tracks search behavior for personalization.
@@ -44,7 +44,11 @@ export class SearchAnalyticsService {
    * Get trending queries from last N hours.
    * Merge multiple hourly ZSETs for rolling window.
    */
-  async getTopQueries(from?: string, to?: string, limit = 20): Promise<Array<{ query: string; count: number }>> {
+  async getTopQueries(
+    from?: string,
+    to?: string,
+    limit = 20,
+  ): Promise<Array<{ query: string; count: number }>> {
     // Use last 1 hour for real-time trending
     const hourKey = `trending:${new Date().toISOString().substring(0, 13)}`;
     const results = await this.redis.zrevrangeWithScores(hourKey, 0, limit - 1);

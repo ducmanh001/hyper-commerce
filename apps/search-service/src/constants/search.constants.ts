@@ -15,17 +15,17 @@ export const SEARCH_LIMITS = {
   MAX_FILTERS: 20,
   MIN_QUERY_LENGTH: 1,
   AUTOCOMPLETE_LIMIT: 10,
-  VECTOR_CANDIDATES: 200,    // retrieve 200 for RRF, show top 20
+  VECTOR_CANDIDATES: 200, // retrieve 200 for RRF, show top 20
   BM25_CANDIDATES: 200,
   ES_CANDIDATES: 200,
 } as const;
 
 export const SEARCH_CACHE_TTL = {
-  RESULTS_HOT: 60,           // 1 min for trending queries
-  RESULTS_NORMAL: 300,       // 5 min for regular queries
-  AUTOCOMPLETE: 600,         // 10 min for autocomplete
-  TRIE_SNAPSHOT: 3600,       // 1 hour for trie snapshot in Redis
-  VECTOR_EMBEDDING: 86400,   // 24 hours for product embeddings
+  RESULTS_HOT: 60, // 1 min for trending queries
+  RESULTS_NORMAL: 300, // 5 min for regular queries
+  AUTOCOMPLETE: 600, // 10 min for autocomplete
+  TRIE_SNAPSHOT: 3600, // 1 hour for trie snapshot in Redis
+  VECTOR_EMBEDDING: 86400, // 24 hours for product embeddings
 } as const;
 
 export const SEARCH_CACHE_KEYS = {
@@ -53,8 +53,8 @@ export const SEARCH_BOOSTS = {
   DESCRIPTION: 2,
   TAGS: 3,
   BRAND_EXACT: 8,
-  FLASH_SALE: 1.5,        // 50% boost for flash sale items
-  HIGH_RATING: 1.3,       // 30% boost for 4.5+ star items
-  LOW_STOCK: 0.8,         // 20% penalty for low stock (<5)
-  OUT_OF_STOCK: 0,        // Filter out OOS
+  FLASH_SALE: 1.5, // 50% boost for flash sale items
+  HIGH_RATING: 1.3, // 30% boost for 4.5+ star items
+  LOW_STOCK: 0.8, // 20% penalty for low stock (<5)
+  OUT_OF_STOCK: 0, // Filter out OOS
 } as const;

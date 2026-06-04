@@ -5,8 +5,8 @@
 import { Controller, UseFilters } from '@nestjs/common';
 import { GrpcMethod } from '@nestjs/microservices';
 import { GrpcExceptionFilter } from '@hypercommerce/grpc';
-import { SearchService } from '../search.service';
-import { AutocompleteService } from '../suggest/autocomplete.service';
+import type { SearchService } from '../search.service';
+import type { AutocompleteService } from '../suggest/autocomplete.service';
 
 interface GrpcSearchRequest {
   query: string;
@@ -58,7 +58,13 @@ export class SearchGrpcController {
       },
       page: (data.page ?? 1) - 1,
       limit: data.pageSize ?? 20,
-      sort: data.sortBy as 'RELEVANCE' | 'PRICE_ASC' | 'PRICE_DESC' | 'NEWEST' | 'RATING' | undefined,
+      sort: data.sortBy as
+        | 'RELEVANCE'
+        | 'PRICE_ASC'
+        | 'PRICE_DESC'
+        | 'NEWEST'
+        | 'RATING'
+        | undefined,
     });
 
     return {
@@ -69,20 +75,14 @@ export class SearchGrpcController {
 
   @GrpcMethod('SearchService', 'Autocomplete')
   async autocomplete(data: GrpcAutocompleteRequest) {
-    const suggestions = await this.autocompleteService.suggest(
-      data.prefix,
-      data.limit ?? 10,
-    );
+    const suggestions = await this.autocompleteService.suggest(data.prefix, data.limit ?? 10);
     return { suggestions };
   }
 
   @GrpcMethod('SearchService', 'Suggest')
   async suggest(data: { productId: string; userId?: string; limit?: number }) {
     // Find similar products to productId using vector search
-    const result = await this.searchService.findSimilar(
-      data.productId,
-      data.limit ?? 10,
-    );
+    const result = await this.searchService.findSimilar(data.productId, data.limit ?? 10);
     return { products: result };
   }
 

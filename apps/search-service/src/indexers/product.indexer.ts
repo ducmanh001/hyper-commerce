@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { ElasticsearchService } from '@nestjs/elasticsearch';
-import { RedisClientService } from '@hypercommerce/redis';
+import type { ElasticsearchService } from '@nestjs/elasticsearch';
+import type { RedisClientService } from '@hypercommerce/redis';
 
 export interface IndexableProduct {
   id: string;
@@ -17,7 +17,7 @@ export interface IndexableProduct {
   reviewCount?: number;
   stockAvailable: number;
   attributes?: Record<string, string>;
-  embedding?: number[];   // 1536-dim vector from text-embedding-3-small
+  embedding?: number[]; // 1536-dim vector from text-embedding-3-small
   isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
@@ -48,23 +48,23 @@ export class ProductIndexer {
   readonly mapping = {
     mappings: {
       properties: {
-        id:          { type: 'keyword' },
-        name:        { type: 'text', analyzer: 'vietnamese', fields: { keyword: { type: 'keyword' } } },
+        id: { type: 'keyword' },
+        name: { type: 'text', analyzer: 'vietnamese', fields: { keyword: { type: 'keyword' } } },
         description: { type: 'text', analyzer: 'vietnamese' },
-        category:    { type: 'keyword' },
-        price:       { type: 'scaled_float', scaling_factor: 100 },
-        currency:    { type: 'keyword' },
-        sellerId:    { type: 'keyword' },
-        sellerName:  { type: 'text', fields: { keyword: { type: 'keyword' } } },
-        tags:        { type: 'keyword' },
-        rating:      { type: 'float' },
+        category: { type: 'keyword' },
+        price: { type: 'scaled_float', scaling_factor: 100 },
+        currency: { type: 'keyword' },
+        sellerId: { type: 'keyword' },
+        sellerName: { type: 'text', fields: { keyword: { type: 'keyword' } } },
+        tags: { type: 'keyword' },
+        rating: { type: 'float' },
         reviewCount: { type: 'integer' },
         stockAvailable: { type: 'integer' },
-        attributes:  { type: 'object', dynamic: true },
-        embedding:   { type: 'dense_vector', dims: 1536, index: true, similarity: 'cosine' },
-        isActive:    { type: 'boolean' },
-        createdAt:   { type: 'date' },
-        updatedAt:   { type: 'date' },
+        attributes: { type: 'object', dynamic: true },
+        embedding: { type: 'dense_vector', dims: 1536, index: true, similarity: 'cosine' },
+        isActive: { type: 'boolean' },
+        createdAt: { type: 'date' },
+        updatedAt: { type: 'date' },
       },
     },
     settings: {
@@ -91,7 +91,10 @@ export class ProductIndexer {
   async ensureIndex(): Promise<void> {
     const exists = await this.es.indices.exists({ index: this.indexName });
     if (!exists) {
-      await this.es.indices.create({ index: this.indexName, ...this.mapping } as unknown as Parameters<typeof this.es.indices.create>[0]);
+      await this.es.indices.create({
+        index: this.indexName,
+        ...this.mapping,
+      } as unknown as Parameters<typeof this.es.indices.create>[0]);
       this.logger.log(`Created ES index: ${this.indexName}`);
     }
   }
@@ -101,7 +104,7 @@ export class ProductIndexer {
       index: this.indexName,
       id: product.id,
       document: product,
-      refresh: false,  // Async refresh — don't block on search visibility
+      refresh: false, // Async refresh — don't block on search visibility
     });
 
     // Invalidate autocomplete cache for terms in product name

@@ -1,12 +1,12 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { ElasticsearchService } from '@nestjs/elasticsearch';
-import { RedisClientService } from '@hypercommerce/redis';
+import type { ElasticsearchService } from '@nestjs/elasticsearch';
+import type { RedisClientService } from '@hypercommerce/redis';
 
 export interface SearchResult<T = Record<string, unknown>> {
   items: T[];
   total: number;
   nextCursor: string | null;
-  took: number;       // ES query time in ms
+  took: number; // ES query time in ms
   maxScore: number;
 }
 
@@ -41,9 +41,7 @@ export class SearchRankingService {
     const { query, embedding, filters, pagination } = params;
     const limit = pagination.limit;
 
-    const mustFilters: Record<string, unknown>[] = [
-      { term: { isActive: true } },
-    ];
+    const mustFilters: Record<string, unknown>[] = [{ term: { isActive: true } }];
 
     if (filters?.category) {
       mustFilters.push({ term: { category: filters.category } });
@@ -109,9 +107,10 @@ export class SearchRankingService {
     const hits = response.hits.hits;
     const hasMore = hits.length > limit;
     const items = hits.slice(0, limit).map((h) => ({ ...(h._source as object), _score: h._score }));
-    const total = typeof response.hits.total === 'object'
-      ? response.hits.total.value
-      : response.hits.total ?? 0;
+    const total =
+      typeof response.hits.total === 'object'
+        ? response.hits.total.value
+        : (response.hits.total ?? 0);
 
     return {
       items,

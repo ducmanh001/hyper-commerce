@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { ElasticsearchService } from '@nestjs/elasticsearch';
+import type { ElasticsearchService } from '@nestjs/elasticsearch';
 
 /**
  * VectorSearchService — kNN approximate nearest neighbour search via Elasticsearch dense_vector.

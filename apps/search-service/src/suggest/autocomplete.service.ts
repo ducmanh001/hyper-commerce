@@ -3,15 +3,12 @@
 // Hot path: Redis GET on every keystroke.
 // Cold start / rebuild: load from Trie in memory (snapshot persisted).
 
-import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import { RedisClientService } from '@hypercommerce/redis';
+import type { OnModuleInit } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
+import type { ConfigService } from '@nestjs/config';
+import type { RedisClientService } from '@hypercommerce/redis';
 import { Trie, CompactTrieSerializer } from '@hypercommerce/algorithms';
-import {
-  SEARCH_CACHE_TTL,
-  SEARCH_CACHE_KEYS,
-  SEARCH_LIMITS,
-} from '../constants/search.constants';
+import { SEARCH_CACHE_TTL, SEARCH_CACHE_KEYS, SEARCH_LIMITS } from '../constants/search.constants';
 
 export interface AutocompleteSuggestion {
   text: string;
@@ -64,18 +61,16 @@ export class AutocompleteService implements OnModuleInit {
 
     const trieResults = this.trie.autocomplete(normalized, limit);
 
-    const suggestions: AutocompleteSuggestion[] = trieResults.map((r: { term: string; frequency: number }) => ({
-      text: r.term,
-      frequency: r.frequency,
-      type: 'keyword' as const,
-    }));
+    const suggestions: AutocompleteSuggestion[] = trieResults.map(
+      (r: { term: string; frequency: number }) => ({
+        text: r.term,
+        frequency: r.frequency,
+        type: 'keyword' as const,
+      }),
+    );
 
     // Cache results
-    await this.redis.set(
-      cacheKey,
-      JSON.stringify(suggestions),
-      SEARCH_CACHE_TTL.AUTOCOMPLETE,
-    );
+    await this.redis.set(cacheKey, JSON.stringify(suggestions), SEARCH_CACHE_TTL.AUTOCOMPLETE);
 
     return suggestions;
   }

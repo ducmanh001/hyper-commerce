@@ -13,9 +13,9 @@
 // ============================================================
 
 export interface RankedResult {
-  id: string;                    // Document ID
-  score: number;                 // Original score from this ranker
-  rank: number;                  // 1-based rank position
+  id: string; // Document ID
+  score: number; // Original score from this ranker
+  rank: number; // 1-based rank position
   metadata?: Record<string, unknown>;
 }
 
@@ -57,11 +57,14 @@ export class ReciprocalRankFusionHelper {
    * Lists can have different sizes — handles gracefully.
    */
   fuse(rankedLists: RankedResult[][]): FusedResult[] {
-    const scores = new Map<string, {
-      rrfScore: number;
-      ranks: number[];
-      origScores: number[];
-    }>();
+    const scores = new Map<
+      string,
+      {
+        rrfScore: number;
+        ranks: number[];
+        origScores: number[];
+      }
+    >();
 
     for (let listIdx = 0; listIdx < rankedLists.length; listIdx++) {
       const list = rankedLists[listIdx];
@@ -108,19 +111,19 @@ export class ReciprocalRankFusionHelper {
    * Use case: boost keyword results for short queries (< 2 tokens),
    * boost vector results for long semantic queries.
    */
-  fuseWeighted(
-    rankedLists: RankedResult[][],
-    weights: number[],
-  ): FusedResult[] {
+  fuseWeighted(rankedLists: RankedResult[][], weights: number[]): FusedResult[] {
     if (weights.length !== rankedLists.length) {
       throw new Error('weights.length must equal rankedLists.length');
     }
 
-    const scores = new Map<string, {
-      rrfScore: number;
-      ranks: number[];
-      origScores: number[];
-    }>();
+    const scores = new Map<
+      string,
+      {
+        rrfScore: number;
+        ranks: number[];
+        origScores: number[];
+      }
+    >();
 
     for (let listIdx = 0; listIdx < rankedLists.length; listIdx++) {
       const list = rankedLists[listIdx];

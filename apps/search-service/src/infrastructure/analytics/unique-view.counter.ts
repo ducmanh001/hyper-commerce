@@ -37,12 +37,13 @@
  */
 import { Injectable, Logger, Inject } from '@nestjs/common';
 import { HyperLogLog } from '@hypercommerce/algorithms';
-import { RedisClientService } from '@hypercommerce/redis';
-import algorithmConfig, { AlgorithmConfigProps } from '@hypercommerce/common/config/algorithm.config';
+import type { RedisClientService } from '@hypercommerce/redis';
+import type { AlgorithmConfigProps } from '@hypercommerce/common/config/algorithm.config';
+import algorithmConfig from '@hypercommerce/common/config/algorithm.config';
 
 const TTL_SECONDS = {
-  daily:   25 * 3600,  // 25 hours (a bit longer than 24h to handle timezone edge cases)
-  weekly:  8 * 24 * 3600,
+  daily: 25 * 3600, // 25 hours (a bit longer than 24h to handle timezone edge cases)
+  weekly: 8 * 24 * 3600,
 };
 
 @Injectable()
@@ -70,7 +71,7 @@ export class UniqueViewCounter {
 
     if (!hll) {
       // First view today — load existing HLL from Redis if any
-      hll = await this.loadFromRedis(key) ?? new HyperLogLog(this.config.hyperLogLog.precision);
+      hll = (await this.loadFromRedis(key)) ?? new HyperLogLog(this.config.hyperLogLog.precision);
       this.localCounters.set(key, hll);
     }
 
@@ -82,15 +83,18 @@ export class UniqueViewCounter {
    * Get estimated unique viewer count for a product today.
    * Returns estimated count with confidence info for transparency.
    */
-  async getUniqueViewCount(productId: string, period: 'today' | 'week' = 'today'): Promise<{
+  async getUniqueViewCount(
+    productId: string,
+    period: 'today' | 'week' = 'today',
+  ): Promise<{
     count: number;
     errorPercent: number;
   }> {
-    const precision  = this.config.hyperLogLog.precision;
-    const errorPct   = 1.04 / Math.sqrt(2 ** precision) * 100;
+    const precision = this.config.hyperLogLog.precision;
+    const errorPct = (1.04 / Math.sqrt(2 ** precision)) * 100;
 
     if (period === 'today') {
-      const key   = this.dailyKey(productId);
+      const key = this.dailyKey(productId);
       const local = this.localCounters.get(key);
 
       if (local) {
@@ -104,7 +108,7 @@ export class UniqueViewCounter {
 
     // Merge last 7 days
     const merged = new HyperLogLog(precision);
-    const dates  = Array.from({ length: 7 }, (_, i) => {
+    const dates = Array.from({ length: 7 }, (_, i) => {
       const d = new Date();
       d.setDate(d.getDate() - i);
       return d.toISOString().slice(0, 10); // YYYY-MM-DD
