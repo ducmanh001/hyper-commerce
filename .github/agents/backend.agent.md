@@ -7,7 +7,7 @@ applyTo: 'libs/common/**,libs/database/**,libs/events/**,libs/kafka/**,libs/queu
 
 ## CONTEXT (read once, reuse)
 
-You are working on shared libraries used by ALL 13 NestJS microservices in HyperCommerce.
+You are working on shared libraries used by ALL 16 NestJS microservices in HyperCommerce.
 **Any change here affects every service** — be conservative, add @deprecated before removing.
 
 ## Key Shared Libraries
@@ -33,12 +33,8 @@ import { OrderCreatedEvent } from '@app/events';
 
 ## Saga Pattern (Choreography)
 
-```
-order.created  → [inventory] reserve stock
-stock.reserved → [payment] charge card
-payment.captured → [order] confirm order → [notification] send email
-payment.failed → [order] cancel → [inventory] release stock
-```
+> Flow: see `copilot-instructions.md` Architecture Patterns
+> Order-saga detail: see `agents/commerce.agent.md`
 
 - Each service consumes exactly its own events
 - Compensating event on failure = reverse the action + publish failure event

@@ -1,6 +1,6 @@
 ---
 description: Commerce domain — order lifecycle, payment processing, inventory management. Tight coupling via Saga choreography.
-applyTo: 'apps/order-service/**,apps/payment-service/**,apps/inventory-service/**,apps/review-service/**'
+applyTo: 'apps/order-service/**,apps/payment-service/**,apps/inventory-service/**,apps/review-service/**,apps/wallet-service/**'
 ---
 
 # Commerce Agent — Order · Payment · Inventory
@@ -90,6 +90,8 @@ hc:price:{productId}:{variantId}      price cache (TTL=60s)
 ```
 
 ## Kafka Events (Commerce)
+
+> Canonical routing: `libs/events/EVENTS.md` — this table shows order-service domain perspective only.
 
 | Publish         | Consume            |
 | --------------- | ------------------ |

@@ -87,6 +87,8 @@ analytics:buffer:{date}            event buffer before ClickHouse flush
 
 ## Kafka Events (Platform — consumers)
 
+> Canonical routing: `libs/events/EVENTS.md` — this shows platform-service consumer perspective only.
+
 ```
 order.confirmed  → notification (send confirmation email)
 order.shipped    → notification (send tracking SMS)

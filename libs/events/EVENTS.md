@@ -1,35 +1,28 @@
-# Kafka Event Catalog
+# Kafka Event Catalog — Navigation Index
 
-> **Source of truth**: `libs/events/src/events.ts`  
-> Add new event interfaces there first, then add a row here.  
-> **Rule**: never remove/rename existing fields — only add optional fields (backwards compat).
+> **Payload interfaces live in `libs/events/src/events.ts` — read that file, not this one.**
+> This file stores only: (1) topic→service routing, (2) saga flow diagram, (3) rules.
 
-## All Topics & Events
+## Topic → Service Routing
 
-| Topic                 | eventType                | Emitter           | Consumer(s)                                                      | Key Payload Fields                                             |
-| --------------------- | ------------------------ | ----------------- | ---------------------------------------------------------------- | -------------------------------------------------------------- |
-| `order.events`        | `ORDER_CREATED`          | order-service     | inventory-service _(reserve)_, payment-service _(charge)_        | orderId, userId, items[], totalAmount, expiresAt               |
-| `order.events`        | `ORDER_CONFIRMED`        | order-service     | notification-service, analytics-service                          | orderId, userId, confirmedAt                                   |
-| `order.events`        | `ORDER_CANCELLED`        | order-service     | inventory-service _(release)_, notification-service              | orderId, userId, reason                                        |
-| `inventory.events`    | `STOCK_RESERVED`         | inventory-service | order-service _(next saga step)_                                 | orderId, reservationIds[], expiresAt                           |
-| `inventory.events`    | `STOCK_RELEASED`         | inventory-service | _(logging/analytics)_                                            | orderId, reservationIds[], reason                              |
-| `inventory.events`    | `STOCK_INSUFFICIENT`     | inventory-service | order-service _(compensate → cancel)_                            | orderId, productId, requested, available                       |
-| `inventory.events`    | `STOCK_LOW`              | inventory-service | notification-service _(alert seller)_                            | productId, sellerId, currentStock, threshold                   |
-| `payment.events`      | `PAYMENT_INITIATED`      | payment-service   | _(processor webhook awaited)_                                    | orderId, paymentId, amount, processorType                      |
-| `payment.events`      | `PAYMENT_CAPTURED`       | payment-service   | order-service _(confirm)_                                        | orderId, paymentId, amount, capturedAt                         |
-| `payment.events`      | `PAYMENT_FAILED`         | payment-service   | order-service _(compensate)_, notification-service               | orderId, declineCode, retryable                                |
-| `payment.events`      | `REFUND_PROCESSED`       | payment-service   | order-service, notification-service                              | orderId, refundAmount, processedAt                             |
-| `user.events`         | `USER_REGISTERED`        | user-service      | notification-service _(welcome)_, feed-service _(init timeline)_ | userId, email, username                                        |
-| `user.events`         | `USER_FOLLOWED`          | user-service      | feed-service _(fan-out or pull based on isCelebrity)_            | followerId, followeeId, isCelebrity                            |
-| `notification.events` | `NOTIFICATION_REQUESTED` | **any service**   | notification-service                                             | userId, channels[], notificationType, data, priority           |
-| `live.events`         | `LIVE_STREAM_STARTED`    | live-service      | feed-service _(push to followers)_, notification-service         | streamId, hostId, title, scheduledProductIds[]                 |
-| `live.events`         | `LIVE_STREAM_ENDED`      | live-service      | analytics-service                                                | streamId, hostId, peakViewers, totalRevenue, durationSeconds   |
-| `review.events`       | `REVIEW_CREATED`         | review-service    | ai-service _(moderation pipeline)_                               | reviewId, productId, orderId, rating, moderationStatus=PENDING |
-| `review.events`       | `REVIEW_PUBLISHED`       | review-service    | search-service _(update rating)_, notification-service           | reviewId, productId, newAverageRating, totalReviewCount        |
-| `review.events`       | `REVIEW_REJECTED`        | review-service    | notification-service _(inform user)_                             | reviewId, userId, reason                                       |
-| `review.events`       | `REVIEW_HELPFUL_MARKED`  | review-service    | _(analytics)_                                                    | reviewId, userId, newHelpfulCount                              |
+| Topic                 | Emitter           | Consumer(s)                                                                                 |
+| --------------------- | ----------------- | ------------------------------------------------------------------------------------------- |
+| `order.events`        | order-service     | inventory-service, payment-service, notification-service, analytics-service, wallet-service |
+| `inventory.events`    | inventory-service | order-service, notification-service                                                         |
+| `payment.events`      | payment-service   | order-service, notification-service                                                         |
+| `user.events`         | user-service      | notification-service, feed-service                                                          |
+| `live.events`         | live-service      | feed-service, notification-service, analytics-service                                       |
+| `review.events`       | review-service    | ai-service, search-service, notification-service                                            |
+| `notification.events` | any service       | notification-service                                                                        |
+| `flash.events`        | inventory-service | feed-service, notification-service, analytics-service                                       |
+| `wallet.events`       | wallet-service    | analytics-service                                                                           |
+| `analytics.alerts`    | analytics-service | ops-agent (ai-service)                                                                      |
 
-## Saga Choreography Flow (Order → Payment)
+**Event interfaces**: `grep_search 'export interface.*Event' libs/events/src/events.ts`
+
+---
+
+## Saga: Order → Payment (choreography)
 
 ```
 order-service         inventory-service      payment-service
@@ -46,12 +39,34 @@ order-service         inventory-service      payment-service
      │── ORDER_CANCELLED ────►│ (release stock)
 ```
 
-## Dead Letter Topics (add when needed)
+---
+
+## Dead Letter Topics
 
 ```
-order.dead-letter      — ORDER_CREATED that failed after 3 retries
-payment.dead-letter    — PAYMENT_INITIATED that failed after 3 retries
-inventory.dead-letter  — STOCK_RESERVED that failed after 3 retries
+order.dead-letter | payment.dead-letter | inventory.dead-letter
 ```
 
-All DLT consumers must: log with traceId, alert on-call, emit to ClickHouse `failed_events`.
+Rule: log traceId + alert on-call + emit to ClickHouse `failed_events`
+
+---
+
+## Rules
+
+- **Never remove/rename event fields** — only add optional fields (backwards compat)
+- After adding a new emit: add interface to `events.ts` + add row to routing table above
+- Kafka publish pattern (always include traceId + version):
+  ```typescript
+  await this.kafka.publish({
+    topic,
+    partitionKey: userId,
+    value: {
+      eventId: uuid(),
+      eventType: 'X',
+      occurredAt: new Date().toISOString(),
+      traceId: uuid(),
+      version: 1,
+      ...payload,
+    },
+  });
+  ```

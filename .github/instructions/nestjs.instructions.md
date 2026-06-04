@@ -73,3 +73,32 @@ export class MyProcessor extends WorkerHost {
 - Save `OutboxEvent` in the SAME transaction as the domain entity
 - `OutboxProcessorService` polls every 5s and publishes to Kafka
 - NEVER publish to Kafka directly from a saga without outbox
+
+## Self-Update Rules (run AFTER implementation — mandatory)
+
+**After creating any entity file** → run in terminal:
+
+```
+node scripts/gen-context-index.js
+```
+
+This auto-refreshes SCHEMA.md table map + migration number from live @Entity decorators. Do NOT edit SCHEMA.md table map manually.
+
+**After adding any Kafka emit/publish** → two places to update:
+
+1. `libs/events/src/events.ts` — add the TypeScript interface (source of truth for payload)
+2. `libs/events/EVENTS.md` — add row to routing table (topic | emitter | consumer(s) only, no payload details)
+3. If it's part of a saga flow → update the saga diagram in EVENTS.md
+
+**After creating a new NestJS service** → update `apps/api-gateway/server.js`:
+
+- Add proxy route following existing `createProxyMiddleware` pattern
+- Add port to service map in `copilot-instructions.md`
+
+**After adding a BullMQ queue or job** → update `libs/queue/src/constants/queue.constants.ts`:
+
+- Add to `QUEUES` enum and `JOBS` enum, never hardcode queue/job name strings inline
+
+**After fixing a recurring bug or discovering a project-specific anti-pattern** → add to `.github/PATTERNS.md`:
+
+- Format: section header (domain) → pattern name → ❌ wrong code → ✅ correct code → why

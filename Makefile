@@ -160,6 +160,9 @@ migrate-revert: ## Revert the last migration
 seeds: ## Seed development data
 	npm run db:seed
 
+context\:index: ## Regenerate SCHEMA.md table map + migration number from live code
+	node scripts/gen-context-index.js
+
 # ── Kafka ──────────────────────────────────────────────────────
 create-topics: ## Create Kafka topics
 	@echo "Creating Kafka topics..."

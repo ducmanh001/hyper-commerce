@@ -4,14 +4,21 @@ applyTo: 'infrastructure/**,apps/*/src/entities/**'
 
 # Database & Infrastructure Conventions
 
-## BEFORE writing any migration — schema snapshot
+## BEFORE writing any migration — check schema
 
 **Read `infrastructure/postgres/SCHEMA.md` first.**
 
-- Lists all 25 existing tables with columns, indexes, FK relationships
-- Check if the table already exists → use `ALTER TABLE` not `CREATE TABLE`
-- Next migration number is at the top of that file — use it, then increment it
-- After adding a migration, update "Next migration number" in SCHEMA.md
+- Check the table map: does the table already exist? → use `ALTER TABLE` not `CREATE TABLE`
+- Read the entity file listed in the map to get current column definitions
+- Next migration number is at the top of that file — use it (it is auto-generated from `infrastructure/postgres/migrations/` filenames)
+
+**After any schema change — run `make context:index`** to refresh SCHEMA.md:
+
+- **After adding a table**: create the entity file → run `make context:index` → table appears in map automatically
+- **After modifying a table (ALTER TABLE)**: update the TypeORM entity file only → no manual SCHEMA.md edit needed
+- **After removing a table**: delete the entity file → run `make context:index` → row disappears from map automatically
+
+> SCHEMA.md table map is auto-generated — do NOT edit it manually. Edit entity files instead.
 
 ## TypeORM migrations (NEVER synchronize in prod)
 

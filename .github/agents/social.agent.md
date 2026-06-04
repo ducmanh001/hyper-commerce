@@ -100,6 +100,8 @@ user:session:{userId}            active session token
 
 ## Kafka Events (Social)
 
+> Canonical routing: `libs/events/EVENTS.md` — this table shows social-domain perspective only.
+
 | Publish               | Consume                             |
 | --------------------- | ----------------------------------- |
 | user.registered       | notification, analytics, ai-service |
