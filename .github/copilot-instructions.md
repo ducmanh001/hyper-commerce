@@ -91,6 +91,7 @@ Multi-vendor social commerce platform. Target: 50M DAU, 500K orders/day, 100K co
 
 - Kafka events: `libs/events/EVENTS.md` — topic routing + saga diagram (payload → read `events.ts`)
 - DB schema: `infrastructure/postgres/SCHEMA.md` — table→service map + migration number (columns → read entity file)
+- gRPC catalog: `libs/grpc/PROTOS.md` — 5 services, methods, request/response fields, client pattern
 
 ## Self-Retrieval Rules (LCB v3 L5 — never guess, always retrieve)
 
@@ -104,6 +105,7 @@ Multi-vendor social commerce platform. Target: 50M DAU, 500K orders/day, 100K co
 | Kafka topic exists? which services?      | `libs/events/EVENTS.md` (routing table)             | Add row to routing table in EVENTS.md              |
 | Kafka event payload / interface?         | `libs/events/src/events.ts`                         | Add interface to events.ts                         |
 | Saga flow / compensating events?         | `libs/events/EVENTS.md` (saga diagram)              | Update diagram if flow changes                     |
+| gRPC method name / request type?         | `libs/grpc/PROTOS.md` (catalog)                     | Add new method to proto file + PROTOS.md           |
 | Queue name / Job name constant           | `libs/queue/src/constants/queue.constants.ts`       | Add constants to that file                         |
 | API Gateway proxy routes                 | `apps/api-gateway/server.js`                        | Add proxy route for new services                   |
 | Port number / service name               | Already in this file — reread above                 | Add new service to port map in this file           |
