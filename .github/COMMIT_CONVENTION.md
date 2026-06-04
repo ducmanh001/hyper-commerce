@@ -120,9 +120,9 @@ docs(specs): add flash-sale-engine spec (L4)
 ```
 fix: fixed the bug                   ← not imperative + too vague
 Update stuff                         ← no type, no scope, too vague
-feat(order): Add Order Idempotency Key To Prevent Duplicate Submissions   ← 75 chars, capitalized
+feat(order): Add Order Idempotency Key To Prevent Duplicate Submissions   ← 71 chars but CAPITALIZED ❌
 feat: wip                            ← too short, no scope
-chore: update core config for wallet-service + AI workflow routing        ← 74 chars ❌
+chore: update core config for wallet-service + AI workflow routing        ← 66 chars but vague `update` verb ❌
 ```
 
 ---
