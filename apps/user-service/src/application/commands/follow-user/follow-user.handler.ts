@@ -19,7 +19,8 @@
  *    If followerId already follows followeeId, we throw AlreadyFollowingException
  *    (the client should check isFollowing state before calling).
  */
-import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
+import type { ICommandHandler } from '@nestjs/cqrs';
+import { CommandHandler } from '@nestjs/cqrs';
 import { Inject, Logger } from '@nestjs/common';
 import { FollowUserCommand, UnfollowUserCommand } from './follow-user.command';
 import {
@@ -27,15 +28,12 @@ import {
   CannotFollowSelfException,
   AlreadyFollowingException,
 } from '../../../domain/exceptions/user.exceptions';
-import {
-  USER_REPOSITORY_PORT, IUserRepository,
-} from '../../../domain/repositories/user.repository.port';
-import {
-  FOLLOW_REPOSITORY_PORT, IFollowRepository,
-} from '../../../domain/repositories/follow.repository.port';
-import {
-  USER_EVENT_PUBLISHER_PORT, IUserEventPublisherPort,
-} from '../../ports/application.ports';
+import type { IUserRepository } from '../../../domain/repositories/user.repository.port';
+import { USER_REPOSITORY_PORT } from '../../../domain/repositories/user.repository.port';
+import type { IFollowRepository } from '../../../domain/repositories/follow.repository.port';
+import { FOLLOW_REPOSITORY_PORT } from '../../../domain/repositories/follow.repository.port';
+import type { IUserEventPublisherPort } from '../../ports/application.ports';
+import { USER_EVENT_PUBLISHER_PORT } from '../../ports/application.ports';
 import { UserFollowedEvent, UserUnfollowedEvent } from '../../../domain/events/user.events';
 
 @CommandHandler(FollowUserCommand)
@@ -43,7 +41,7 @@ export class FollowUserHandler implements ICommandHandler<FollowUserCommand, voi
   private readonly logger = new Logger(FollowUserHandler.name);
 
   constructor(
-    @Inject(USER_REPOSITORY_PORT)   private readonly userRepo: IUserRepository,
+    @Inject(USER_REPOSITORY_PORT) private readonly userRepo: IUserRepository,
     @Inject(FOLLOW_REPOSITORY_PORT) private readonly followRepo: IFollowRepository,
     @Inject(USER_EVENT_PUBLISHER_PORT) private readonly events: IUserEventPublisherPort,
   ) {}
@@ -76,15 +74,10 @@ export class FollowUserHandler implements ICommandHandler<FollowUserCommand, voi
     follower.incrementFollowingCount();
     const becameCelebrity = followee.incrementFollowerCount();
 
-    await Promise.all([
-      this.userRepo.save(follower),
-      this.userRepo.save(followee),
-    ]);
+    await Promise.all([this.userRepo.save(follower), this.userRepo.save(followee)]);
 
     // ── Publish follow event ───────────────────────────────────────────────
-    await this.events.publish(
-      new UserFollowedEvent(followerId, followeeId, followee.isCelebrity),
-    );
+    await this.events.publish(new UserFollowedEvent(followerId, followeeId, followee.isCelebrity));
 
     // ── Log celebrity threshold crossing ──────────────────────────────────
     if (becameCelebrity) {
@@ -100,7 +93,7 @@ export class FollowUserHandler implements ICommandHandler<FollowUserCommand, voi
 @CommandHandler(UnfollowUserCommand)
 export class UnfollowUserHandler implements ICommandHandler<UnfollowUserCommand, void> {
   constructor(
-    @Inject(USER_REPOSITORY_PORT)   private readonly userRepo: IUserRepository,
+    @Inject(USER_REPOSITORY_PORT) private readonly userRepo: IUserRepository,
     @Inject(FOLLOW_REPOSITORY_PORT) private readonly followRepo: IFollowRepository,
     @Inject(USER_EVENT_PUBLISHER_PORT) private readonly events: IUserEventPublisherPort,
   ) {}
@@ -121,10 +114,7 @@ export class UnfollowUserHandler implements ICommandHandler<UnfollowUserCommand,
     follower.decrementFollowingCount();
     followee.decrementFollowerCount();
 
-    await Promise.all([
-      this.userRepo.save(follower),
-      this.userRepo.save(followee),
-    ]);
+    await Promise.all([this.userRepo.save(follower), this.userRepo.save(followee)]);
 
     await this.events.publish(new UserUnfollowedEvent(followerId, followeeId));
   }

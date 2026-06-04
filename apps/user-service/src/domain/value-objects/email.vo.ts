@@ -35,7 +35,8 @@ export class Email extends BaseValueObject<EmailProps> {
    * RFC 5321 simplified — handles 99%+ of real email addresses.
    * Deliberately NOT RFC 5322 full (which allows weird things like "John"@example.com).
    */
-  private static readonly PATTERN = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*\.[a-zA-Z]{2,}$/;
+  private static readonly PATTERN =
+    /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*\.[a-zA-Z]{2,}$/;
   private static readonly MAX_LENGTH = 255;
 
   constructor(rawEmail: string) {

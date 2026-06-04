@@ -1,7 +1,4 @@
-import {
-  Entity, PrimaryGeneratedColumn, Column,
-  CreateDateColumn, Index,
-} from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, Index } from 'typeorm';
 
 /**
  * UserFollow — edge in social graph.
@@ -14,20 +11,20 @@ import {
  */
 @Entity('user_follows')
 @Index(['followerId', 'followeeId'], { unique: true })
-@Index(['followeeId'])  // "who follows this person" — for fan-out
-@Index(['followerId'])  // "who does this person follow" — for feed
+@Index(['followeeId']) // "who follows this person" — for fan-out
+@Index(['followerId']) // "who does this person follow" — for feed
 export class UserFollow {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 
   @Column({ type: 'varchar', length: 36 })
-  followerId!: string;  // The person who clicked Follow
+  followerId!: string; // The person who clicked Follow
 
   @Column({ type: 'varchar', length: 36 })
-  followeeId!: string;  // The person being followed
+  followeeId!: string; // The person being followed
 
   @Column({ type: 'boolean', default: false })
-  notificationsEnabled!: boolean;  // Notify on new content
+  notificationsEnabled!: boolean; // Notify on new content
 
   @CreateDateColumn()
   createdAt!: Date;

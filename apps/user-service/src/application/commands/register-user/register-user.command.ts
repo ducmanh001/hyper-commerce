@@ -25,7 +25,7 @@ export class RegisterUserCommand {
   constructor(
     public readonly email: string,
     public readonly username: string,
-    public readonly password: string,   // plain text — will be hashed in handler
+    public readonly password: string, // plain text — will be hashed in handler
     public readonly displayName: string,
   ) {}
 }

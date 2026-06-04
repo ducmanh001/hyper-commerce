@@ -24,25 +24,46 @@
  *   InvalidCredentialsException→ 401 Unauthorized
  */
 import {
-  Controller, Get, Post, Patch, Delete, Body, Param, Query,
-  HttpCode, HttpStatus, UseGuards, ParseUUIDPipe, DefaultValuePipe, ParseIntPipe,
+  Controller,
+  Get,
+  Post,
+  Patch,
+  Delete,
+  Body,
+  Param,
+  Query,
+  HttpCode,
+  HttpStatus,
+  UseGuards,
+  ParseUUIDPipe,
+  DefaultValuePipe,
+  ParseIntPipe,
   Version,
 } from '@nestjs/common';
-import { CommandBus, QueryBus } from '@nestjs/cqrs';
+import type { CommandBus, QueryBus } from '@nestjs/cqrs';
 import { ApiTags, ApiBearerAuth, ApiOperation, ApiParam, ApiQuery } from '@nestjs/swagger';
 
-import { RegisterUserCommand }    from '../../application/commands/register-user/register-user.command';
-import { UpdateProfileCommand }   from '../../application/commands/update-profile/update-profile.command';
-import { FollowUserCommand, UnfollowUserCommand } from '../../application/commands/follow-user/follow-user.command';
+import { RegisterUserCommand } from '../../application/commands/register-user/register-user.command';
+import { UpdateProfileCommand } from '../../application/commands/update-profile/update-profile.command';
 import {
-  GetUserProfileQuery, GetFollowersQuery, GetFollowingQuery,
-  SearchUsersQuery, CheckUsernameAvailabilityQuery,
+  FollowUserCommand,
+  UnfollowUserCommand,
+} from '../../application/commands/follow-user/follow-user.command';
+import {
+  GetUserProfileQuery,
+  GetFollowersQuery,
+  GetFollowingQuery,
+  SearchUsersQuery,
+  CheckUsernameAvailabilityQuery,
 } from '../../application/queries/user.queries';
 
-import { JwtAuthGuard }   from '@hypercommerce/common/guards/jwt-auth.guard';
-import { Public }         from '@hypercommerce/common/decorators/public.decorator';
-import { CurrentUser }    from '@hypercommerce/common/decorators/current-user.decorator';
-import { TokenBucketRateLimitGuard, RateLimit } from '@hypercommerce/common/guards/token-bucket-rate-limit.guard';
+import { JwtAuthGuard } from '@hypercommerce/common/guards/jwt-auth.guard';
+import { Public } from '@hypercommerce/common/decorators/public.decorator';
+import { CurrentUser } from '@hypercommerce/common/decorators/current-user.decorator';
+import {
+  TokenBucketRateLimitGuard,
+  RateLimit,
+} from '@hypercommerce/common/guards/token-bucket-rate-limit.guard';
 
 // ── Request DTOs ──────────────────────────────────────────────────────────────
 
@@ -55,29 +76,40 @@ class RegisterUserDto {
   email!: string;
 
   @ApiProperty({ example: 'alice_dev' })
-  @IsString() @MinLength(3) @MaxLength(50)
+  @IsString()
+  @MinLength(3)
+  @MaxLength(50)
   username!: string;
 
   @ApiProperty({ example: 'SecurePass123!' })
-  @IsString() @MinLength(8) @MaxLength(128)
+  @IsString()
+  @MinLength(8)
+  @MaxLength(128)
   password!: string;
 
   @ApiProperty({ example: 'Alice Smith' })
-  @IsString() @MinLength(1) @MaxLength(100)
+  @IsString()
+  @MinLength(1)
+  @MaxLength(100)
   displayName!: string;
 }
 
 class UpdateProfileDto {
   @ApiProperty({ required: false })
-  @IsOptional() @IsString() @MaxLength(100)
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
   displayName?: string;
 
   @ApiProperty({ required: false })
-  @IsOptional() @IsString() @MaxLength(500)
+  @IsOptional()
+  @IsString()
+  @MaxLength(500)
   bio?: string;
 
   @ApiProperty({ required: false })
-  @IsOptional() @IsString()
+  @IsOptional()
+  @IsString()
   avatarUrl?: string;
 }
 
@@ -90,13 +122,13 @@ class UpdateProfileDto {
 export class UserController {
   constructor(
     private readonly commandBus: CommandBus,
-    private readonly queryBus:   QueryBus,
+    private readonly queryBus: QueryBus,
   ) {}
 
   // ── Registration ──────────────────────────────────────────────────────────
 
-  @Public()                               // No JWT required
-  @RateLimit({ rpm: 5, burstSize: 3 })    // Strict: max 5 registrations/min per IP
+  @Public() // No JWT required
+  @RateLimit({ rpm: 5, burstSize: 3 }) // Strict: max 5 registrations/min per IP
   @Post('register')
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({ summary: 'Register a new user account' })
@@ -116,13 +148,8 @@ export class UserController {
 
   @Patch('me')
   @ApiOperation({ summary: 'Update own profile' })
-  updateMyProfile(
-    @CurrentUser('sub') userId: string,
-    @Body() dto: UpdateProfileDto,
-  ) {
-    return this.commandBus.execute(
-      new UpdateProfileCommand(userId, userId, dto),
-    );
+  updateMyProfile(@CurrentUser('sub') userId: string, @Body() dto: UpdateProfileDto) {
+    return this.commandBus.execute(new UpdateProfileCommand(userId, userId, dto));
   }
 
   @Public()
@@ -141,12 +168,12 @@ export class UserController {
   @Public()
   @Get()
   @ApiOperation({ summary: 'Search users by username or display name' })
-  @ApiQuery({ name: 'q',      required: true })
-  @ApiQuery({ name: 'limit',  required: false, type: Number })
+  @ApiQuery({ name: 'q', required: true })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
   @ApiQuery({ name: 'cursor', required: false })
   searchUsers(
     @Query('q') query: string,
-    @Query('limit',  new DefaultValuePipe(20), ParseIntPipe) limit: number,
+    @Query('limit', new DefaultValuePipe(20), ParseIntPipe) limit: number,
     @Query('cursor') cursor?: string,
   ) {
     return this.queryBus.execute(new SearchUsersQuery(query, limit, cursor));
@@ -162,7 +189,7 @@ export class UserController {
   // ── Follow Graph ──────────────────────────────────────────────────────────
 
   @Post(':userId/follow')
-  @RateLimit({ rpm: 30 })   // 30 follows/min — prevents follow spam
+  @RateLimit({ rpm: 30 }) // 30 follows/min — prevents follow spam
   @ApiOperation({ summary: 'Follow a user' })
   follow(
     @CurrentUser('sub') followerId: string,
@@ -185,7 +212,7 @@ export class UserController {
   @ApiOperation({ summary: 'Get followers list' })
   getFollowers(
     @Param('userId', ParseUUIDPipe) userId: string,
-    @Query('limit',  new DefaultValuePipe(20), ParseIntPipe) limit: number,
+    @Query('limit', new DefaultValuePipe(20), ParseIntPipe) limit: number,
     @Query('cursor') cursor?: string,
   ) {
     return this.queryBus.execute(new GetFollowersQuery(userId, limit, cursor));
@@ -195,7 +222,7 @@ export class UserController {
   @ApiOperation({ summary: 'Get following list' })
   getFollowing(
     @Param('userId', ParseUUIDPipe) userId: string,
-    @Query('limit',  new DefaultValuePipe(20), ParseIntPipe) limit: number,
+    @Query('limit', new DefaultValuePipe(20), ParseIntPipe) limit: number,
     @Query('cursor') cursor?: string,
   ) {
     return this.queryBus.execute(new GetFollowingQuery(userId, limit, cursor));

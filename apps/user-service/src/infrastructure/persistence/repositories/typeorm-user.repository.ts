@@ -21,14 +21,15 @@
  */
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, DataSource } from 'typeorm';
+import type { Repository, DataSource } from 'typeorm';
 import { UserDocument } from '../documents/user.document';
 import { UserMapper } from '../mappers/user.mapper';
-import { IUserRepository } from '../../../domain/repositories/user.repository.port';
-import { UserAggregate } from '../../../domain/entities/user.aggregate';
-import { Email } from '../../../domain/value-objects/email.vo';
-import { Username } from '../../../domain/value-objects/username.vo';
-import { UserStatus, UserProfileSnapshot } from '../../../domain/types/user.types';
+import type { IUserRepository } from '../../../domain/repositories/user.repository.port';
+import type { UserAggregate } from '../../../domain/entities/user.aggregate';
+import type { Email } from '../../../domain/value-objects/email.vo';
+import type { Username } from '../../../domain/value-objects/username.vo';
+import type { UserProfileSnapshot } from '../../../domain/types/user.types';
+import { UserStatus } from '../../../domain/types/user.types';
 
 @Injectable()
 export class TypeOrmUserRepository implements IUserRepository {
@@ -40,17 +41,31 @@ export class TypeOrmUserRepository implements IUserRepository {
 
   async save(user: UserAggregate): Promise<void> {
     const data = UserMapper.toPersistence(user);
-    await this.orm.createQueryBuilder()
+    await this.orm
+      .createQueryBuilder()
       .insert()
       .into(UserDocument)
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       .values(data as any)
       .orUpdate(
         // Columns to update on conflict
-        ['passwordHash', 'displayName', 'avatarUrl', 'bio', 'status',
-         'roles', 'emailVerified', 'phoneVerified', 'phone', 'sellerId',
-         'followerCount', 'followingCount', 'preferences', 'updatedAt'],
-        ['id'],   // Conflict on primary key
+        [
+          'passwordHash',
+          'displayName',
+          'avatarUrl',
+          'bio',
+          'status',
+          'roles',
+          'emailVerified',
+          'phoneVerified',
+          'phone',
+          'sellerId',
+          'followerCount',
+          'followingCount',
+          'preferences',
+          'updatedAt',
+        ],
+        ['id'], // Conflict on primary key
       )
       .execute();
   }
@@ -80,10 +95,7 @@ export class TypeOrmUserRepository implements IUserRepository {
 
   async findByIds(ids: string[]): Promise<UserAggregate[]> {
     if (!ids.length) return [];
-    const docs = await this.orm
-      .createQueryBuilder('u')
-      .whereInIds(ids)
-      .getMany();
+    const docs = await this.orm.createQueryBuilder('u').whereInIds(ids).getMany();
     return docs.map(UserMapper.toDomain);
   }
 
@@ -92,17 +104,22 @@ export class TypeOrmUserRepository implements IUserRepository {
     limit: number;
     cursor?: string;
   }): Promise<{ items: UserProfileSnapshot[]; nextCursor?: string }> {
-    const qb = this.orm.createQueryBuilder('u')
-      .select(['u.id', 'u.username', 'u.displayName', 'u.avatarUrl', 'u.followerCount', 'u.createdAt'])
+    const qb = this.orm
+      .createQueryBuilder('u')
+      .select([
+        'u.id',
+        'u.username',
+        'u.displayName',
+        'u.avatarUrl',
+        'u.followerCount',
+        'u.createdAt',
+      ])
       .where('u.status = :status', { status: UserStatus.ACTIVE })
       .orderBy('u.id', 'ASC')
-      .limit(params.limit + 1);  // Fetch one extra to determine if there's a next page
+      .limit(params.limit + 1); // Fetch one extra to determine if there's a next page
 
     if (params.query) {
-      qb.andWhere(
-        '(u.username ILIKE :q OR u.displayName ILIKE :q)',
-        { q: `%${params.query}%` },
-      );
+      qb.andWhere('(u.username ILIKE :q OR u.displayName ILIKE :q)', { q: `%${params.query}%` });
     }
 
     if (params.cursor) {
@@ -112,7 +129,7 @@ export class TypeOrmUserRepository implements IUserRepository {
 
     const docs = await qb.getMany();
     const hasMore = docs.length > params.limit;
-    const items   = hasMore ? docs.slice(0, params.limit) : docs;
+    const items = hasMore ? docs.slice(0, params.limit) : docs;
 
     const nextCursor = hasMore
       ? Buffer.from(items[items.length - 1].id).toString('base64')

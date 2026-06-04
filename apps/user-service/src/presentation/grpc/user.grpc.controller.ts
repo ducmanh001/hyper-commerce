@@ -17,7 +17,7 @@
  */
 import { Controller, Logger } from '@nestjs/common';
 import { GrpcMethod } from '@nestjs/microservices';
-import { QueryBus } from '@nestjs/cqrs';
+import type { QueryBus } from '@nestjs/cqrs';
 import {
   GetUserProfileQuery,
   GetFollowersQuery,
@@ -73,9 +73,7 @@ export class UserGrpcController {
   async getUser(request: GetUserRequest): Promise<UserResponse> {
     this.logger.debug(`gRPC GetUser: ${request.user_id}`);
 
-    const profile = await this.queryBus.execute(
-      new GetUserProfileQuery(request.user_id),
-    );
+    const profile = await this.queryBus.execute(new GetUserProfileQuery(request.user_id));
 
     return this.toUserResponse(profile);
   }
@@ -86,9 +84,7 @@ export class UserGrpcController {
    * Much cheaper than N individual GetUser calls.
    */
   @GrpcMethod('UserService', 'GetUserBatch')
-  async getUserBatch(
-    request: GetUserBatchRequest,
-  ): Promise<{ users: UserResponse[] }> {
+  async getUserBatch(request: GetUserBatchRequest): Promise<{ users: UserResponse[] }> {
     this.logger.debug(`gRPC GetUserBatch: ${request.user_ids.length} users`);
 
     const profiles = await Promise.all(
@@ -98,9 +94,7 @@ export class UserGrpcController {
     );
 
     return {
-      users: profiles
-        .filter(Boolean)
-        .map((p) => this.toUserResponse(p)),
+      users: profiles.filter(Boolean).map((p) => this.toUserResponse(p)),
     };
   }
 
@@ -115,11 +109,11 @@ export class UserGrpcController {
     );
 
     return {
-      user:             this.toUserResponse(profile),
-      is_following:     profile.isFollowing ?? false,
-      is_blocked:       profile.isBlocked ?? false,
-      post_count:       0,  // owned by post-service — fetch separately
-      following_count:  profile.followingCount ?? 0,
+      user: this.toUserResponse(profile),
+      is_following: profile.isFollowing ?? false,
+      is_blocked: profile.isBlocked ?? false,
+      post_count: 0, // owned by post-service — fetch separately
+      following_count: profile.followingCount ?? 0,
     };
   }
 
@@ -128,9 +122,7 @@ export class UserGrpcController {
    * Called by payment-service before processing a payout.
    */
   @GrpcMethod('UserService', 'CheckUserExists')
-  async checkUserExists(
-    request: CheckUserExistsRequest,
-  ): Promise<{ exists: boolean }> {
+  async checkUserExists(request: CheckUserExistsRequest): Promise<{ exists: boolean }> {
     try {
       await this.queryBus.execute(new GetUserProfileQuery(request.user_id));
       return { exists: true };
@@ -144,12 +136,8 @@ export class UserGrpcController {
    * Celebrity check: followerCount >= 50K → pull-based fan-out.
    */
   @GrpcMethod('UserService', 'GetFollowerCount')
-  async getFollowerCount(
-    request: GetFollowerCountRequest,
-  ): Promise<{ count: number }> {
-    const profile = await this.queryBus.execute(
-      new GetUserProfileQuery(request.user_id),
-    );
+  async getFollowerCount(request: GetFollowerCountRequest): Promise<{ count: number }> {
+    const profile = await this.queryBus.execute(new GetUserProfileQuery(request.user_id));
     return { count: profile?.followerCount ?? 0 };
   }
 
@@ -157,16 +145,17 @@ export class UserGrpcController {
 
   private toUserResponse(profile: Record<string, unknown>): UserResponse {
     return {
-      id:            String(profile['id'] ?? ''),
-      username:      String(profile['username'] ?? ''),
-      email:         String(profile['email'] ?? ''),
-      avatar_url:    String(profile['avatarUrl'] ?? ''),
-      display_name:  String(profile['displayName'] ?? ''),
-      is_celebrity:  Boolean(profile['isCelebrity']),
+      id: String(profile['id'] ?? ''),
+      username: String(profile['username'] ?? ''),
+      email: String(profile['email'] ?? ''),
+      avatar_url: String(profile['avatarUrl'] ?? ''),
+      display_name: String(profile['displayName'] ?? ''),
+      is_celebrity: Boolean(profile['isCelebrity']),
       follower_count: Number(profile['followerCount'] ?? 0),
-      created_at:    profile['createdAt'] instanceof Date
-        ? profile['createdAt'].getTime()
-        : Number(profile['createdAt'] ?? 0),
+      created_at:
+        profile['createdAt'] instanceof Date
+          ? profile['createdAt'].getTime()
+          : Number(profile['createdAt'] ?? 0),
     };
   }
 }

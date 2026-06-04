@@ -13,7 +13,8 @@
  *   - isMutualFollower: do they follow each other?
  *   This avoids a separate API call from the client.
  */
-import { IQueryHandler, QueryHandler } from '@nestjs/cqrs';
+import type { IQueryHandler } from '@nestjs/cqrs';
+import { QueryHandler } from '@nestjs/cqrs';
 import { Inject, Logger } from '@nestjs/common';
 import {
   GetUserProfileQuery,
@@ -22,15 +23,12 @@ import {
   SearchUsersQuery,
   CheckUsernameAvailabilityQuery,
 } from './user.queries';
-import {
-  USER_REPOSITORY_PORT, IUserRepository,
-} from '../../domain/repositories/user.repository.port';
-import {
-  FOLLOW_REPOSITORY_PORT, IFollowRepository,
-} from '../../domain/repositories/follow.repository.port';
-import {
-  USER_CACHE_PORT, IUserCachePort,
-} from '../ports/application.ports';
+import type { IUserRepository } from '../../domain/repositories/user.repository.port';
+import { USER_REPOSITORY_PORT } from '../../domain/repositories/user.repository.port';
+import type { IFollowRepository } from '../../domain/repositories/follow.repository.port';
+import { FOLLOW_REPOSITORY_PORT } from '../../domain/repositories/follow.repository.port';
+import type { IUserCachePort } from '../ports/application.ports';
+import { USER_CACHE_PORT } from '../ports/application.ports';
 import { UserNotFoundException } from '../../domain/exceptions/user.exceptions';
 import { Username } from '../../domain/value-objects/username.vo';
 
@@ -43,8 +41,8 @@ export class GetUserProfileHandler implements IQueryHandler<GetUserProfileQuery>
   private readonly logger = new Logger(GetUserProfileHandler.name);
 
   constructor(
-    @Inject(USER_REPOSITORY_PORT)   private readonly userRepo: IUserRepository,
-    @Inject(USER_CACHE_PORT)        private readonly cache: IUserCachePort,
+    @Inject(USER_REPOSITORY_PORT) private readonly userRepo: IUserRepository,
+    @Inject(USER_CACHE_PORT) private readonly cache: IUserCachePort,
     @Inject(FOLLOW_REPOSITORY_PORT) private readonly followRepo: IFollowRepository,
   ) {}
 
@@ -68,12 +66,20 @@ export class GetUserProfileHandler implements IQueryHandler<GetUserProfileQuery>
       PROFILE_CACHE_TTL_SEC,
     );
 
-    return this.enrichWithViewerContext(snapshot as unknown as Record<string, unknown>, query.viewerId);
+    return this.enrichWithViewerContext(
+      snapshot as unknown as Record<string, unknown>,
+      query.viewerId,
+    );
   }
 
   private async enrichWithViewerContext(profile: Record<string, unknown>, viewerId?: string) {
     if (!viewerId || viewerId === profile['id']) {
-      return { ...profile, isFollowing: false, isMutualFollower: false, isOwnProfile: !viewerId || viewerId === profile['id'] };
+      return {
+        ...profile,
+        isFollowing: false,
+        isMutualFollower: false,
+        isOwnProfile: !viewerId || viewerId === profile['id'],
+      };
     }
 
     const [isFollowing, isMutualFollower] = await Promise.all([
@@ -91,13 +97,14 @@ export class GetUserProfileHandler implements IQueryHandler<GetUserProfileQuery>
 export class GetFollowersHandler implements IQueryHandler<GetFollowersQuery> {
   constructor(
     @Inject(FOLLOW_REPOSITORY_PORT) private readonly followRepo: IFollowRepository,
-    @Inject(USER_REPOSITORY_PORT)   private readonly userRepo: IUserRepository,
+    @Inject(USER_REPOSITORY_PORT) private readonly userRepo: IUserRepository,
   ) {}
 
   async execute(query: GetFollowersQuery) {
-    const { items, nextCursor, totalCount } = await this.followRepo.getFollowers(
-      query.userId, { limit: query.limit, cursor: query.cursor },
-    );
+    const { items, nextCursor, totalCount } = await this.followRepo.getFollowers(query.userId, {
+      limit: query.limit,
+      cursor: query.cursor,
+    });
 
     // Hydrate follower profiles (batch fetch)
     const followerIds = items.map((f) => f.followerId);
@@ -105,10 +112,20 @@ export class GetFollowersHandler implements IQueryHandler<GetFollowersQuery> {
     const userMap = new Map(users.map((u) => [u.id, u]));
 
     return {
-      items: items.map((f) => {
-        const u = userMap.get(f.followerId);
-        return u ? { id: u.id, username: u.username.value, displayName: u.displayName, avatarUrl: u.avatarUrl, isCelebrity: u.isCelebrity } : null;
-      }).filter(Boolean),
+      items: items
+        .map((f) => {
+          const u = userMap.get(f.followerId);
+          return u
+            ? {
+                id: u.id,
+                username: u.username.value,
+                displayName: u.displayName,
+                avatarUrl: u.avatarUrl,
+                isCelebrity: u.isCelebrity,
+              }
+            : null;
+        })
+        .filter(Boolean),
       totalCount,
       nextCursor,
     };
@@ -121,22 +138,33 @@ export class GetFollowersHandler implements IQueryHandler<GetFollowersQuery> {
 export class GetFollowingHandler implements IQueryHandler<GetFollowingQuery> {
   constructor(
     @Inject(FOLLOW_REPOSITORY_PORT) private readonly followRepo: IFollowRepository,
-    @Inject(USER_REPOSITORY_PORT)   private readonly userRepo: IUserRepository,
+    @Inject(USER_REPOSITORY_PORT) private readonly userRepo: IUserRepository,
   ) {}
 
   async execute(query: GetFollowingQuery) {
-    const { items, nextCursor, totalCount } = await this.followRepo.getFollowing(
-      query.userId, { limit: query.limit, cursor: query.cursor },
-    );
+    const { items, nextCursor, totalCount } = await this.followRepo.getFollowing(query.userId, {
+      limit: query.limit,
+      cursor: query.cursor,
+    });
     const followeeIds = items.map((f) => f.followeeId);
-    const users       = await this.userRepo.findByIds(followeeIds);
-    const userMap     = new Map(users.map((u) => [u.id, u]));
+    const users = await this.userRepo.findByIds(followeeIds);
+    const userMap = new Map(users.map((u) => [u.id, u]));
 
     return {
-      items: items.map((f) => {
-        const u = userMap.get(f.followeeId);
-        return u ? { id: u.id, username: u.username.value, displayName: u.displayName, avatarUrl: u.avatarUrl, isCelebrity: u.isCelebrity } : null;
-      }).filter(Boolean),
+      items: items
+        .map((f) => {
+          const u = userMap.get(f.followeeId);
+          return u
+            ? {
+                id: u.id,
+                username: u.username.value,
+                displayName: u.displayName,
+                avatarUrl: u.avatarUrl,
+                isCelebrity: u.isCelebrity,
+              }
+            : null;
+        })
+        .filter(Boolean),
       totalCount,
       nextCursor,
     };
@@ -147,14 +175,12 @@ export class GetFollowingHandler implements IQueryHandler<GetFollowingQuery> {
 
 @QueryHandler(SearchUsersQuery)
 export class SearchUsersHandler implements IQueryHandler<SearchUsersQuery> {
-  constructor(
-    @Inject(USER_REPOSITORY_PORT) private readonly userRepo: IUserRepository,
-  ) {}
+  constructor(@Inject(USER_REPOSITORY_PORT) private readonly userRepo: IUserRepository) {}
 
   async execute(query: SearchUsersQuery) {
     return this.userRepo.search({
-      query:  query.query,
-      limit:  query.limit,
+      query: query.query,
+      limit: query.limit,
       cursor: query.cursor,
     });
   }
@@ -164,9 +190,7 @@ export class SearchUsersHandler implements IQueryHandler<SearchUsersQuery> {
 
 @QueryHandler(CheckUsernameAvailabilityQuery)
 export class CheckUsernameAvailabilityHandler implements IQueryHandler<CheckUsernameAvailabilityQuery> {
-  constructor(
-    @Inject(USER_REPOSITORY_PORT) private readonly userRepo: IUserRepository,
-  ) {}
+  constructor(@Inject(USER_REPOSITORY_PORT) private readonly userRepo: IUserRepository) {}
 
   async execute(query: CheckUsernameAvailabilityQuery) {
     try {

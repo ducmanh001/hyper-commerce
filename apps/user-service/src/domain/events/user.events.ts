@@ -29,7 +29,7 @@ export class UserRegisteredEvent extends DomainEvent {
   readonly eventType = 'user.registered';
 
   constructor(
-    readonly aggregateId: string,  // userId
+    readonly aggregateId: string, // userId
     readonly email: string,
     readonly username: string,
     readonly displayName: string,
@@ -114,7 +114,7 @@ export class UserDeletedEvent extends DomainEvent {
 
   constructor(
     readonly aggregateId: string,
-    readonly email: string,  // For data retention/GDPR audits
+    readonly email: string, // For data retention/GDPR audits
   ) {
     super();
   }

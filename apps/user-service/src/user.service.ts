@@ -7,25 +7,21 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource } from 'typeorm';
-import { EventEmitter2 } from '@nestjs/event-emitter';
-import { ConfigService } from '@nestjs/config';
-import { User } from './entities/user.entity';
-import { UserRepository } from './repositories/user.repository';
-import { FollowService } from './follow/follow.service';
-import { RedisClientService } from '@hypercommerce/redis';
-import { KafkaProducerService } from '@hypercommerce/kafka';
+import type { EventEmitter2 } from '@nestjs/event-emitter';
+import type { ConfigService } from '@nestjs/config';
+import type { User } from './entities/user.entity';
+import type { UserRepository } from './repositories/user.repository';
+import type { FollowService } from './follow/follow.service';
+import type { RedisClientService } from '@hypercommerce/redis';
+import type { KafkaProducerService } from '@hypercommerce/kafka';
 import { APP_CONSTANTS } from '@hypercommerce/common/constants/app.constants';
 import {
   NotFoundException,
   ConflictException,
   ForbiddenException,
 } from '@hypercommerce/common/exceptions/domain.exceptions';
-import {
-  CreateUserDto,
-  UpdateUserDto,
-  UserProfileResponseDto,
-  FollowResponseDto,
-} from './dto';
+import type { CreateUserDto, UpdateUserDto } from './dto';
+import { UserProfileResponseDto, FollowResponseDto } from './dto';
 
 @Injectable()
 export class UserService {
@@ -58,17 +54,12 @@ export class UserService {
     // Warm cache immediately after creation
     await this.cacheUserProfile(user);
 
-    this.logger.log(
-      JSON.stringify({ event: 'user_created', userId: user.id }),
-    );
+    this.logger.log(JSON.stringify({ event: 'user_created', userId: user.id }));
 
     return UserProfileResponseDto.fromEntity(user);
   }
 
-  async getUserProfile(
-    userId: string,
-    viewerId?: string,
-  ): Promise<UserProfileResponseDto> {
+  async getUserProfile(userId: string, viewerId?: string): Promise<UserProfileResponseDto> {
     // 1. Try Redis cache (L1) — ~0.5ms
     const cached = await this.getCachedProfile(userId);
     if (cached) {
@@ -82,10 +73,7 @@ export class UserService {
     // 3. Write-back to cache
     await this.cacheUserProfile(user);
 
-    return this.enrichWithViewerContext(
-      UserProfileResponseDto.fromEntity(user),
-      viewerId,
-    );
+    return this.enrichWithViewerContext(UserProfileResponseDto.fromEntity(user), viewerId);
   }
 
   async updateUser(
@@ -103,8 +91,8 @@ export class UserService {
     // Apply partial updates to the entity and save
     Object.assign(user, {
       ...(dto.displayName !== undefined && { fullName: dto.displayName }),
-      ...(dto.bio         !== undefined && { bio: dto.bio }),
-      ...(dto.avatarUrl   !== undefined && { avatarUrl: dto.avatarUrl }),
+      ...(dto.bio !== undefined && { bio: dto.bio }),
+      ...(dto.avatarUrl !== undefined && { avatarUrl: dto.avatarUrl }),
     });
     const updated = await this.userRepo.save(user);
 
@@ -126,7 +114,10 @@ export class UserService {
   }> {
     const cacheKey = `social:stats:${userId}`;
     const cached = await this.redis.get(cacheKey);
-    if (cached) return JSON.parse(cached) as ReturnType<typeof this.getSocialStats> extends Promise<infer R> ? R : never;
+    if (cached)
+      return JSON.parse(cached) as ReturnType<typeof this.getSocialStats> extends Promise<infer R>
+        ? R
+        : never;
 
     const [followersCount, followingCount] = await Promise.all([
       this.followService.countFollowers(userId),
@@ -134,8 +125,7 @@ export class UserService {
     ]);
     const postsCount = 0; // posts not owned by user-service — fetch from post-service
 
-    const isCelebrity =
-      followersCount >= APP_CONSTANTS.CELEBRITY_FOLLOWER_THRESHOLD;
+    const isCelebrity = followersCount >= APP_CONSTANTS.CELEBRITY_FOLLOWER_THRESHOLD;
 
     const stats = { followersCount, followingCount, postsCount, isCelebrity };
 
@@ -178,15 +168,18 @@ export class UserService {
     return this.getUserProfile(userId);
   }
 
-  async updateProfile(userId: string, body: Record<string, unknown>): Promise<UserProfileResponseDto> {
+  async updateProfile(
+    userId: string,
+    body: Record<string, unknown>,
+  ): Promise<UserProfileResponseDto> {
     const user = await this.userRepo.findById(userId);
     if (!user) throw new NotFoundException('User', userId);
 
     Object.assign(user, {
       ...(body['displayName'] !== undefined && { displayName: body['displayName'] as string }),
-      ...(body['bio']         !== undefined && { bio: body['bio'] as string }),
-      ...(body['avatarUrl']   !== undefined && { avatarUrl: body['avatarUrl'] as string }),
-      ...(body['fullName']    !== undefined && { fullName: body['fullName'] as string }),
+      ...(body['bio'] !== undefined && { bio: body['bio'] as string }),
+      ...(body['avatarUrl'] !== undefined && { avatarUrl: body['avatarUrl'] as string }),
+      ...(body['fullName'] !== undefined && { fullName: body['fullName'] as string }),
     });
     const updated = await this.userRepo.save(user);
     await this.redis.del(`${APP_CONSTANTS.REDIS_KEYS.USER_PROFILE}${userId}`);

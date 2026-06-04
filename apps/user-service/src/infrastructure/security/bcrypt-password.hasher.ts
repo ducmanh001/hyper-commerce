@@ -20,7 +20,7 @@ import { Injectable } from '@nestjs/common';
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore - package installed at runtime
 import * as bcrypt from 'bcrypt';
-import { IPasswordHasherPort } from '../../application/ports/application.ports';
+import type { IPasswordHasherPort } from '../../application/ports/application.ports';
 
 const BCRYPT_COST = 12;
 

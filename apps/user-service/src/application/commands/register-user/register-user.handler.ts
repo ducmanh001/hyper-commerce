@@ -1,4 +1,5 @@
-import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
+import type { ICommandHandler } from '@nestjs/cqrs';
+import { CommandHandler } from '@nestjs/cqrs';
 import { Inject, Logger } from '@nestjs/common';
 import { RegisterUserCommand } from './register-user.command';
 import { UserAggregate } from '../../../domain/entities/user.aggregate';
@@ -8,22 +9,22 @@ import {
   EmailAlreadyTakenException,
   UsernameAlreadyTakenException,
 } from '../../../domain/exceptions/user.exceptions';
-import {
-  USER_REPOSITORY_PORT, IUserRepository,
-} from '../../../domain/repositories/user.repository.port';
-import {
-  PASSWORD_HASHER_PORT, IPasswordHasherPort,
-  USER_EVENT_PUBLISHER_PORT, IUserEventPublisherPort,
-} from '../../ports/application.ports';
+import type { IUserRepository } from '../../../domain/repositories/user.repository.port';
+import { USER_REPOSITORY_PORT } from '../../../domain/repositories/user.repository.port';
+import type { IPasswordHasherPort, IUserEventPublisherPort } from '../../ports/application.ports';
+import { PASSWORD_HASHER_PORT, USER_EVENT_PUBLISHER_PORT } from '../../ports/application.ports';
 
 export interface RegisterUserResult {
-  userId:   string;
+  userId: string;
   username: string;
-  email:    string;
+  email: string;
 }
 
 @CommandHandler(RegisterUserCommand)
-export class RegisterUserHandler implements ICommandHandler<RegisterUserCommand, RegisterUserResult> {
+export class RegisterUserHandler implements ICommandHandler<
+  RegisterUserCommand,
+  RegisterUserResult
+> {
   private readonly logger = new Logger(RegisterUserHandler.name);
 
   constructor(
@@ -41,7 +42,7 @@ export class RegisterUserHandler implements ICommandHandler<RegisterUserCommand,
     // ── Step 1: Create & validate value objects ────────────────────────────
     // Email/Username constructors throw if format is invalid.
     // We let these bubble as 400 Bad Request at the controller level.
-    const email    = new Email(cmd.email);
+    const email = new Email(cmd.email);
     const username = new Username(cmd.username);
 
     // ── Step 2: Uniqueness checks (parallel for speed) ─────────────────────
@@ -50,7 +51,7 @@ export class RegisterUserHandler implements ICommandHandler<RegisterUserCommand,
       this.userRepo.existsByUsername(username),
     ]);
 
-    if (emailTaken)    throw new EmailAlreadyTakenException(email.value);
+    if (emailTaken) throw new EmailAlreadyTakenException(email.value);
     if (usernameTaken) throw new UsernameAlreadyTakenException(username.value);
 
     // ── Step 3: Hash password ──────────────────────────────────────────────
@@ -61,10 +62,10 @@ export class RegisterUserHandler implements ICommandHandler<RegisterUserCommand,
     // ── Step 4: Create domain aggregate ───────────────────────────────────
     // This emits UserRegisteredEvent internally.
     const user = UserAggregate.register({
-      email:        email.value,
-      username:     username.value,
+      email: email.value,
+      username: username.value,
       passwordHash,
-      displayName:  cmd.displayName,
+      displayName: cmd.displayName,
     });
 
     // ── Step 5: Persist ───────────────────────────────────────────────────
@@ -85,9 +86,9 @@ export class RegisterUserHandler implements ICommandHandler<RegisterUserCommand,
     });
 
     return {
-      userId:   user.id,
+      userId: user.id,
       username: user.username.value,
-      email:    user.email.value,
+      email: user.email.value,
     };
   }
 }

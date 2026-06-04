@@ -1,6 +1,10 @@
 import {
-  Entity, PrimaryGeneratedColumn, Column,
-  CreateDateColumn, UpdateDateColumn, Index,
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  UpdateDateColumn,
+  Index,
 } from 'typeorm';
 
 /**
@@ -40,13 +44,13 @@ export class UserProfile {
   gender?: 'MALE' | 'FEMALE' | 'OTHER' | 'PREFER_NOT_TO_SAY';
 
   @Column({ type: 'simple-array', nullable: true })
-  interests?: string[];  // Product categories user is interested in
+  interests?: string[]; // Product categories user is interested in
 
   @Column({ type: 'varchar', length: 1000, nullable: true })
   coverImageUrl?: string;
 
   @Column({ type: 'jsonb', nullable: true })
-  socialLinks?: Record<string, string>;  // { facebook: url, tiktok: url }
+  socialLinks?: Record<string, string>; // { facebook: url, tiktok: url }
 
   @Column({ type: 'boolean', default: true })
   profilePublic!: boolean;

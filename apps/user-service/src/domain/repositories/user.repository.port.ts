@@ -20,10 +20,10 @@
  * USAGE in command handler:
  *   @Inject(USER_REPOSITORY_PORT) private readonly repo: IUserRepository
  */
-import { UserAggregate } from '../entities/user.aggregate';
-import { Email } from '../value-objects/email.vo';
-import { Username } from '../value-objects/username.vo';
-import { UserProfileSnapshot } from '../types/user.types';
+import type { UserAggregate } from '../entities/user.aggregate';
+import type { Email } from '../value-objects/email.vo';
+import type { Username } from '../value-objects/username.vo';
+import type { UserProfileSnapshot } from '../types/user.types';
 
 export const USER_REPOSITORY_PORT = Symbol('USER_REPOSITORY_PORT');
 

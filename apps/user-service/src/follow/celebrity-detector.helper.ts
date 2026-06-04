@@ -7,7 +7,7 @@
 
 import { Injectable, Logger } from '@nestjs/common';
 import { APP_CONSTANTS } from '@hypercommerce/common/constants/app.constants';
-import { RedisClientService } from '@hypercommerce/redis';
+import type { RedisClientService } from '@hypercommerce/redis';
 
 export type FanoutStrategy = 'PUSH' | 'PULL' | 'HYBRID';
 
@@ -59,10 +59,7 @@ export class CelebrityDetectorHelper {
    * Redis SET sismember is atomic and ~0.3ms — used on hot paths.
    */
   async isCelebrity(userId: string): Promise<boolean> {
-    const result = await this.redis.sismember(
-      APP_CONSTANTS.REDIS_KEYS.CELEBRITY_LIST,
-      userId,
-    );
+    const result = await this.redis.sismember(APP_CONSTANTS.REDIS_KEYS.CELEBRITY_LIST, userId);
     return result === 1;
   }
 
@@ -73,9 +70,7 @@ export class CelebrityDetectorHelper {
   async bulkIsCelebrity(userIds: string[]): Promise<Map<string, boolean>> {
     if (!userIds.length) return new Map();
 
-    const celebrities = await this.redis.smembers(
-      APP_CONSTANTS.REDIS_KEYS.CELEBRITY_LIST,
-    );
+    const celebrities = await this.redis.smembers(APP_CONSTANTS.REDIS_KEYS.CELEBRITY_LIST);
     const celebritySet = new Set(celebrities);
 
     return new Map(userIds.map((id) => [id, celebritySet.has(id)]));
@@ -118,17 +113,13 @@ export class CelebrityDetectorHelper {
    *
    * @param lastActiveAt - ISO timestamp of follower's last activity
    */
-  shouldPushToFollower(
-    strategy: FanoutStrategy,
-    lastActiveAt: string | null,
-  ): boolean {
+  shouldPushToFollower(strategy: FanoutStrategy, lastActiveAt: string | null): boolean {
     if (strategy === 'PUSH') return true;
     if (strategy === 'PULL') return false;
 
     // HYBRID: push only to followers active in last 7 days
     if (!lastActiveAt) return false;
-    const daysSinceActive =
-      (Date.now() - new Date(lastActiveAt).getTime()) / (1000 * 60 * 60 * 24);
+    const daysSinceActive = (Date.now() - new Date(lastActiveAt).getTime()) / (1000 * 60 * 60 * 24);
     return daysSinceActive <= 7;
   }
 }

@@ -27,7 +27,9 @@
 import { BaseAggregateRoot } from '@hypercommerce/common/domain/base.aggregate-root';
 import { Email } from '../value-objects/email.vo';
 import { Username } from '../value-objects/username.vo';
-import { UserStatus, UserRole, FanOutStrategy, UserProfileSnapshot } from '../types/user.types';
+import type { FanOutStrategy, UserProfileSnapshot } from '../types/user.types';
+import { UserStatus, UserRole } from '../types/user.types';
+import type { ProfileUpdatePayload } from '../events/user.events';
 import {
   UserRegisteredEvent,
   UserProfileUpdatedEvent,
@@ -36,7 +38,6 @@ import {
   UserUnfollowedEvent,
   UserSuspendedEvent,
   UserDeletedEvent,
-  ProfileUpdatePayload,
 } from '../events/user.events';
 import {
   UserSuspendedException,
@@ -49,92 +50,92 @@ const CELEBRITY_THRESHOLD = 50_000;
 // ── Reconstitution props (from persistence) ──────────────────────────────────
 
 export interface UserAggregateProps {
-  id:             string;
-  email:          string;   // raw string from DB → wrapped in VO internally
-  username:       string;
-  passwordHash:   string;
-  displayName:    string;
-  avatarUrl?:     string;
-  bio?:           string;
-  status:         UserStatus;
-  roles:          UserRole[];
-  emailVerified:  boolean;
-  phoneVerified:  boolean;
-  phone?:         string;
-  sellerId?:      string;
-  followerCount:  number;
+  id: string;
+  email: string; // raw string from DB → wrapped in VO internally
+  username: string;
+  passwordHash: string;
+  displayName: string;
+  avatarUrl?: string;
+  bio?: string;
+  status: UserStatus;
+  roles: UserRole[];
+  emailVerified: boolean;
+  phoneVerified: boolean;
+  phone?: string;
+  sellerId?: string;
+  followerCount: number;
   followingCount: number;
-  preferences?:   Record<string, unknown>;
-  createdAt:      Date;
-  updatedAt:      Date;
+  preferences?: Record<string, unknown>;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 export class UserAggregate extends BaseAggregateRoot {
   // ── Private mutable state ──────────────────────────────────────────────────
-  private _email:          Email;
-  private _username:       Username;
-  private _passwordHash:   string;
-  private _displayName:    string;
-  private _avatarUrl?:     string;
-  private _bio?:           string;
-  private _status:         UserStatus;
-  private _roles:          UserRole[];
-  private _emailVerified:  boolean;
-  private _phoneVerified:  boolean;
-  private _phone?:         string;
-  private _sellerId?:      string;
-  private _followerCount:  number;
+  private _email: Email;
+  private _username: Username;
+  private _passwordHash: string;
+  private _displayName: string;
+  private _avatarUrl?: string;
+  private _bio?: string;
+  private _status: UserStatus;
+  private _roles: UserRole[];
+  private _emailVerified: boolean;
+  private _phoneVerified: boolean;
+  private _phone?: string;
+  private _sellerId?: string;
+  private _followerCount: number;
   private _followingCount: number;
-  private _preferences:    Record<string, unknown>;
+  private _preferences: Record<string, unknown>;
 
   // ── Private constructor — use static factories ─────────────────────────────
   private constructor(props: UserAggregateProps) {
     super(props.id, props.createdAt, props.updatedAt);
-    this._email          = new Email(props.email);
-    this._username       = new Username(props.username);
-    this._passwordHash   = props.passwordHash;
-    this._displayName    = props.displayName;
-    this._avatarUrl      = props.avatarUrl;
-    this._bio            = props.bio;
-    this._status         = props.status;
-    this._roles          = [...props.roles];
-    this._emailVerified  = props.emailVerified;
-    this._phoneVerified  = props.phoneVerified;
-    this._phone          = props.phone;
-    this._sellerId       = props.sellerId;
-    this._followerCount  = props.followerCount;
+    this._email = new Email(props.email);
+    this._username = new Username(props.username);
+    this._passwordHash = props.passwordHash;
+    this._displayName = props.displayName;
+    this._avatarUrl = props.avatarUrl;
+    this._bio = props.bio;
+    this._status = props.status;
+    this._roles = [...props.roles];
+    this._emailVerified = props.emailVerified;
+    this._phoneVerified = props.phoneVerified;
+    this._phone = props.phone;
+    this._sellerId = props.sellerId;
+    this._followerCount = props.followerCount;
     this._followingCount = props.followingCount;
-    this._preferences    = props.preferences ?? {};
+    this._preferences = props.preferences ?? {};
   }
 
   // ── Factory: new registration ──────────────────────────────────────────────
 
   static register(input: {
-    email:        string;
-    username:     string;
+    email: string;
+    username: string;
     passwordHash: string;
-    displayName:  string;
+    displayName: string;
   }): UserAggregate {
     const now = new Date();
     const user = new UserAggregate({
-      id:             undefined as unknown as string, // generated in super()
-      email:          input.email,
-      username:       input.username,
-      passwordHash:   input.passwordHash,
-      displayName:    input.displayName,
-      status:         UserStatus.PENDING_VERIFY,
-      roles:          [UserRole.USER],
-      emailVerified:  false,
-      phoneVerified:  false,
-      followerCount:  0,
+      id: undefined as unknown as string, // generated in super()
+      email: input.email,
+      username: input.username,
+      passwordHash: input.passwordHash,
+      displayName: input.displayName,
+      status: UserStatus.PENDING_VERIFY,
+      roles: [UserRole.USER],
+      emailVerified: false,
+      phoneVerified: false,
+      followerCount: 0,
       followingCount: 0,
-      createdAt:      now,
-      updatedAt:      now,
+      createdAt: now,
+      updatedAt: now,
     });
 
-    user.addDomainEvent(new UserRegisteredEvent(
-      user.id, input.email, input.username, input.displayName,
-    ));
+    user.addDomainEvent(
+      new UserRegisteredEvent(user.id, input.email, input.username, input.displayName),
+    );
 
     return user;
   }
@@ -170,8 +171,8 @@ export class UserAggregate extends BaseAggregateRoot {
   updateProfile(changes: ProfileUpdatePayload): void {
     this.assertActive('update profile');
     if (changes.displayName !== undefined) this._displayName = changes.displayName;
-    if (changes.bio !== undefined)         this._bio         = changes.bio;
-    if (changes.avatarUrl !== undefined)   this._avatarUrl   = changes.avatarUrl;
+    if (changes.bio !== undefined) this._bio = changes.bio;
+    if (changes.avatarUrl !== undefined) this._avatarUrl = changes.avatarUrl;
     this.touch();
     this.addDomainEvent(new UserProfileUpdatedEvent(this.id, changes));
   }
@@ -231,21 +232,51 @@ export class UserAggregate extends BaseAggregateRoot {
 
   // ── Queries / Getters ──────────────────────────────────────────────────────
 
-  get email():          Email       { return this._email; }
-  get username():       Username    { return this._username; }
-  get passwordHash():   string      { return this._passwordHash; }
-  get displayName():    string      { return this._displayName; }
-  get avatarUrl():      string | undefined { return this._avatarUrl; }
-  get bio():            string | undefined { return this._bio; }
-  get status():         UserStatus  { return this._status; }
-  get roles():          UserRole[]  { return [...this._roles]; }
-  get emailVerified():  boolean     { return this._emailVerified; }
-  get phoneVerified():  boolean     { return this._phoneVerified; }
-  get phone():          string | undefined { return this._phone; }
-  get sellerId():       string | undefined { return this._sellerId; }
-  get followerCount():  number      { return this._followerCount; }
-  get followingCount(): number      { return this._followingCount; }
-  get preferences():   Record<string, unknown> { return { ...this._preferences }; }
+  get email(): Email {
+    return this._email;
+  }
+  get username(): Username {
+    return this._username;
+  }
+  get passwordHash(): string {
+    return this._passwordHash;
+  }
+  get displayName(): string {
+    return this._displayName;
+  }
+  get avatarUrl(): string | undefined {
+    return this._avatarUrl;
+  }
+  get bio(): string | undefined {
+    return this._bio;
+  }
+  get status(): UserStatus {
+    return this._status;
+  }
+  get roles(): UserRole[] {
+    return [...this._roles];
+  }
+  get emailVerified(): boolean {
+    return this._emailVerified;
+  }
+  get phoneVerified(): boolean {
+    return this._phoneVerified;
+  }
+  get phone(): string | undefined {
+    return this._phone;
+  }
+  get sellerId(): string | undefined {
+    return this._sellerId;
+  }
+  get followerCount(): number {
+    return this._followerCount;
+  }
+  get followingCount(): number {
+    return this._followingCount;
+  }
+  get preferences(): Record<string, unknown> {
+    return { ...this._preferences };
+  }
 
   /** True when followerCount >= CELEBRITY_THRESHOLD */
   get isCelebrity(): boolean {
@@ -264,17 +295,17 @@ export class UserAggregate extends BaseAggregateRoot {
   /** Snapshot for caching / read model projection */
   toSnapshot(): UserProfileSnapshot {
     return {
-      id:            this.id,
-      username:      this._username.value,
-      displayName:   this._displayName,
-      avatarUrl:     this._avatarUrl,
-      bio:           this._bio,
-      status:        this._status,
-      roles:         [...this._roles],
-      isCelebrity:   this.isCelebrity,
+      id: this.id,
+      username: this._username.value,
+      displayName: this._displayName,
+      avatarUrl: this._avatarUrl,
+      bio: this._bio,
+      status: this._status,
+      roles: [...this._roles],
+      isCelebrity: this.isCelebrity,
       emailVerified: this._emailVerified,
       phoneVerified: this._phoneVerified,
-      createdAt:     this.createdAt,
+      createdAt: this.createdAt,
     };
   }
 

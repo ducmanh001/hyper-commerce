@@ -71,11 +71,7 @@ export interface IFileStoragePort {
    * Upload avatar.
    * @returns public URL of the uploaded image
    */
-  uploadAvatar(params: {
-    userId: string;
-    buffer: Buffer;
-    mimeType: string;
-  }): Promise<string>;
+  uploadAvatar(params: { userId: string; buffer: Buffer; mimeType: string }): Promise<string>;
 
   deleteAvatar(userId: string): Promise<void>;
 }

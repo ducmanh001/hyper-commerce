@@ -19,12 +19,12 @@
  *   BloomFilters: Binary (compact, no JSON overhead for large bit arrays)
  */
 import { Injectable } from '@nestjs/common';
-import { RedisClientService } from '@hypercommerce/redis';
-import { IUserCachePort } from '../../application/ports/application.ports';
+import type { RedisClientService } from '@hypercommerce/redis';
+import type { IUserCachePort } from '../../application/ports/application.ports';
 
 const KEY = {
-  profile:     (id: string) => `user:profile:${id}`,
-  seenItems:   (id: string) => `user:seen:${id}`,
+  profile: (id: string) => `user:profile:${id}`,
+  seenItems: (id: string) => `user:seen:${id}`,
   verifyToken: (token: string) => `user:verify:${token}`,
 } as const;
 
@@ -67,11 +67,7 @@ export class UserCacheAdapter implements IUserCachePort {
     await this.redis.setBuffer(KEY.seenItems(userId), filterBuffer, ttlSeconds);
   }
 
-  async setVerificationToken(
-    token: string,
-    userId: string,
-    ttlSeconds: number,
-  ): Promise<void> {
+  async setVerificationToken(token: string, userId: string, ttlSeconds: number): Promise<void> {
     await this.redis.set(KEY.verifyToken(token), userId, ttlSeconds);
   }
 

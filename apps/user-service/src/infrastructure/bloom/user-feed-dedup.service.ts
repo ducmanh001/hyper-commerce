@@ -41,8 +41,10 @@
  */
 import { Injectable, Logger, Inject } from '@nestjs/common';
 import { BloomFilter } from '@hypercommerce/algorithms';
-import { USER_CACHE_PORT, IUserCachePort } from '../../application/ports/application.ports';
-import algorithmConfig, { AlgorithmConfigProps } from '@hypercommerce/common/config/algorithm.config';
+import type { IUserCachePort } from '../../application/ports/application.ports';
+import { USER_CACHE_PORT } from '../../application/ports/application.ports';
+import type { AlgorithmConfigProps } from '@hypercommerce/common/config/algorithm.config';
+import algorithmConfig from '@hypercommerce/common/config/algorithm.config';
 
 const SEEN_ITEMS_TTL_SEC = 7 * 24 * 3600; // 7 days
 
@@ -52,7 +54,7 @@ export class UserFeedDedupService {
 
   /** In-memory cache of bloom filters (avoids Redis round-trip on every check) */
   private readonly localCache = new Map<string, { filter: BloomFilter; dirtyAt: number }>();
-  private readonly FLUSH_INTERVAL_MS = 30_000;  // Flush to Redis every 30s
+  private readonly FLUSH_INTERVAL_MS = 30_000; // Flush to Redis every 30s
   private flushTimer?: NodeJS.Timeout;
 
   constructor(
@@ -124,12 +126,11 @@ export class UserFeedDedupService {
     const buf = await this.cache.getSeenItemsFilter(userId);
 
     const opts = {
-      expectedItems:      this.config.bloomFilter.expectedCapacity,
-      falsePositiveRate:  this.config.bloomFilter.falsePositiveRate,
+      expectedItems: this.config.bloomFilter.expectedCapacity,
+      falsePositiveRate: this.config.bloomFilter.falsePositiveRate,
     };
-    const filter = (buf && buf.length > 0)
-      ? BloomFilter.fromBuffer(buf, opts)
-      : new BloomFilter(opts);
+    const filter =
+      buf && buf.length > 0 ? BloomFilter.fromBuffer(buf, opts) : new BloomFilter(opts);
 
     this.localCache.set(userId, { filter, dirtyAt: 0 });
     return filter;
@@ -154,8 +155,11 @@ export class UserFeedDedupService {
       if (entry.dirtyAt > 0 && now - entry.dirtyAt >= this.FLUSH_INTERVAL_MS) {
         const serialized = entry.filter.toBuffer();
         flushPromises.push(
-          this.cache.setSeenItemsFilter(userId, serialized, SEEN_ITEMS_TTL_SEC)
-            .then(() => { entry.dirtyAt = 0; })
+          this.cache
+            .setSeenItemsFilter(userId, serialized, SEEN_ITEMS_TTL_SEC)
+            .then(() => {
+              entry.dirtyAt = 0;
+            })
             .catch((err: unknown) => {
               this.logger.warn({ event: 'feed_dedup_flush_failed', userId, error: String(err) });
             }),
@@ -178,9 +182,7 @@ export class UserFeedDedupService {
     for (const [userId, entry] of this.localCache.entries()) {
       if (entry.dirtyAt > 0) {
         const serialized = entry.filter.toBuffer();
-        promises.push(
-          this.cache.setSeenItemsFilter(userId, serialized, SEEN_ITEMS_TTL_SEC),
-        );
+        promises.push(this.cache.setSeenItemsFilter(userId, serialized, SEEN_ITEMS_TTL_SEC));
       }
     }
     await Promise.allSettled(promises);

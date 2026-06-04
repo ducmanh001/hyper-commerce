@@ -9,17 +9,17 @@
 
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectDataSource } from '@nestjs/typeorm';
-import { DataSource } from 'typeorm';
-import { KafkaProducerService } from '@hypercommerce/kafka';
-import { RedisClientService } from '@hypercommerce/redis';
+import type { DataSource } from 'typeorm';
+import type { KafkaProducerService } from '@hypercommerce/kafka';
+import type { RedisClientService } from '@hypercommerce/redis';
 import { APP_CONSTANTS } from '@hypercommerce/common/constants/app.constants';
 import {
   ConflictException,
   NotFoundException,
 } from '@hypercommerce/common/exceptions/domain.exceptions';
-import { UserRepository } from '../repositories/user.repository';
-import { FollowRepository } from '../repositories/follow.repository';
-import { CelebrityDetectorHelper } from './celebrity-detector.helper';
+import type { UserRepository } from '../repositories/user.repository';
+import type { FollowRepository } from '../repositories/follow.repository';
+import type { CelebrityDetectorHelper } from './celebrity-detector.helper';
 
 export interface FollowResult {
   followerId: string;
@@ -74,16 +74,11 @@ export class FollowService {
     // Check block relationship
     const isBlocked = await this.followRepo.isBlocked(followerId, followeeId);
     if (isBlocked) {
-      throw new ConflictException(
-        `Cannot follow: relationship blocked`,
-      );
+      throw new ConflictException(`Cannot follow: relationship blocked`);
     }
 
     // Idempotent check — already following?
-    const alreadyFollowing = await this.followRepo.isFollowing(
-      followerId,
-      followeeId,
-    );
+    const alreadyFollowing = await this.followRepo.isFollowing(followerId, followeeId);
     if (alreadyFollowing) {
       // Return current state without error — idempotent
       const count = await this.userRepo.countFollowers(followeeId);
@@ -218,11 +213,7 @@ export class FollowService {
    * For celebrities (5M followers), this uses shard-aware query
    * routing to the correct Citus shard.
    */
-  async getFollowers(
-    userId: string,
-    cursor?: string,
-    limit = 20,
-  ): Promise<FollowerListResult> {
+  async getFollowers(userId: string, cursor?: string, limit = 20): Promise<FollowerListResult> {
     const isCelebrity = !!(await this.redis.sismember(
       APP_CONSTANTS.REDIS_KEYS.CELEBRITY_LIST,
       userId,
@@ -243,11 +234,7 @@ export class FollowService {
    * Get users that userId is following.
    * Used by Feed Service to know whose posts to include.
    */
-  async getFollowing(
-    userId: string,
-    cursor?: string,
-    limit = 20,
-  ): Promise<FollowerListResult> {
+  async getFollowing(userId: string, cursor?: string, limit = 20): Promise<FollowerListResult> {
     const result = await this.followRepo.getFollowing(userId, cursor, limit);
     return {
       followers: result.items,

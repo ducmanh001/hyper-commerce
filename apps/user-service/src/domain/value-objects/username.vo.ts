@@ -26,11 +26,32 @@ export class Username extends BaseValueObject<UsernameProps> {
 
   /** Reserved words that cannot be used as usernames */
   private static readonly RESERVED = new Set([
-    'admin', 'root', 'api', 'www', 'app', 'mail', 'email',
-    'support', 'help', 'info', 'user', 'users', 'account',
-    'accounts', 'login', 'logout', 'register', 'signup',
-    'profile', 'settings', 'null', 'undefined', 'anonymous',
-    'system', 'bot', 'hypercommerce',
+    'admin',
+    'root',
+    'api',
+    'www',
+    'app',
+    'mail',
+    'email',
+    'support',
+    'help',
+    'info',
+    'user',
+    'users',
+    'account',
+    'accounts',
+    'login',
+    'logout',
+    'register',
+    'signup',
+    'profile',
+    'settings',
+    'null',
+    'undefined',
+    'anonymous',
+    'system',
+    'bot',
+    'hypercommerce',
   ]);
 
   constructor(rawUsername: string) {
@@ -50,7 +71,7 @@ export class Username extends BaseValueObject<UsernameProps> {
     if (!Username.PATTERN.test(value)) {
       throw new Error(
         `Username can only contain letters, digits, underscores, and hyphens, ` +
-        `and cannot start or end with an underscore or hyphen`,
+          `and cannot start or end with an underscore or hyphen`,
       );
     }
     if (Username.RESERVED.has(value)) {

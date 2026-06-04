@@ -1,6 +1,10 @@
 import {
-  Entity, PrimaryGeneratedColumn, Column,
-  CreateDateColumn, UpdateDateColumn, Index,
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  UpdateDateColumn,
+  Index,
 } from 'typeorm';
 
 export type UserStatus = 'ACTIVE' | 'SUSPENDED' | 'DELETED' | 'PENDING_VERIFY';
@@ -19,7 +23,7 @@ export class User {
   username!: string;
 
   @Column({ type: 'varchar', length: 255 })
-  passwordHash!: string;  // bcrypt hash
+  passwordHash!: string; // bcrypt hash
 
   @Column({ type: 'varchar', length: 100, nullable: true })
   fullName?: string;
@@ -40,7 +44,7 @@ export class User {
   roles!: string[];
 
   @Column({ type: 'varchar', length: 36, nullable: true })
-  sellerId?: string;  // If user is also a seller
+  sellerId?: string; // If user is also a seller
 
   @Column({ type: 'boolean', default: false })
   emailVerified!: boolean;
@@ -52,7 +56,7 @@ export class User {
   phone?: string;
 
   @Column({ type: 'int', default: 0 })
-  followerCount!: number;  // Denormalized counter for performance
+  followerCount!: number; // Denormalized counter for performance
 
   @Column({ type: 'int', default: 0 })
   followingCount!: number;
@@ -64,7 +68,7 @@ export class User {
   lastLoginAt?: Date;
 
   @Column({ type: 'varchar', length: 45, nullable: true })
-  lastLoginIp?: string;  // IPv4/IPv6
+  lastLoginIp?: string; // IPv4/IPv6
 
   @Column({ type: 'int', default: 0 })
   loginFailureCount!: number;

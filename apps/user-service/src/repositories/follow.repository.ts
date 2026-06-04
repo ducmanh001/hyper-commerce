@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { EntityManager, Repository } from 'typeorm';
+import type { EntityManager, Repository } from 'typeorm';
 import { UserFollow } from '../entities/user-follow.entity';
 
 export interface FollowerUserData {
@@ -41,19 +41,31 @@ export class FollowRepository {
       .limit(limit + 1);
 
     if (cursor) {
-      qb.andWhere('f.created_at < :cursor', { cursor: new Date(Buffer.from(cursor, 'base64url').toString()) });
+      qb.andWhere('f.created_at < :cursor', {
+        cursor: new Date(Buffer.from(cursor, 'base64url').toString()),
+      });
     }
 
     const rows = await qb.getRawMany<FollowerUserData & { createdAt: Date }>();
     const hasMore = rows.length > limit;
-    const items = rows.slice(0, limit).map(({ id, username, displayName, avatarUrl }) => ({ id, username, displayName, avatarUrl: avatarUrl ?? undefined }));
+    const items = rows.slice(0, limit).map(({ id, username, displayName, avatarUrl }) => ({
+      id,
+      username,
+      displayName,
+      avatarUrl: avatarUrl ?? undefined,
+    }));
     const last = rows[Math.min(rows.length, limit) - 1];
 
     return {
       items,
-      nextCursor: hasMore && last
-        ? Buffer.from((last as any).createdAt instanceof Date ? (last as any).createdAt.toISOString() : String((last as any).createdAt)).toString('base64url')
-        : null,
+      nextCursor:
+        hasMore && last
+          ? Buffer.from(
+              (last as any).createdAt instanceof Date
+                ? (last as any).createdAt.toISOString()
+                : String((last as any).createdAt),
+            ).toString('base64url')
+          : null,
       hasMore,
     };
   }
@@ -78,19 +90,31 @@ export class FollowRepository {
       .limit(limit + 1);
 
     if (cursor) {
-      qb.andWhere('f.created_at < :cursor', { cursor: new Date(Buffer.from(cursor, 'base64url').toString()) });
+      qb.andWhere('f.created_at < :cursor', {
+        cursor: new Date(Buffer.from(cursor, 'base64url').toString()),
+      });
     }
 
     const rows = await qb.getRawMany<FollowerUserData & { createdAt: Date }>();
     const hasMore = rows.length > limit;
-    const items = rows.slice(0, limit).map(({ id, username, displayName, avatarUrl }) => ({ id, username, displayName, avatarUrl: avatarUrl ?? undefined }));
+    const items = rows.slice(0, limit).map(({ id, username, displayName, avatarUrl }) => ({
+      id,
+      username,
+      displayName,
+      avatarUrl: avatarUrl ?? undefined,
+    }));
     const last = rows[Math.min(rows.length, limit) - 1];
 
     return {
       items,
-      nextCursor: hasMore && last
-        ? Buffer.from((last as any).createdAt instanceof Date ? (last as any).createdAt.toISOString() : String((last as any).createdAt)).toString('base64url')
-        : null,
+      nextCursor:
+        hasMore && last
+          ? Buffer.from(
+              (last as any).createdAt instanceof Date
+                ? (last as any).createdAt.toISOString()
+                : String((last as any).createdAt),
+            ).toString('base64url')
+          : null,
       hasMore,
     };
   }
@@ -117,7 +141,9 @@ export class FollowRepository {
 
     if (limit) qb.limit(limit + 1);
     if (cursor) {
-      qb.andWhere('f.created_at < :cursor', { cursor: new Date(Buffer.from(cursor, 'base64url').toString()) });
+      qb.andWhere('f.created_at < :cursor', {
+        cursor: new Date(Buffer.from(cursor, 'base64url').toString()),
+      });
     }
 
     const rows = await qb.getRawMany<{ id: string; createdAt: Date }>();
@@ -127,9 +153,15 @@ export class FollowRepository {
 
     return {
       ids: sliced.map((r) => r.id),
-      nextCursor: hasMore && last
-        ? Buffer.from((last.createdAt instanceof Date ? last.createdAt : new Date(last.createdAt)).toISOString()).toString('base64url')
-        : null,
+      nextCursor:
+        hasMore && last
+          ? Buffer.from(
+              (last.createdAt instanceof Date
+                ? last.createdAt
+                : new Date(last.createdAt)
+              ).toISOString(),
+            ).toString('base64url')
+          : null,
     };
   }
 

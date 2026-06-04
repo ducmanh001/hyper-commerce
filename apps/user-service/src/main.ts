@@ -21,6 +21,9 @@ import { NestFactory } from '@nestjs/core';
 import { VersioningType, Logger } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { ConfigService } from '@nestjs/config';
+import type { MicroserviceOptions } from '@nestjs/microservices';
+import { Transport } from '@nestjs/microservices';
+import { join } from 'path';
 import { AppModule } from './app.module';
 import {
   GlobalExceptionFilter,
@@ -32,14 +35,14 @@ import { bootstrapWithCluster } from '@hypercommerce/common/cluster/cluster.boot
 
 async function bootstrap() {
   const logger = new Logger('UserService');
-  const app    = await NestFactory.create(AppModule, { bufferLogs: true });
+  const app = await NestFactory.create(AppModule, { bufferLogs: true });
   const config = app.get(ConfigService);
 
   // ── Global configuration ────────────────────────────────────────────────
   app.setGlobalPrefix('api');
   app.enableVersioning({ type: VersioningType.URI, defaultVersion: '1' });
   app.enableCors({
-    origin:      config.get<string>('CORS_ORIGINS', '*').split(','),
+    origin: config.get<string>('CORS_ORIGINS', '*').split(','),
     credentials: true,
   });
   app.useGlobalPipes(new StrictValidationPipe());
@@ -62,9 +65,22 @@ async function bootstrap() {
     SwaggerModule.setup('api/docs', app, SwaggerModule.createDocument(app, cfg));
   }
 
+  // ── gRPC microservice (hybrid — HTTP + gRPC on separate port) ─────────
+  app.connectMicroservice<MicroserviceOptions>({
+    transport: Transport.GRPC,
+    options: {
+      package: 'hypercommerce.user',
+      protoPath: join(process.cwd(), 'libs/grpc/src/proto/user.proto'),
+      url: `0.0.0.0:${config.get<number>('GRPC_PORT', 50051)}`,
+    },
+  });
+
   const port = config.get<number>('PORT', 3005);
+  await app.startAllMicroservices();
   await app.listen(port);
-  logger.log(`User Service running on port ${port} [worker pid=${process.pid}]`);
+  logger.log(
+    `User Service running on HTTP :${port} gRPC :${config.get('GRPC_PORT', 50051)} [pid=${process.pid}]`,
+  );
 }
 
 // ── Cluster entry point ─────────────────────────────────────────────────────

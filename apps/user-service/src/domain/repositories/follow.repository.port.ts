@@ -11,15 +11,15 @@
  *   we need follower IDs to fan-out read notifications, but for normal
  *   users we never need the full list (just counts).
  */
-import { FollowStatus } from '../types/user.types';
+import type { FollowStatus } from '../types/user.types';
 
 export const FOLLOW_REPOSITORY_PORT = Symbol('FOLLOW_REPOSITORY_PORT');
 
 export interface FollowRecord {
-  followerId:   string;
-  followeeId:   string;
-  status:       FollowStatus;
-  createdAt:    Date;
+  followerId: string;
+  followeeId: string;
+  status: FollowStatus;
+  createdAt: Date;
 }
 
 export interface IFollowRepository {
@@ -33,16 +33,22 @@ export interface IFollowRepository {
   isFollowing(followerId: string, followeeId: string): Promise<boolean>;
 
   /** Get a paginated list of who follows userId. */
-  getFollowers(userId: string, params: {
-    limit: number;
-    cursor?: string;
-  }): Promise<{ items: FollowRecord[]; nextCursor?: string; totalCount: number }>;
+  getFollowers(
+    userId: string,
+    params: {
+      limit: number;
+      cursor?: string;
+    },
+  ): Promise<{ items: FollowRecord[]; nextCursor?: string; totalCount: number }>;
 
   /** Get a paginated list of who userId follows. */
-  getFollowing(userId: string, params: {
-    limit: number;
-    cursor?: string;
-  }): Promise<{ items: FollowRecord[]; nextCursor?: string; totalCount: number }>;
+  getFollowing(
+    userId: string,
+    params: {
+      limit: number;
+      cursor?: string;
+    },
+  ): Promise<{ items: FollowRecord[]; nextCursor?: string; totalCount: number }>;
 
   /**
    * Get ALL follower IDs for a celebrity.

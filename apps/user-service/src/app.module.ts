@@ -25,14 +25,14 @@ import { UserModule } from './user.module';
   imports: [
     // Config must be first so subsequent modules can read env vars
     ConfigModule.forRoot({
-      isGlobal:    true,
+      isGlobal: true,
       envFilePath: ['.env.local', '.env'],
-      load:        [hardwareConfig],  // Load hardware config globally
+      load: [hardwareConfig], // Load hardware config globally
     }),
 
     // Database connection pool
     DatabaseModule.forRoot({
-      entities:    [__dirname + '/**/*.document{.ts,.js}', __dirname + '/**/*.entity{.ts,.js}'],
+      entities: [__dirname + '/**/*.document{.ts,.js}', __dirname + '/**/*.entity{.ts,.js}'],
       synchronize: process.env.NODE_ENV !== 'production',
     }),
 

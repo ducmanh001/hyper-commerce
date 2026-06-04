@@ -1,12 +1,23 @@
 import {
-  Controller, Get, Post, Patch, Delete,
-  Param, Body, Query, ParseUUIDPipe,
-  HttpCode, HttpStatus, UseGuards, Logger,
+  Controller,
+  Get,
+  Post,
+  Patch,
+  Delete,
+  Param,
+  Body,
+  Query,
+  ParseUUIDPipe,
+  HttpCode,
+  HttpStatus,
+  UseGuards,
+  Logger,
 } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation, ApiQuery } from '@nestjs/swagger';
-import { JwtAuthGuard, RolesGuard, CurrentUser, JwtPayload, Public } from '@hypercommerce/common';
-import { UserService } from './user.service';
-import { FollowService } from './follow/follow.service';
+import type { JwtPayload } from '@hypercommerce/common';
+import { JwtAuthGuard, RolesGuard, CurrentUser, Public } from '@hypercommerce/common';
+import type { UserService } from './user.service';
+import type { FollowService } from './follow/follow.service';
 
 @ApiTags('users')
 @ApiBearerAuth()
@@ -30,10 +41,7 @@ export class UserController {
 
   @Patch('me')
   @ApiOperation({ summary: 'Update current user profile' })
-  async updateProfile(
-    @CurrentUser() user: JwtPayload,
-    @Body() body: Record<string, unknown>,
-  ) {
+  async updateProfile(@CurrentUser() user: JwtPayload, @Body() body: Record<string, unknown>) {
     return this.userService.updateProfile(user.sub, body);
   }
 
@@ -88,10 +96,7 @@ export class UserController {
   @Get(':userId/following')
   @Public()
   @ApiOperation({ summary: 'Get following list' })
-  async getFollowing(
-    @Param('userId', ParseUUIDPipe) userId: string,
-    @Query('limit') limit = 50,
-  ) {
+  async getFollowing(@Param('userId', ParseUUIDPipe) userId: string, @Query('limit') limit = 50) {
     return this.followService.getFollowing(userId, undefined, Number(limit));
   }
 }

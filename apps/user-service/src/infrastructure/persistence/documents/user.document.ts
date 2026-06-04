@@ -15,12 +15,10 @@
  *
  * MAPPING: UserMapper converts Document ↔ UserAggregate.
  */
-import {
-  Entity, PrimaryColumn, Column, CreateDateColumn, UpdateDateColumn, Index,
-} from 'typeorm';
+import { Entity, PrimaryColumn, Column, CreateDateColumn, UpdateDateColumn, Index } from 'typeorm';
 
 @Entity('users')
-@Index(['email'],    { unique: true })
+@Index(['email'], { unique: true })
 @Index(['username'], { unique: true })
 @Index(['status'])
 export class UserDocument {

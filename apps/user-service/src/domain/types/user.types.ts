@@ -29,10 +29,10 @@ export enum UserStatus {
 // ── Roles & Permissions ─────────────────────────────────────────────────────
 
 export enum UserRole {
-  USER       = 'USER',
-  SELLER     = 'SELLER',   // Can list products, manage orders
-  MODERATOR  = 'MODERATOR', // Can remove posts, suspend accounts
-  ADMIN      = 'ADMIN',    // Full access
+  USER = 'USER',
+  SELLER = 'SELLER', // Can list products, manage orders
+  MODERATOR = 'MODERATOR', // Can remove posts, suspend accounts
+  ADMIN = 'ADMIN', // Full access
 }
 
 // ── Social graph ────────────────────────────────────────────────────────────
@@ -48,9 +48,9 @@ export enum FollowStatus {
 // ── Social stats ─────────────────────────────────────────────────────────────
 
 export interface SocialStats {
-  followerCount:  number;
+  followerCount: number;
   followingCount: number;
-  postCount:      number;
+  postCount: number;
   /**
    * Celebrity threshold: followerCount >= 50,000 triggers fan-out strategy change.
    * Regular users: write to follower feeds on post (fan-out on write).
@@ -66,15 +66,15 @@ export type FanOutStrategy = 'WRITE' | 'READ';
 // ── Profile ─────────────────────────────────────────────────────────────────
 
 export interface UserProfileSnapshot {
-  id:            string;
-  username:      string;
-  displayName:   string;
-  avatarUrl?:    string;
-  bio?:          string;
-  status:        UserStatus;
-  roles:         UserRole[];
-  isCelebrity:   boolean;
+  id: string;
+  username: string;
+  displayName: string;
+  avatarUrl?: string;
+  bio?: string;
+  status: UserStatus;
+  roles: UserRole[];
+  isCelebrity: boolean;
   emailVerified: boolean;
   phoneVerified: boolean;
-  createdAt:     Date;
+  createdAt: Date;
 }

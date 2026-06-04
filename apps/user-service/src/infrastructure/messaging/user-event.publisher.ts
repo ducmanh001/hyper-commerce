@@ -26,9 +26,9 @@
  *   This guarantees at-least-once delivery with exactly-once semantics.
  */
 import { Injectable, Logger } from '@nestjs/common';
-import { KafkaProducerService } from '@hypercommerce/kafka';
-import { DomainEvent } from '@hypercommerce/common/domain/domain-event.base';
-import { IUserEventPublisherPort } from '../../application/ports/application.ports';
+import type { KafkaProducerService } from '@hypercommerce/kafka';
+import type { DomainEvent } from '@hypercommerce/common/domain/domain-event.base';
+import type { IUserEventPublisherPort } from '../../application/ports/application.ports';
 
 const TOPIC = 'user.events';
 
@@ -41,19 +41,19 @@ export class UserEventPublisher implements IUserEventPublisherPort {
   async publish(event: DomainEvent): Promise<void> {
     try {
       await this.kafka.publish({
-        topic:        TOPIC,
-        key:     event.aggregateId,  // Partition by aggregate ID
-        value:   {
-          eventId:     event.eventId,
-          eventType:   event.eventType,
+        topic: TOPIC,
+        key: event.aggregateId, // Partition by aggregate ID
+        value: {
+          eventId: event.eventId,
+          eventType: event.eventType,
           aggregateId: event.aggregateId,
-          occurredAt:  event.occurredAt.toISOString(),
-          payload:     event as unknown as Record<string, unknown>,
+          occurredAt: event.occurredAt.toISOString(),
+          payload: event as unknown as Record<string, unknown>,
         },
         headers: {
-          'event-type':   event.eventType,
+          'event-type': event.eventType,
           'aggregate-id': event.aggregateId,
-          'event-id':     event.eventId,
+          'event-id': event.eventId,
         },
       });
     } catch (err) {
