@@ -4,6 +4,8 @@ interface ProductFiltersProps {
   currentCategory?: string;
   currentMinPrice?: number;
   currentMaxPrice?: number;
+  basePath?: string;
+  searchQuery?: string;
 }
 
 const CATEGORIES = [
@@ -22,7 +24,8 @@ const PRICE_RANGES = [
   { label: 'Trên 1M', min: 1_000_000, max: undefined },
 ];
 
-export function ProductFilters({ currentCategory, currentMinPrice, currentMaxPrice }: ProductFiltersProps) {
+export function ProductFilters({ currentCategory, currentMinPrice, currentMaxPrice, basePath = '/products', searchQuery }: ProductFiltersProps) {
+  const qParam = searchQuery ? `&q=${encodeURIComponent(searchQuery)}` : '';
   return (
     <div className="space-y-6">
       {/* Categories */}
@@ -32,7 +35,7 @@ export function ProductFilters({ currentCategory, currentMinPrice, currentMaxPri
           {CATEGORIES.map((cat) => (
             <li key={cat.id}>
               <a
-                href={`/products?category=${cat.id}`}
+                href={`${basePath}?category=${cat.id}${qParam}`}
                 className={`block px-3 py-2 text-sm rounded-md transition-colors ${
                   currentCategory === cat.id
                     ? 'bg-primary-50 text-primary-600 font-medium'
@@ -53,7 +56,7 @@ export function ProductFilters({ currentCategory, currentMinPrice, currentMaxPri
           {PRICE_RANGES.map((range) => (
             <li key={range.label}>
               <a
-                href={`/products?minPrice=${range.min}${range.max ? `&maxPrice=${range.max}` : ''}${currentCategory ? `&category=${currentCategory}` : ''}`}
+                href={`${basePath}?minPrice=${range.min}${range.max ? `&maxPrice=${range.max}` : ''}${currentCategory ? `&category=${currentCategory}` : ''}${qParam}`}
                 className={`block px-3 py-2 text-sm rounded-md transition-colors ${
                   currentMinPrice === range.min && currentMaxPrice === range.max
                     ? 'bg-primary-50 text-primary-600 font-medium'

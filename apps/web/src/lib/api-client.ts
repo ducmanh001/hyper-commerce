@@ -6,12 +6,6 @@
 // =====================================================
 
 import { ApiError, SearchResult, Product, Order, Cart, CartItem } from '@/types';
-import {
-  MOCK_PRODUCTS,
-  MOCK_SEARCH_RESULT,
-  MOCK_FEATURED_PRODUCTS,
-  MOCK_FLASH_SALE_PRODUCTS,
-} from '@/lib/mock-data';
 
 const INTERNAL_BASE = process.env.GATEWAY_URL ?? 'http://localhost:4000';
 // All service calls go through the API Gateway
@@ -60,56 +54,43 @@ export async function searchProducts(params: {
   qs.set('pageSize', String(params.pageSize ?? 24));
   if (params.sort) qs.set('sort', params.sort);
 
-  try {
-    const res = await fetch(`${INTERNAL_BASE}/api/search?${qs.toString()}`, {
-      next: { revalidate: 30 },
-    });
-    if (res.ok) {
-      const data = await res.json() as SearchResult;
-      if (data.products && data.products.length > 0) return data;
-    }
-  } catch { /* fall through to mock */ }
-
-  // Filter mock data when query given
-  if (params.q) {
-    const q = params.q.toLowerCase();
-    const filtered = MOCK_PRODUCTS.filter(
-      (p) => p.name.toLowerCase().includes(q) || (p.tags ?? []).some((t) => t.includes(q)),
-    );
-    return { products: filtered, total: filtered.length, page: 1, pageSize: 24, sponsored: [] };
+  const res = await fetch(`${INTERNAL_BASE}/api/search?${qs.toString()}`, {
+    next: { revalidate: 30 },
+  });
+  if (!res.ok) {
+    const body = await res.text().catch(() => '');
+    throw new Error(`search failed: ${res.status} ${body}`);
   }
-  return MOCK_SEARCH_RESULT;
+  return res.json() as Promise<SearchResult>;
 }
 
 export async function getProduct(id: string): Promise<Product> {
-  try {
-    const res = await fetch(`${INTERNAL_BASE}/api/products/${id}`, { next: { revalidate: 60 } });
-    if (res.ok) return res.json() as Promise<Product>;
-  } catch { /* fall through */ }
-  const mock = MOCK_PRODUCTS.find((p) => p.id === id) ?? MOCK_PRODUCTS[0];
-  return { ...mock, id };
+  const res = await fetch(`${INTERNAL_BASE}/api/products/${id}`, { next: { revalidate: 60 } });
+  if (!res.ok) {
+    const body = await res.text().catch(() => '');
+    throw new Error(`getProduct failed: ${res.status} ${body}`);
+  }
+  return res.json() as Promise<Product>;
 }
 
 export async function getFlashSaleProducts(): Promise<Product[]> {
-  try {
-    const res = await fetch(`${INTERNAL_BASE}/api/products/flash-sale`, { next: { revalidate: 10 } });
-    if (res.ok) {
-      const data = await res.json() as { products: Product[] };
-      if (data.products && data.products.length > 0) return data.products;
-    }
-  } catch { /* fall through */ }
-  return MOCK_FLASH_SALE_PRODUCTS;
+  const res = await fetch(`${INTERNAL_BASE}/api/products/flash-sale`, { next: { revalidate: 10 } });
+  if (!res.ok) {
+    const body = await res.text().catch(() => '');
+    throw new Error(`getFlashSaleProducts failed: ${res.status} ${body}`);
+  }
+  const data = (await res.json()) as { products: Product[] };
+  return data.products ?? [];
 }
 
 export async function getFeaturedProducts(): Promise<Product[]> {
-  try {
-    const res = await fetch(`${INTERNAL_BASE}/api/products/featured`, { next: { revalidate: 300 } });
-    if (res.ok) {
-      const data = await res.json() as { products: Product[] };
-      if (data.products && data.products.length > 0) return data.products;
-    }
-  } catch { /* fall through */ }
-  return MOCK_FEATURED_PRODUCTS;
+  const res = await fetch(`${INTERNAL_BASE}/api/products/featured`, { next: { revalidate: 300 } });
+  if (!res.ok) {
+    const body = await res.text().catch(() => '');
+    throw new Error(`getFeaturedProducts failed: ${res.status} ${body}`);
+  }
+  const data = (await res.json()) as { products: Product[] };
+  return data.products ?? [];
 }
 
 // ── Client-side API (called from 'use client' components) ──
@@ -124,7 +105,7 @@ export const clientApi = {
       body: JSON.stringify({ email, password }),
     });
     if (!res.ok) {
-      const err = await res.json() as ApiError;
+      const err = (await res.json()) as ApiError;
       throw new Error(err.message);
     }
     return res.json();
@@ -137,14 +118,19 @@ export const clientApi = {
     return res.json() as Promise<Cart>;
   },
 
-  async addToCart(productId: string, variantId: string | undefined, quantity: number, adImpressionId?: string) {
+  async addToCart(
+    productId: string,
+    variantId: string | undefined,
+    quantity: number,
+    adImpressionId?: string,
+  ) {
     const res = await fetch('/api/cart/items', {
       method: 'POST',
       headers: authHeaders(),
       body: JSON.stringify({ productId, variantId, quantity, adImpressionId }),
     });
     if (!res.ok) {
-      const err = await res.json() as ApiError;
+      const err = (await res.json()) as ApiError;
       throw new Error(err.message);
     }
     return res.json() as Promise<Cart>;
@@ -167,7 +153,7 @@ export const clientApi = {
       body: JSON.stringify({ code }),
     });
     if (!res.ok) {
-      const err = await res.json() as ApiError;
+      const err = (await res.json()) as ApiError;
       throw new Error(err.message);
     }
     return res.json() as Promise<{ code: string; discount: number; type: 'PERCENT' | 'FIXED' }>;
@@ -187,7 +173,7 @@ export const clientApi = {
       body: JSON.stringify(orderData),
     });
     if (!res.ok) {
-      const err = await res.json() as ApiError;
+      const err = (await res.json()) as ApiError;
       throw new Error(err.message);
     }
     return res.json() as Promise<Order>;

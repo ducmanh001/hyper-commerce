@@ -2,7 +2,7 @@
 
 import { useRouter, useSearchParams } from 'next/navigation';
 
-interface ProductSortProps { currentSort?: string; }
+interface ProductSortProps { currentSort?: string; basePath?: string; }
 
 const SORT_OPTIONS = [
   { value: 'relevance', label: 'Liên quan nhất' },
@@ -12,7 +12,7 @@ const SORT_OPTIONS = [
   { value: 'price_desc', label: 'Giá cao → thấp' },
 ];
 
-export function ProductSort({ currentSort }: ProductSortProps) {
+export function ProductSort({ currentSort, basePath = '/products' }: ProductSortProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -20,7 +20,7 @@ export function ProductSort({ currentSort }: ProductSortProps) {
     const params = new URLSearchParams(searchParams.toString());
     params.set('sort', e.target.value);
     params.delete('page');
-    router.push(`/products?${params.toString()}`);
+    router.push(`${basePath}?${params.toString()}`);
   }
 
   return (

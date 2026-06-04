@@ -1,7 +1,6 @@
 import { Metadata } from 'next';
 import Image from 'next/image';
 import Link from 'next/link';
-import { MOCK_LIVE_STREAMS } from '@/lib/mock-data';
 
 export const metadata: Metadata = { title: 'Live Stream | HyperCommerce' };
 
@@ -17,28 +16,12 @@ interface LiveRoom {
 }
 
 async function getLiveRooms(): Promise<LiveRoom[]> {
-  try {
-    const res = await fetch(`${process.env.GATEWAY_URL ?? 'http://localhost:4000'}/api/live/rooms/active`, {
-      next: { revalidate: 30 },
-    });
-    if (res.ok) {
-      const data = await res.json();
-      const items: LiveRoom[] = data.items ?? [];
-      if (items.length > 0) return items;
-    }
-  } catch { /* fall through */ }
-
-  // Mock fallback
-  return MOCK_LIVE_STREAMS.map((s) => ({
-    id:          s.id,
-    title:       s.title,
-    sellerName:  s.hostName,
-    sellerAvatar: s.hostAvatar,
-    thumbnailUrl: s.thumbnailUrl,
-    viewerCount: s.viewerCount,
-    category:    'Tất cả',
-    isFlashSale: s.id === 'live-1',
-  }));
+  const res = await fetch(`${process.env.GATEWAY_URL ?? 'http://localhost:4000'}/api/live/rooms/active`, {
+    next: { revalidate: 30 },
+  });
+  if (!res.ok) return []; // empty state shown instead of fake data
+  const data = await res.json() as { items?: LiveRoom[] };
+  return data.items ?? [];
 }
 
 export default async function LiveListPage() {
