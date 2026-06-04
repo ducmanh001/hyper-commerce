@@ -163,6 +163,62 @@ seeds: ## Seed development data
 context\:index: ## Regenerate SCHEMA.md table map + migration number from live code
 	node scripts/gen-context-index.js
 
+context\:audit: ## Audit AI context token budget — check all context files vs size limits
+	@echo "$(BOLD)── AI Context Token Budget Audit ──$(RESET)"
+	@echo ""
+	@echo "$(CYAN)L1 Always-loaded (every request):$(RESET)"
+	@for f in .github/copilot-instructions.md; do \
+		lines=$$(wc -l < $$f); \
+		limit=150; \
+		status="✓"; \
+		[ $$lines -gt $$limit ] && status="✗ OVER LIMIT"; \
+		printf "  %-45s %4d lines  (limit %d) %s\n" "$$f" $$lines $$limit "$$status"; \
+	done
+	@echo ""
+	@echo "$(CYAN)L2 Agent files (auto-load by file path):$(RESET)"
+	@for f in .github/agents/*.agent.md; do \
+		lines=$$(wc -l < $$f); \
+		limit=170; \
+		status="✓"; \
+		[ $$lines -gt $$limit ] && status="✗ OVER LIMIT"; \
+		printf "  %-45s %4d lines  (limit %d) %s\n" "$$f" $$lines $$limit "$$status"; \
+	done
+	@echo ""
+	@echo "$(CYAN)L3 Instruction files (auto-load by file type):$(RESET)"
+	@for f in .github/instructions/*.instructions.md; do \
+		lines=$$(wc -l < $$f); \
+		limit=120; \
+		status="✓"; \
+		[ $$lines -gt $$limit ] && status="✗ OVER LIMIT"; \
+		printf "  %-45s %4d lines  (limit %d) %s\n" "$$f" $$lines $$limit "$$status"; \
+	done
+	@echo ""
+	@echo "$(CYAN)Navigation indices (on-demand):$(RESET)"
+	@for f in infrastructure/postgres/SCHEMA.md libs/events/EVENTS.md; do \
+		lines=$$(wc -l < $$f); \
+		limit=100; \
+		status="✓"; \
+		[ $$lines -gt $$limit ] && status="✗ OVER LIMIT"; \
+		printf "  %-45s %4d lines  (limit %d) %s\n" "$$f" $$lines $$limit "$$status"; \
+	done
+	@echo ""
+	@echo "$(CYAN)Estimated token load per task type (lines × 15):$(RESET)"
+	@l1=$$(wc -l < .github/copilot-instructions.md); \
+	nestjs=$$(wc -l < .github/instructions/nestjs.instructions.md); \
+	sec=$$(wc -l < .github/instructions/security.instructions.md); \
+	avg_agent=130; \
+	schema=$$(wc -l < infrastructure/postgres/SCHEMA.md); \
+	events=$$(wc -l < libs/events/EVENTS.md); \
+	simple_lines=$$((l1 + nestjs + sec + avg_agent)); \
+	complex_lines=$$((simple_lines + schema + events + 80)); \
+	printf "  Simple task (typo/rename):        ~%d lines → ~%d tokens\n" $$simple_lines $$((simple_lines * 15)); \
+	printf "  Full feature (table+events+API):  ~%d lines → ~%d tokens\n" $$complex_lines $$((complex_lines * 15)); \
+	printf "  Context window budget (200K tok): budget used = simple %.1f%% / complex %.1f%%\n" \
+		$$(echo "scale=1; $$simple_lines * 15 / 200000 * 100" | bc) \
+		$$(echo "scale=1; $$complex_lines * 15 / 200000 * 100" | bc)
+	@echo ""
+	@echo "$(CYAN)$(BOLD)Audit complete. Fix any '✗ OVER LIMIT' files to stay within token budget.$(RESET)"
+
 # ── Kafka ──────────────────────────────────────────────────────
 create-topics: ## Create Kafka topics
 	@echo "Creating Kafka topics..."
