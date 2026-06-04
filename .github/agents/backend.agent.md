@@ -12,24 +12,13 @@ You are working on shared libraries used by ALL 16 NestJS microservices in Hyper
 
 ## Key Shared Libraries
 
-> Module/controller/service patterns → see `nestjs.instructions.md`
-
-```typescript
-// libs/kafka — event publishing
-import { KafkaProducerService } from '@app/kafka';
-// Usage:
-await this.kafka.publish('topic.name', { correlationId: uuid(), ...payload });
-
-// libs/redis — cache + Lua atomics
-import { RedisClientService } from '@app/redis';
-
-// libs/database — base entity
-import { BaseEntity } from '@app/database';
-// BaseEntity has: id (UUID), createdAt, updatedAt, deletedAt
-
-// libs/events — typed Kafka schemas
-import { OrderCreatedEvent } from '@app/events';
-```
+| Lib      | Import path     | Patterns                                                         |
+| -------- | --------------- | ---------------------------------------------------------------- |
+| kafka    | `@app/kafka`    | `KafkaProducerService.publish(topic, payload)` — see `+kafka.md` |
+| redis    | `@app/redis`    | `RedisClientService` — see `+redis.md`                           |
+| database | `@app/database` | `BaseEntity` (id UUID, createdAt, updatedAt, deletedAt)          |
+| events   | `@app/events`   | Typed schemas — see `libs/events/EVENTS.md`                      |
+| queue    | `@app/queue`    | `QUEUE_CONSTANTS` — see `libs/queue/src/constants/`              |
 
 ## Saga Pattern (Choreography)
 
@@ -42,47 +31,20 @@ import { OrderCreatedEvent } from '@app/events';
 
 ## TypeORM Patterns
 
-> Guards/DTOs patterns → see `nestjs.instructions.md`
-
-```typescript
-// Transactions — use QueryRunner for multi-table writes
-const qr = this.dataSource.createQueryRunner();
-await qr.connect();
-await qr.startTransaction();
-try {
-  await qr.manager.save(entity);
-  await qr.commitTransaction();
-} catch (e) {
-  await qr.rollbackTransaction();
-  throw e;
-} finally {
-  await qr.release();
-}
-
-// Soft delete — never hard delete user data
-await this.repo.softDelete(id);
-```
+> Multi-table transactions → use `+tx.md` fragment (QueryRunner pattern)
+> Guards/DTOs/entity conventions → see `nestjs.instructions.md`
+> Soft delete: `repo.softDelete(id)` — never hard delete user data
 
 ## Outbox Pattern (REQUIRED for Kafka publishes)
 
-```typescript
-// WRONG — dual-write risk
-await this.orderRepo.save(order);
-await this.kafka.publish('order.created', event); // could fail after save
-
-// CORRECT — outbox in same transaction
-await qr.manager.save(order);
-await qr.manager.save(OutboxEvent, { topic: 'order.created', payload: event });
-// Debezium CDC picks up outbox row → publishes to Kafka atomically
-```
+> Full pattern → see `+kafka.md` fragment
+> Rule: save `OutboxEvent` in **same transaction** as business entity. NEVER dual-write.
+> wallet-service + order-service use Outbox. Other services: direct publish OK.
 
 ## Error Handling
 
-```typescript
-// Use typed errors from libs/common
-throw new BusinessException(ErrorCode.STOCK_INSUFFICIENT, 'Not enough stock', HttpStatus.CONFLICT);
-throw new BusinessException(ErrorCode.VOUCHER_EXPIRED, 'Voucher expired', HttpStatus.BAD_REQUEST);
-```
+Use `BusinessException(ErrorCode.X, message, HttpStatus.Y)` from `libs/common`.
+Error codes defined in `libs/common/src/exceptions/error-codes.ts`.
 
 ## Metrics
 
