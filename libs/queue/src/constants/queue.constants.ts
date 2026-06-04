@@ -35,6 +35,9 @@ export const QUEUE_NAMES = {
   // Analytics
   ANALYTICS_INGEST: 'analytics:ingest',
 
+  // Review
+  REVIEW_PROCESSING: 'review:processing',
+
   // Media
   MEDIA_RESIZE: 'media:resize',
   MEDIA_THUMBNAIL: 'media:thumbnail',
@@ -44,7 +47,7 @@ export const QUEUE_NAMES = {
   STOCK_SYNC: 'stock:sync',
 } as const;
 
-export type QueueName = typeof QUEUE_NAMES[keyof typeof QUEUE_NAMES];
+export type QueueName = (typeof QUEUE_NAMES)[keyof typeof QUEUE_NAMES];
 
 export const JOB_NAMES = {
   // Order
@@ -86,9 +89,14 @@ export const JOB_NAMES = {
   // Stock
   RECONCILE_STOCK: 'reconcile-stock',
   RELEASE_EXPIRED_RESERVATIONS: 'release-expired-reservations',
+
+  // Review
+  PROCESS_REVIEW: 'process-review', // Moderation + Kafka publish
+  UPDATE_PRODUCT_RATING: 'update-product-rating', // Recalculate aggregate rating
+  NOTIFY_SELLER_REVIEW: 'notify-seller-review',
 } as const;
 
-export type JobName = typeof JOB_NAMES[keyof typeof JOB_NAMES];
+export type JobName = (typeof JOB_NAMES)[keyof typeof JOB_NAMES];
 
 // Default job options per queue type
 export const JOB_DEFAULT_OPTIONS = {

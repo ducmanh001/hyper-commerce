@@ -3,8 +3,9 @@
 // Cluster-aware client với atomic Lua scripts cho inventory ops
 // ============================================================
 
-import { Injectable, Logger, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
+import type { OnModuleInit, OnModuleDestroy } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
+import type { ConfigService } from '@nestjs/config';
 import Redis, { Cluster } from 'ioredis';
 
 // ── Lua Scripts (loaded once, executed atomically on Redis) ───
@@ -84,8 +85,7 @@ export class RedisClientService implements OnModuleInit, OnModuleDestroy {
       });
 
       this.client = new Cluster(nodes, {
-        clusterRetryStrategy: (times: number) =>
-          Math.min(times * 100, 3_000),
+        clusterRetryStrategy: (times: number) => Math.min(times * 100, 3_000),
         redisOptions: {
           password: this.config.get('REDIS_PASSWORD') || undefined,
           tls: this.config.get('REDIS_TLS') === 'true' ? {} : undefined,
@@ -104,9 +104,7 @@ export class RedisClientService implements OnModuleInit, OnModuleDestroy {
       });
     }
 
-    this.client.on('error', (err: Error) =>
-      this.logger.error(`Redis error: ${err.message}`),
-    );
+    this.client.on('error', (err: Error) => this.logger.error(`Redis error: ${err.message}`));
 
     this.client.on('ready', () => this.logger.log('Redis connected'));
 
@@ -237,6 +235,10 @@ export class RedisClientService implements OnModuleInit, OnModuleDestroy {
     return this.client.sadd(key, ...members);
   }
 
+  async srem(key: string, ...members: string[]): Promise<number> {
+    return this.client.srem(key, ...members);
+  }
+
   async sismember(key: string, member: string): Promise<number> {
     return this.client.sismember(key, member);
   }
@@ -245,16 +247,49 @@ export class RedisClientService implements OnModuleInit, OnModuleDestroy {
     return this.client.smembers(key);
   }
 
+  async decr(key: string): Promise<number> {
+    return this.client.decr(key);
+  }
+
+  async decrby(key: string, by: number): Promise<number> {
+    return this.client.decrby(key, by);
+  }
+
+  /** Alias for expire — sets TTL in seconds */
+  async setExpiry(key: string, seconds: number): Promise<number> {
+    return this.client.expire(key, seconds);
+  }
+
+  async zcard(key: string): Promise<number> {
+    return this.client.zcard(key);
+  }
+
+  async zrank(key: string, member: string): Promise<number | null> {
+    return this.client.zrank(key, member);
+  }
+
+  async zrangeByScore(key: string, min: number | '-inf', max: number | '+inf'): Promise<string[]> {
+    return this.client.zrangebyscore(key, min, max);
+  }
+
+  /** Pop N members with lowest score (FIFO queue usage) */
+  async zpopmin(key: string, count: number): Promise<string[]> {
+    const raw = await this.client.zpopmin(key, count);
+    // ioredis returns [member, score, member, score, ...] — extract members only
+    const members: string[] = [];
+    for (let i = 0; i < raw.length; i += 2) {
+      members.push(raw[i]);
+    }
+    return members;
+  }
+
   // ── Atomic Stock Operations (Lua) ─────────────────────────
 
   /**
    * Atomically decrement stock — rejects if insufficient.
    * Uses Lua to prevent race conditions in concurrent purchases.
    */
-  async atomicDecrementStock(
-    stockKey: string,
-    amount: number,
-  ): Promise<StockOperationResult> {
+  async atomicDecrementStock(stockKey: string, amount: number): Promise<StockOperationResult> {
     const result = await this.evalScript<[number, number]>(
       'atomicDecrement',
       LUA_ATOMIC_DECREMENT,
@@ -289,10 +324,7 @@ export class RedisClientService implements OnModuleInit, OnModuleDestroy {
    * Release a reservation — restores stock atomically.
    * Called on payment failure, cart clear, or timeout.
    */
-  async releaseReservation(
-    stockKey: string,
-    reservationKey: string,
-  ): Promise<number> {
+  async releaseReservation(stockKey: string, reservationKey: string): Promise<number> {
     return this.evalScript<number>(
       'releaseReservation',
       LUA_RELEASE_RESERVATION,
@@ -305,10 +337,7 @@ export class RedisClientService implements OnModuleInit, OnModuleDestroy {
    * Flash sale dequeue — atomically pops batch from queue.
    * Guarantees ordering: first-in = first-served.
    */
-  async flashSaleDequeue(
-    queueKey: string,
-    batchSize: number,
-  ): Promise<string[]> {
+  async flashSaleDequeue(queueKey: string, batchSize: number): Promise<string[]> {
     return this.evalScript<string[]>(
       'flashSaleDequeue',
       LUA_FLASH_SALE_DEQUEUE,
@@ -330,7 +359,7 @@ export class RedisClientService implements OnModuleInit, OnModuleDestroy {
     await Promise.all(
       Object.entries(scripts).map(async ([name, script]) => {
         try {
-          const sha = await this.client.script('LOAD', script) as string;
+          const sha = (await this.client.script('LOAD', script)) as string;
           this.scriptShas[name] = sha;
         } catch (err) {
           this.logger.warn(`Failed to load Lua script '${name}': ${String(err)}`);
@@ -352,12 +381,7 @@ export class RedisClientService implements OnModuleInit, OnModuleDestroy {
     if (sha) {
       try {
         // EVALSHA — faster than EVAL (no script transfer)
-        return await (this.client as Redis).evalsha(
-          sha,
-          keys.length,
-          ...keys,
-          ...args,
-        ) as T;
+        return (await (this.client as Redis).evalsha(sha, keys.length, ...keys, ...args)) as T;
       } catch (err) {
         // NOSCRIPT: script was flushed from Redis cache
         if (err instanceof Error && err.message.startsWith('NOSCRIPT')) {
@@ -370,12 +394,7 @@ export class RedisClientService implements OnModuleInit, OnModuleDestroy {
     }
 
     // EVAL fallback — also caches script in Redis
-    return await (this.client as Redis).eval(
-      script,
-      keys.length,
-      ...keys,
-      ...args,
-    ) as T;
+    return (await (this.client as Redis).eval(script, keys.length, ...keys, ...args)) as T;
   }
 
   private parseStockResult(result: [number, number]): StockOperationResult {

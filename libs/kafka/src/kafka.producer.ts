@@ -3,15 +3,11 @@
 // Transactional produce, dead-letter routing, span propagation
 // ============================================================
 
-import { Injectable, Logger, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import {
-  Kafka,
-  Producer,
-  ProducerRecord,
-  RecordMetadata,
-  CompressionTypes,
-} from 'kafkajs';
+import type { OnModuleInit, OnModuleDestroy } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
+import type { ConfigService } from '@nestjs/config';
+import type { Producer, ProducerRecord, RecordMetadata } from 'kafkajs';
+import { Kafka, CompressionTypes } from 'kafkajs';
 import { withRetry } from '@hypercommerce/common/utils/retry.util';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -46,9 +42,7 @@ export class KafkaProducerService implements OnModuleInit, OnModuleDestroy {
   async onModuleInit(): Promise<void> {
     const kafka = new Kafka({
       clientId: this.config.get<string>('KAFKA_CLIENT_ID', 'hypercommerce'),
-      brokers: this.config
-        .get<string>('KAFKA_BROKERS', 'localhost:9092')
-        .split(','),
+      brokers: this.config.get<string>('KAFKA_BROKERS', 'localhost:9092').split(','),
       retry: {
         retries: 5,
         initialRetryTime: 300,
@@ -62,12 +56,15 @@ export class KafkaProducerService implements OnModuleInit, OnModuleDestroy {
     });
 
     // Connect asynchronously — don't block NestJS startup
-    this.producer.connect().then(() => {
-      this.isConnected = true;
-      this.logger.log('Kafka producer connected');
-    }).catch((err) => {
-      this.logger.error('Kafka producer connection failed', err);
-    });
+    this.producer
+      .connect()
+      .then(() => {
+        this.isConnected = true;
+        this.logger.log('Kafka producer connected');
+      })
+      .catch((err) => {
+        this.logger.error('Kafka producer connection failed', err);
+      });
   }
 
   async onModuleDestroy(): Promise<void> {
@@ -110,26 +107,23 @@ export class KafkaProducerService implements OnModuleInit, OnModuleDestroy {
       ],
     };
 
-    return withRetry(
-      () => this.producer.send(record),
-      {
-        maxAttempts: 3,
-        baseDelayMs: 100,
-        maxDelayMs: 2_000,
-        retryIf: (err) => this.isRetryableKafkaError(err),
-        onRetry: (err, attempt) => {
-          this.logger.warn(
-            JSON.stringify({
-              event: 'kafka_produce_retry',
-              topic: options.topic,
-              attempt,
-              traceId,
-              error: err instanceof Error ? err.message : String(err),
-            }),
-          );
-        },
+    return withRetry(() => this.producer.send(record), {
+      maxAttempts: 3,
+      baseDelayMs: 100,
+      maxDelayMs: 2_000,
+      retryIf: (err) => this.isRetryableKafkaError(err),
+      onRetry: (err, attempt) => {
+        this.logger.warn(
+          JSON.stringify({
+            event: 'kafka_produce_retry',
+            topic: options.topic,
+            attempt,
+            traceId,
+            error: err instanceof Error ? err.message : String(err),
+          }),
+        );
       },
-    );
+    });
   }
 
   /**
@@ -167,10 +161,7 @@ export class KafkaProducerService implements OnModuleInit, OnModuleDestroy {
    * Transactional publish — ACID across multiple topics.
    * Use for Saga compensation steps where ordering is critical.
    */
-  async publishInTransaction(
-    records: PublishOptions[],
-    traceId?: string,
-  ): Promise<void> {
+  async publishInTransaction(records: PublishOptions[], traceId?: string): Promise<void> {
     const txTraceId = traceId ?? uuidv4();
     const transaction = await this.producer.transaction();
 

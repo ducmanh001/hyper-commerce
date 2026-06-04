@@ -2,9 +2,9 @@
 // NestJS module that provides BullMQ Queue instances via DI.
 // Each queue is registered as a named provider.
 
-import { DynamicModule, Module, Provider } from '@nestjs/common';
+import type { DynamicModule, Provider } from '@nestjs/common';
+import { Module, Inject } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { Queue } from 'bullmq';
 import {
   createQueue,
   createCriticalQueue,
@@ -12,7 +12,8 @@ import {
   createBestEffortQueue,
   setQueueRedisConnection,
 } from './queue.factory';
-import { QUEUE_NAMES, QueueName } from './constants/queue.constants';
+import type { QueueName } from './constants/queue.constants';
+import { QUEUE_NAMES } from './constants/queue.constants';
 
 export const QUEUE_TOKEN = (name: string) => `QUEUE:${name}`;
 
@@ -40,26 +41,30 @@ export class QueueModule {
           return true;
         },
       },
-      ...queues.map((q): Provider => ({
-        provide: QUEUE_TOKEN(q.name),
-        inject: ['QUEUE_INIT'],
-        useFactory: (_init: boolean) => {
-          switch (q.type) {
-            case 'critical': return createCriticalQueue(q.name);
-            case 'non-critical': return createNonCriticalQueue(q.name);
-            case 'best-effort': return createBestEffortQueue(q.name);
-            default: return createQueue(q.name);
-          }
-        },
-      })),
+      ...queues.map(
+        (q): Provider => ({
+          provide: QUEUE_TOKEN(q.name),
+          inject: ['QUEUE_INIT'],
+          useFactory: (_init: boolean) => {
+            switch (q.type) {
+              case 'critical':
+                return createCriticalQueue(q.name);
+              case 'non-critical':
+                return createNonCriticalQueue(q.name);
+              case 'best-effort':
+                return createBestEffortQueue(q.name);
+              default:
+                return createQueue(q.name);
+            }
+          },
+        }),
+      ),
     ];
 
     return {
       module: QueueModule,
       providers,
-      exports: [
-        ...queues.map((q) => QUEUE_TOKEN(q.name)),
-      ],
+      exports: [...queues.map((q) => QUEUE_TOKEN(q.name))],
     };
   }
 
@@ -67,9 +72,9 @@ export class QueueModule {
    * Register ALL queues at once (for admin/monitoring service).
    */
   static registerAll(): DynamicModule {
-    const allQueues: QueueRegistration[] = Object.values(QUEUE_NAMES).map(
-      (name) => ({ name: name as QueueName }),
-    );
+    const allQueues: QueueRegistration[] = Object.values(QUEUE_NAMES).map((name) => ({
+      name: name as QueueName,
+    }));
     return QueueModule.register(allQueues);
   }
 }
@@ -78,13 +83,8 @@ export class QueueModule {
 export function InjectQueue(name: QueueName) {
   return (target: object, propertyKey: string | symbol, parameterIndex: number) => {
     const token = QUEUE_TOKEN(name);
-    Reflect.defineMetadata(
-      `queue:${String(propertyKey)}:${parameterIndex}`,
-      token,
-      target,
-    );
+    Reflect.defineMetadata(`queue:${String(propertyKey)}:${parameterIndex}`, token, target);
     // Use NestJS Inject
-    const Inject = require('@nestjs/common').Inject;
     Inject(token)(target, propertyKey, parameterIndex);
   };
 }

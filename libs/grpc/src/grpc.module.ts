@@ -3,7 +3,8 @@
 // Provides helper functions to register gRPC microservices and clients.
 
 import { join } from 'path';
-import { ClientsModuleOptions, ClientProviderOptions, Transport } from '@nestjs/microservices';
+import type { ClientProviderOptions, GrpcOptions } from '@nestjs/microservices';
+import { Transport } from '@nestjs/microservices';
 
 // Path to proto files (resolved at runtime)
 const PROTO_DIR = join(__dirname, 'proto');
@@ -16,7 +17,7 @@ export const GRPC_SERVICES = {
   PAYMENT: 'hypercommerce.payment.PaymentService',
 } as const;
 
-export type GrpcServiceName = typeof GRPC_SERVICES[keyof typeof GRPC_SERVICES];
+export type GrpcServiceName = (typeof GRPC_SERVICES)[keyof typeof GRPC_SERVICES];
 
 // Injection tokens for gRPC clients
 export const GRPC_USER_SERVICE = 'GRPC_USER_SERVICE';
@@ -46,11 +47,8 @@ export function grpcMicroserviceOptions(
   service: keyof typeof GRPC_PORTS,
   packages: string[],
   protoFiles: string[],
-): import('@nestjs/microservices').GrpcOptions {
-  const port = parseInt(
-    process.env[`GRPC_${service}_PORT`] ?? '',
-    10,
-  ) || GRPC_PORTS[service];
+): GrpcOptions {
+  const port = parseInt(process.env[`GRPC_${service}_PORT`] ?? '', 10) || GRPC_PORTS[service];
 
   return {
     transport: Transport.GRPC,
@@ -58,7 +56,7 @@ export function grpcMicroserviceOptions(
       url: `0.0.0.0:${port}`,
       package: packages.map((p) => `hypercommerce.${p}`),
       protoPath: protoFiles.map((f) => join(PROTO_DIR, `${f}.proto`)),
-      maxReceiveMessageLength: 1024 * 1024 * 10,  // 10MB
+      maxReceiveMessageLength: 1024 * 1024 * 10, // 10MB
       maxSendMessageLength: 1024 * 1024 * 10,
       keepalive: {
         keepaliveTimeMs: 10000,
@@ -82,15 +80,9 @@ export function grpcClientOptions(
   protoFiles: string[],
   host?: string,
 ): ClientProviderOptions {
-  const port = parseInt(
-    process.env[`GRPC_${service}_PORT`] ?? '',
-    10,
-  ) || GRPC_PORTS[service];
+  const port = parseInt(process.env[`GRPC_${service}_PORT`] ?? '', 10) || GRPC_PORTS[service];
 
-  const resolvedHost =
-    host ??
-    process.env[`GRPC_${service}_HOST`] ??
-    'localhost';
+  const resolvedHost = host ?? process.env[`GRPC_${service}_HOST`] ?? 'localhost';
 
   return {
     name,
@@ -107,12 +99,7 @@ export function grpcClientOptions(
 
 // ── Pre-built client registrations ───────────────────────────
 
-export const USER_GRPC_CLIENT = grpcClientOptions(
-  GRPC_USER_SERVICE,
-  'USER',
-  ['user'],
-  ['user'],
-);
+export const USER_GRPC_CLIENT = grpcClientOptions(GRPC_USER_SERVICE, 'USER', ['user'], ['user']);
 
 export const ORDER_GRPC_CLIENT = grpcClientOptions(
   GRPC_ORDER_SERVICE,

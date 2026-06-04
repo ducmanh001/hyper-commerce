@@ -8,11 +8,11 @@
 
 // ── Base ─────────────────────────────────────────────────────
 export interface DomainEvent {
-  eventId: string;       // UUID — idempotency key for consumers
+  eventId: string; // UUID — idempotency key for consumers
   eventType: string;
-  occurredAt: string;    // ISO-8601
-  traceId: string;       // OpenTelemetry trace propagation
-  version: number;       // Schema version for migration
+  occurredAt: string; // ISO-8601
+  traceId: string; // OpenTelemetry trace propagation
+  version: number; // Schema version for migration
 }
 
 // ── Order Events ─────────────────────────────────────────────
@@ -29,7 +29,7 @@ export interface OrderCreatedEvent extends DomainEvent {
   }>;
   totalAmount: number;
   currency: string;
-  expiresAt: string;       // Reservation TTL — cancel if payment not done
+  expiresAt: string; // Reservation TTL — cancel if payment not done
 }
 
 export interface OrderCancelledEvent extends DomainEvent {
@@ -51,8 +51,8 @@ export interface OrderConfirmedEvent extends DomainEvent {
 export interface StockReservedEvent extends DomainEvent {
   eventType: 'STOCK_RESERVED';
   orderId: string;
-  reservationIds: string[];  // Per-item reservation IDs for rollback
-  expiresAt: string;         // Reservation expiry (15 minutes default)
+  reservationIds: string[]; // Per-item reservation IDs for rollback
+  expiresAt: string; // Reservation expiry (15 minutes default)
 }
 
 export interface StockReleasedEvent extends DomainEvent {
@@ -132,7 +132,7 @@ export interface UserFollowedEvent extends DomainEvent {
   eventType: 'USER_FOLLOWED';
   followerId: string;
   followeeId: string;
-  isCelebrity: boolean;   // triggers push to feed vs pull model
+  isCelebrity: boolean; // triggers push to feed vs pull model
 }
 
 // ── Notification Events ───────────────────────────────────────
@@ -161,4 +161,43 @@ export interface LiveStreamEndedEvent extends DomainEvent {
   peakViewers: number;
   totalRevenue: number;
   durationSeconds: number;
+}
+
+// ── Review Events ─────────────────────────────────────────────
+export interface ReviewCreatedEvent extends DomainEvent {
+  eventType: 'REVIEW_CREATED';
+  reviewId: string;
+  userId: string;
+  productId: string;
+  orderId: string;
+  sellerId: string;
+  rating: number; // 1-5
+  /** AI moderation decision — set after async processing */
+  moderationStatus: 'PENDING' | 'APPROVED' | 'REJECTED';
+}
+
+export interface ReviewPublishedEvent extends DomainEvent {
+  eventType: 'REVIEW_PUBLISHED';
+  reviewId: string;
+  productId: string;
+  sellerId: string;
+  rating: number;
+  /** New aggregate stats after this review */
+  newAverageRating: number;
+  totalReviewCount: number;
+}
+
+export interface ReviewRejectedEvent extends DomainEvent {
+  eventType: 'REVIEW_REJECTED';
+  reviewId: string;
+  userId: string;
+  productId: string;
+  reason: string;
+}
+
+export interface ReviewHelpfulMarkedEvent extends DomainEvent {
+  eventType: 'REVIEW_HELPFUL_MARKED';
+  reviewId: string;
+  userId: string;
+  newHelpfulCount: number;
 }

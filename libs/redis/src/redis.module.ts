@@ -8,6 +8,6 @@ import { RedisClientService } from './redis.client';
 @Global()
 @Module({
   providers: [RedisClientService],
-  exports:   [RedisClientService],
+  exports: [RedisClientService],
 })
 export class RedisModule {}

@@ -3,8 +3,10 @@
 // Shared database configuration for all services.
 // Uses connection pooling + read replicas for scale.
 // ============================================================
-import { Module, DynamicModule } from '@nestjs/common';
-import { TypeOrmModule, TypeOrmModuleOptions } from '@nestjs/typeorm';
+import type { DynamicModule } from '@nestjs/common';
+import { Module } from '@nestjs/common';
+import type { TypeOrmModuleOptions } from '@nestjs/typeorm';
+import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigService } from '@nestjs/config';
 
 export interface DatabaseOptions {
@@ -36,8 +38,9 @@ export class DatabaseModule {
             database: config.get<string>('DB_NAME', 'hypercommerce'),
             entities: options.entities,
             migrations: options.migrations ?? [],
-            synchronize: options.synchronize ?? false,  // NEVER true in production
-            logging: config.get<string>('NODE_ENV') === 'development' ? ['query', 'error'] : ['error'],
+            synchronize: options.synchronize ?? false, // NEVER true in production
+            logging:
+              config.get<string>('NODE_ENV') === 'development' ? ['query', 'error'] : ['error'],
             // Connection pool
             extra: {
               max: config.get<number>('DB_POOL_MAX', 10),
@@ -46,9 +49,10 @@ export class DatabaseModule {
               connectionTimeoutMillis: 5_000,
             },
             // SSL in production
-            ssl: config.get<string>('NODE_ENV') === 'production'
-              ? { rejectUnauthorized: true }
-              : false,
+            ssl:
+              config.get<string>('NODE_ENV') === 'production'
+                ? { rejectUnauthorized: true }
+                : false,
             // Retry on startup (container init race condition)
             retryAttempts: 10,
             retryDelay: 3_000,

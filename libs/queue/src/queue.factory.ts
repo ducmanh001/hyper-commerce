@@ -8,6 +8,7 @@ import {
   QueueEvents,
   type WorkerOptions,
   type QueueOptions,
+  type Job,
 } from 'bullmq';
 import type { RedisOptions } from 'ioredis';
 import { JOB_DEFAULT_OPTIONS } from './constants/queue.constants';
@@ -30,10 +31,7 @@ function getConnection(): RedisOptions {
 
 // ── Queue Factory ─────────────────────────────────────────────
 
-export function createQueue<T = unknown>(
-  name: string,
-  options?: Partial<QueueOptions>,
-): Queue<T> {
+export function createQueue<T = unknown>(name: string, options?: Partial<QueueOptions>): Queue<T> {
   return new Queue<T>(name, {
     connection: getConnection(),
     defaultJobOptions: JOB_DEFAULT_OPTIONS.CRITICAL,
@@ -63,7 +61,7 @@ export function createBestEffortQueue<T = unknown>(name: string): Queue<T> {
 
 export function createWorker<T = unknown, R = unknown>(
   name: string,
-  processor: (job: import('bullmq').Job<T>) => Promise<R>,
+  processor: (job: Job<T>) => Promise<R>,
   options?: Partial<WorkerOptions>,
 ): Worker<T, R> {
   return new Worker<T, R>(name, processor, {
@@ -92,7 +90,7 @@ export async function scheduleJob<T>(
   queue: Queue<T>,
   jobName: string,
   data: T,
-  delayMs: number,
+  _delayMs: number,
 ): Promise<string> {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const job = await queue.add(jobName as any, data as any, {
@@ -107,7 +105,7 @@ export async function addRepeatableJob<T>(
   queue: Queue<T>,
   jobName: string,
   data: T,
-  cronPattern: string,
+  _cronPattern: string,
 ): Promise<void> {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   await queue.add(jobName as any, data as any, {

@@ -4,20 +4,12 @@
 // exponential backoff, manual offset commit.
 // ============================================================
 
-import {
-  Injectable,
-  Logger,
-  OnModuleInit,
-  OnModuleDestroy,
-} from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import {
-  Consumer,
-  Kafka,
-  KafkaMessage,
-  EachMessagePayload,
-} from 'kafkajs';
-import { KafkaProducerService } from './kafka.producer';
+import type { OnModuleInit, OnModuleDestroy } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
+import type { ConfigService } from '@nestjs/config';
+import type { Consumer, KafkaMessage, EachMessagePayload } from 'kafkajs';
+import { Kafka } from 'kafkajs';
+import type { KafkaProducerService } from './kafka.producer';
 
 export interface MessageHandler<T = Record<string, unknown>> {
   topic: string;

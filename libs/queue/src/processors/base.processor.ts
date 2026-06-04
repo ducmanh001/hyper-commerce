@@ -2,7 +2,8 @@
 // Abstract base class for all BullMQ job processors.
 // Provides: retry logic, metrics, distributed tracing, error classification.
 
-import { Job } from 'bullmq';
+import type { Job } from 'bullmq';
+import { Logger } from '@nestjs/common';
 
 export interface JobResult<T = unknown> {
   success: boolean;
@@ -49,6 +50,8 @@ export function classifyError(err: unknown): JobClassification {
 }
 
 export abstract class BaseProcessor<TData, TResult = void> {
+  protected readonly logger = new Logger(this.constructor.name);
+
   /** Override to process a job. Throw to trigger retry. */
   abstract process(job: Job<TData>): Promise<TResult>;
 
@@ -63,13 +66,13 @@ export abstract class BaseProcessor<TData, TResult = void> {
     try {
       const result = await this.process(job);
       const elapsed = Date.now() - start;
-      console.log(`${label} completed in ${elapsed}ms`);
+      this.logger.log(`${label} completed in ${elapsed}ms`);
       return result;
     } catch (err) {
       const elapsed = Date.now() - start;
       const classification = classifyError(err);
 
-      console.error(
+      this.logger.error(
         `${label} failed after ${elapsed}ms — classification: ${classification}`,
         err,
       );

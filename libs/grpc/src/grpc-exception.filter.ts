@@ -2,8 +2,10 @@
 // Maps domain exceptions → gRPC status codes
 // Must be applied on all gRPC controllers.
 
-import { Catch, RpcExceptionFilter, ArgumentsHost } from '@nestjs/common';
-import { Observable, throwError } from 'rxjs';
+import type { RpcExceptionFilter, ArgumentsHost } from '@nestjs/common';
+import { Catch } from '@nestjs/common';
+import type { Observable } from 'rxjs';
+import { throwError } from 'rxjs';
 import { RpcException } from '@nestjs/microservices';
 import { status } from '@grpc/grpc-js';
 

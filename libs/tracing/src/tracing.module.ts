@@ -11,13 +11,19 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { APP_INTERCEPTOR } from '@nestjs/core';
 import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http';
 import { resourceFromAttributes } from '@opentelemetry/resources';
-import { SEMRESATTRS_SERVICE_NAME, SEMRESATTRS_SERVICE_VERSION } from '@opentelemetry/semantic-conventions';
+import {
+  SEMRESATTRS_SERVICE_NAME,
+  SEMRESATTRS_SERVICE_VERSION,
+} from '@opentelemetry/semantic-conventions';
 import { NodeTracerProvider, BatchSpanProcessor } from '@opentelemetry/sdk-trace-node';
-import { trace, context, propagation, Tracer } from '@opentelemetry/api';
+import type { Tracer } from '@opentelemetry/api';
+import { trace, context, propagation } from '@opentelemetry/api';
 import { W3CTraceContextPropagator } from '@opentelemetry/core';
-import { Injectable, NestInterceptor, ExecutionContext, CallHandler } from '@nestjs/common';
-import { Observable, tap } from 'rxjs';
-import { Request } from 'express';
+import type { NestInterceptor, ExecutionContext, CallHandler } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
+import type { Observable } from 'rxjs';
+import { tap } from 'rxjs';
+import type { Request } from 'express';
 
 // ── Tracing Service ───────────────────────────────────────────
 
@@ -60,7 +66,9 @@ export class TracingService {
    * Extract trace context from incoming HTTP request.
    * Used by Kafka consumers to continue the distributed trace.
    */
-  extractContext(headers: Record<string, string | string[] | undefined>): ReturnType<typeof context.active> {
+  extractContext(
+    headers: Record<string, string | string[] | undefined>,
+  ): ReturnType<typeof context.active> {
     return propagation.extract(context.active(), headers);
   }
 
