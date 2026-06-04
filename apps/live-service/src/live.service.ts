@@ -6,8 +6,9 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { RedisClientService } from '@hypercommerce/redis';
-import { KafkaProducerService } from '@hypercommerce/kafka';
+import type { RedisClientService } from '@hypercommerce/redis';
+import type { Redis } from 'ioredis';
+import type { KafkaProducerService } from '@hypercommerce/kafka';
 
 interface Stream {
   id: string;
@@ -29,8 +30,8 @@ interface Stream {
 interface GiftConfig {
   id: string;
   name: string;
-  value: number;         // Virtual currency value
-  realValue: number;     // Real money equivalent (VND)
+  value: number; // Virtual currency value
+  realValue: number; // Real money equivalent (VND)
   animationType: 'SMALL' | 'MEDIUM' | 'LARGE' | 'EPIC';
 }
 
@@ -38,9 +39,27 @@ interface GiftConfig {
 const GIFT_CATALOG: Record<string, GiftConfig> = {
   rose: { id: 'rose', name: '🌹 Hoa hồng', value: 1, realValue: 500, animationType: 'SMALL' },
   heart: { id: 'heart', name: '❤️ Trái tim', value: 5, realValue: 2500, animationType: 'SMALL' },
-  diamond: { id: 'diamond', name: '💎 Kim cương', value: 100, realValue: 50000, animationType: 'MEDIUM' },
-  supercar: { id: 'supercar', name: '🚗 Siêu xe', value: 1000, realValue: 500000, animationType: 'LARGE' },
-  spaceship: { id: 'spaceship', name: '🚀 Tàu vũ trụ', value: 10000, realValue: 5000000, animationType: 'EPIC' },
+  diamond: {
+    id: 'diamond',
+    name: '💎 Kim cương',
+    value: 100,
+    realValue: 50000,
+    animationType: 'MEDIUM',
+  },
+  supercar: {
+    id: 'supercar',
+    name: '🚗 Siêu xe',
+    value: 1000,
+    realValue: 500000,
+    animationType: 'LARGE',
+  },
+  spaceship: {
+    id: 'spaceship',
+    name: '🚀 Tàu vũ trụ',
+    value: 10000,
+    realValue: 5000000,
+    animationType: 'EPIC',
+  },
 };
 
 @Injectable()
@@ -86,7 +105,7 @@ export class LiveService {
     const walletKey = `wallet:coins:${userId}`;
 
     // Atomic decrement — prevent negative balance with Lua script
-    const result = await (this.redis.getClient() as import('ioredis').Redis).eval(
+    const result = (await (this.redis.getClient() as Redis).eval(
       `
         local balance = tonumber(redis.call('GET', KEYS[1]) or '0')
         local cost = tonumber(ARGV[1])
@@ -99,7 +118,7 @@ export class LiveService {
       1,
       walletKey,
       totalCost,
-    ) as [number, number];
+    )) as [number, number];
 
     if (result[0] === 0) {
       return { success: false, balance: result[1], giftValue: 0, animationType: 'SMALL' };

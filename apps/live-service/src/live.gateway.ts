@@ -10,25 +10,24 @@
 // - Room pattern: stream_id → [socket_ids] (fan-out to all viewers)
 // ============================================================
 
+import type { OnGatewayConnection, OnGatewayDisconnect, OnGatewayInit } from '@nestjs/websockets';
 import {
   WebSocketGateway,
   WebSocketServer,
   SubscribeMessage,
-  OnGatewayConnection,
-  OnGatewayDisconnect,
-  OnGatewayInit,
   MessageBody,
   ConnectedSocket,
   WsException,
 } from '@nestjs/websockets';
 import { Logger, UseGuards } from '@nestjs/common';
-import { Server, Socket } from 'socket.io';
-import { JwtService } from '@nestjs/jwt';
-import { RedisClientService } from '@hypercommerce/redis';
-import { KafkaProducerService } from '@hypercommerce/kafka';
+import type { Server, Socket } from 'socket.io';
+import type { JwtService } from '@nestjs/jwt';
+import type { RedisClientService } from '@hypercommerce/redis';
+import type { Redis } from 'ioredis';
+import type { KafkaProducerService } from '@hypercommerce/kafka';
 import { APP_CONSTANTS } from '@hypercommerce/common/constants/app.constants';
-import { LiveService } from './live.service';
-import { ViewerCountService } from './viewer/viewer-count.service';
+import type { LiveService } from './live.service';
+import type { ViewerCountService } from './viewer/viewer-count.service';
 
 interface AuthenticatedSocket extends Socket {
   userId: string;
@@ -60,9 +59,7 @@ interface SendGiftPayload {
   // Socket.io adapter: Redis adapter required for multi-pod broadcasting
   // Configured at module level with @socket.io/redis-adapter
 })
-export class LiveGateway
-  implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect
-{
+export class LiveGateway implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
   server!: Server;
 
@@ -71,7 +68,7 @@ export class LiveGateway
   // In-memory connection registry — survives within pod
   // Cross-pod routing handled by Redis adapter
   private readonly connectionMap = new Map<string, Set<string>>(); // userId → Set<socketId>
-  private readonly socketUserMap = new Map<string, string>();       // socketId → userId
+  private readonly socketUserMap = new Map<string, string>(); // socketId → userId
 
   constructor(
     private readonly jwtService: JwtService,
@@ -98,18 +95,14 @@ export class LiveGateway
    */
   async handleConnection(socket: AuthenticatedSocket): Promise<void> {
     try {
-      const token =
-        socket.handshake.auth.token ||
-        socket.handshake.query.token;
+      const token = socket.handshake.auth.token || socket.handshake.query.token;
 
       if (!token) {
         socket.disconnect(true);
         return;
       }
 
-      const payload = this.jwtService.verify<{ sub: string; username: string }>(
-        String(token),
-      );
+      const payload = this.jwtService.verify<{ sub: string; username: string }>(String(token));
 
       socket.userId = payload.sub;
       socket.username = payload.username;
@@ -151,9 +144,7 @@ export class LiveGateway
     if (!this.connectionMap.get(userId)?.size) {
       this.connectionMap.delete(userId);
       // User fully offline
-      await this.redis.del(
-        `${APP_CONSTANTS.REDIS_KEYS.USER_ONLINE}${userId}`,
-      );
+      await this.redis.del(`${APP_CONSTANTS.REDIS_KEYS.USER_ONLINE}${userId}`);
     }
 
     this.socketUserMap.delete(socket.id);
@@ -302,12 +293,7 @@ export class LiveGateway
     const { streamId, giftId, quantity } = payload;
 
     // Verify user has enough balance
-    const canGift = await this.liveService.processGift(
-      socket.userId,
-      streamId,
-      giftId,
-      quantity,
-    );
+    const canGift = await this.liveService.processGift(socket.userId, streamId, giftId, quantity);
 
     if (!canGift.success) {
       socket.emit('error', { code: 'INSUFFICIENT_BALANCE', available: canGift.balance });
@@ -361,28 +347,25 @@ export class LiveGateway
    */
   private subscribeToRedisEvents(): void {
     const client = this.redis.getClient();
-    if (!client || typeof (client as import('ioredis').Redis).duplicate !== 'function') {
+    if (!client || typeof (client as Redis).duplicate !== 'function') {
       this.logger.warn('Redis client not ready or is Cluster — skipping Redis PubSub subscription');
       return;
     }
-    const sub = (client as import('ioredis').Redis).duplicate();
+    const sub = (client as Redis).duplicate();
 
     // Subscribe to user-specific notification channel
-    void (sub as import('ioredis').Redis).psubscribe('notify:*', (err) => {
+    void (sub as Redis).psubscribe('notify:*', (err) => {
       if (err) this.logger.error(`Redis subscribe error: ${err.message}`);
     });
 
-    (sub as import('ioredis').Redis).on(
-      'pmessage',
-      (_pattern: string, channel: string, rawMessage: string) => {
-        try {
-          const userId = channel.replace('notify:', '');
-          const message = JSON.parse(rawMessage) as { event: string; data: unknown };
-          this.pushToUser(userId, message.event, message.data);
-        } catch {
-          // Ignore malformed messages
-        }
-      },
-    );
+    (sub as Redis).on('pmessage', (_pattern: string, channel: string, rawMessage: string) => {
+      try {
+        const userId = channel.replace('notify:', '');
+        const message = JSON.parse(rawMessage) as { event: string; data: unknown };
+        this.pushToUser(userId, message.event, message.data);
+      } catch {
+        // Ignore malformed messages
+      }
+    });
   }
 }

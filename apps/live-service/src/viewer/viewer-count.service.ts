@@ -13,7 +13,8 @@
 // ============================================================
 
 import { Injectable, Logger } from '@nestjs/common';
-import { RedisClientService } from '@hypercommerce/redis';
+import type { RedisClientService } from '@hypercommerce/redis';
+import type { Redis } from 'ioredis';
 import { APP_CONSTANTS } from '@hypercommerce/common/constants/app.constants';
 
 @Injectable()
@@ -43,7 +44,7 @@ export class ViewerCountService {
    */
   async decrementViewer(streamId: string, userId: string): Promise<void> {
     const key = `${this.KEY_PREFIX}${streamId}`;
-    await (this.redis.getClient() as import('ioredis').Redis).zrem(key, userId);
+    await (this.redis.getClient() as Redis).zrem(key, userId);
   }
 
   /**
@@ -58,11 +59,7 @@ export class ViewerCountService {
     const key = `${this.KEY_PREFIX}${streamId}`;
     const cutoff = Date.now() - this.VIEWER_TTL_SECONDS * 1000;
 
-    const count = await (this.redis.getClient() as import('ioredis').Redis).zcount(
-      key,
-      cutoff,
-      '+inf',
-    );
+    const count = await (this.redis.getClient() as Redis).zcount(key, cutoff, '+inf');
 
     return count;
   }
@@ -73,10 +70,7 @@ export class ViewerCountService {
    */
   async heartbeat(streamId: string, userId: string): Promise<void> {
     const key = `${this.KEY_PREFIX}${streamId}`;
-    const isInStream = await (this.redis.getClient() as import('ioredis').Redis).zscore(
-      key,
-      userId,
-    );
+    const isInStream = await (this.redis.getClient() as Redis).zscore(key, userId);
 
     if (isInStream !== null) {
       // Update timestamp score — refreshes "active" window
@@ -92,11 +86,7 @@ export class ViewerCountService {
     const key = `${this.KEY_PREFIX}${streamId}`;
     const cutoff = Date.now() - this.VIEWER_TTL_SECONDS * 1000;
 
-    return (this.redis.getClient() as import('ioredis').Redis).zremrangebyscore(
-      key,
-      '-inf',
-      cutoff,
-    );
+    return (this.redis.getClient() as Redis).zremrangebyscore(key, '-inf', cutoff);
   }
 
   /**
@@ -105,7 +95,7 @@ export class ViewerCountService {
    */
   async getTopStreams(limit = 20): Promise<Array<{ streamId: string; count: number }>> {
     const leaderboardKey = 'live:leaderboard';
-    const results = await (this.redis.getClient() as import('ioredis').Redis).zrangebyscore(
+    const results = await (this.redis.getClient() as Redis).zrangebyscore(
       leaderboardKey,
       '-inf',
       '+inf',
@@ -138,10 +128,7 @@ export class ViewerCountService {
     if (count > 0) {
       await this.redis.zadd(leaderboardKey, count, streamId);
     } else {
-      await (this.redis.getClient() as import('ioredis').Redis).zrem(
-        leaderboardKey,
-        streamId,
-      );
+      await (this.redis.getClient() as Redis).zrem(leaderboardKey, streamId);
     }
   }
 }
