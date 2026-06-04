@@ -41,10 +41,7 @@ export class CelebrityDetectorHelper {
    * WHY: Ghost accounts (never log in) still follow celebs.
    * Pushing to them wastes writes. Skip them — they'll catch up via PULL.
    */
-  shouldPushToFollower(
-    strategy: 'PUSH' | 'PULL' | 'HYBRID',
-    lastActiveAt: Date | null,
-  ): boolean {
+  shouldPushToFollower(strategy: 'PUSH' | 'PULL' | 'HYBRID', lastActiveAt: Date | null): boolean {
     if (strategy !== 'HYBRID') return true;
     if (!lastActiveAt) return false; // never logged in → skip
 

@@ -11,11 +11,13 @@
 
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
-import { KafkaConsumerService, MessageHandler, MessageMetadata } from '@hypercommerce/kafka';
+import type { MessageHandler, MessageMetadata } from '@hypercommerce/kafka';
+import { KafkaConsumerService } from '@hypercommerce/kafka';
 import { APP_CONSTANTS } from '@hypercommerce/common/constants/app.constants';
-import { FeedRepository, FeedItem } from '../repositories/feed.repository';
-import { FollowRepository } from '../repositories/follow.repository';
-import { CelebrityDetectorHelper } from '../helpers/celebrity-detector.helper';
+import type { FeedItem } from '../repositories/feed.repository';
+import { FeedRepository } from '../repositories/feed.repository';
+import type { FollowRepository } from '../repositories/follow.repository';
+import type { CelebrityDetectorHelper } from '../helpers/celebrity-detector.helper';
 
 interface PostPublishedEvent {
   type: 'POST_PUBLISHED';
@@ -51,10 +53,7 @@ export class FeedFanoutWorker implements MessageHandler<PostPublishedEvent> {
    * Kafka at-least-once means it may be called twice for the same post.
    * Cassandra INSERT with same primary key is idempotent (upsert semantics).
    */
-  async handle(
-    event: PostPublishedEvent,
-    meta: MessageMetadata,
-  ): Promise<void> {
+  async handle(event: PostPublishedEvent, meta: MessageMetadata): Promise<void> {
     if (event.type !== 'POST_PUBLISHED') return;
 
     this.logger.log(
@@ -91,13 +90,8 @@ export class FeedFanoutWorker implements MessageHandler<PostPublishedEvent> {
    *
    * For 10K followers: ~20 batches × 500 followers = done in ~2 seconds.
    */
-  private async pushFanout(
-    event: PostPublishedEvent,
-    traceId: string,
-  ): Promise<void> {
-    const batchSize = this.celebrityDetector.getFanoutBatchSize(
-      event.followerCount,
-    );
+  private async pushFanout(event: PostPublishedEvent, traceId: string): Promise<void> {
+    const batchSize = this.celebrityDetector.getFanoutBatchSize(event.followerCount);
 
     let cursor: string | undefined;
     let totalWritten = 0;
@@ -106,8 +100,11 @@ export class FeedFanoutWorker implements MessageHandler<PostPublishedEvent> {
 
     do {
       // Fetch follower batch
-      const { items: followers, nextCursor } =
-        await this.followRepo.getFollowersBatch(event.authorId, cursor, batchSize);
+      const { items: followers, nextCursor } = await this.followRepo.getFollowersBatch(
+        event.authorId,
+        cursor,
+        batchSize,
+      );
 
       if (!followers.length) break;
 
@@ -123,7 +120,7 @@ export class FeedFanoutWorker implements MessageHandler<PostPublishedEvent> {
         contentPreview: event.contentPreview,
         mediaUrl: event.mediaUrl,
         productId: event.productId,
-        score: 0,           // Will be scored at read time
+        score: 0, // Will be scored at read time
         engagementRate: event.engagementBaseline,
         likeCount: 0,
         commentCount: 0,
@@ -133,9 +130,7 @@ export class FeedFanoutWorker implements MessageHandler<PostPublishedEvent> {
       // Batch write to Cassandra — 100 items at once
       const writeBatchSize = 100;
       for (let i = 0; i < feedItems.length; i += writeBatchSize) {
-        await this.feedRepo.batchInsertFeedItems(
-          feedItems.slice(i, i + writeBatchSize),
-        );
+        await this.feedRepo.batchInsertFeedItems(feedItems.slice(i, i + writeBatchSize));
       }
 
       totalWritten += feedItems.length;
@@ -158,10 +153,7 @@ export class FeedFanoutWorker implements MessageHandler<PostPublishedEvent> {
    * Saves DB writes for ghost accounts / inactive users.
    * Used for mega-celebrities (>1M followers).
    */
-  private async hybridFanout(
-    event: PostPublishedEvent,
-    traceId: string,
-  ): Promise<void> {
+  private async hybridFanout(event: PostPublishedEvent, traceId: string): Promise<void> {
     let cursor: string | undefined;
     let totalWritten = 0;
     let totalSkipped = 0;
@@ -170,17 +162,17 @@ export class FeedFanoutWorker implements MessageHandler<PostPublishedEvent> {
     const publishedAt = new Date(event.publishedAt);
 
     do {
-      const { items: followers, nextCursor } =
-        await this.followRepo.getFollowersBatch(event.authorId, cursor, 200);
+      const { items: followers, nextCursor } = await this.followRepo.getFollowersBatch(
+        event.authorId,
+        cursor,
+        200,
+      );
 
       if (!followers.length) break;
 
       // Filter to active followers only
       const activeFollowers = followers.filter((f) =>
-        this.celebrityDetector.shouldPushToFollower(
-          'HYBRID',
-          f.lastActiveAt,
-        ),
+        this.celebrityDetector.shouldPushToFollower('HYBRID', f.lastActiveAt),
       );
 
       totalSkipped += followers.length - activeFollowers.length;

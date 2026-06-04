@@ -12,10 +12,10 @@
 // ============================================================
 
 import { Injectable, Logger } from '@nestjs/common';
-import { RedisClientService } from '@hypercommerce/redis';
+import type { RedisClientService } from '@hypercommerce/redis';
 import { APP_CONSTANTS } from '@hypercommerce/common/constants/app.constants';
-import { FeedItem } from '../repositories/feed.repository';
-import { ScoringHelper, PostSignals, ScoredFeedItem } from './scoring.helper';
+import type { FeedItem } from '../repositories/feed.repository';
+import type { ScoringHelper, PostSignals, ScoredFeedItem } from './scoring.helper';
 
 export interface RankedFeedResult {
   items: ScoredFeedItem[];
@@ -37,7 +37,7 @@ export class FeedRankerService {
   private readonly logger = new Logger(FeedRankerService.name);
 
   private readonly FETCH_LIMIT = APP_CONSTANTS.FEED_FETCH_LIMIT; // 200
-  private readonly PAGE_SIZE = APP_CONSTANTS.FEED_PAGE_SIZE;     // 20
+  private readonly PAGE_SIZE = APP_CONSTANTS.FEED_PAGE_SIZE; // 20
 
   // Ranking weights — tuned based on A/B test results
   // Must sum to 1.0
@@ -95,9 +95,7 @@ export class FeedRankerService {
     const pageItems = slice.slice(0, this.PAGE_SIZE);
 
     const cursor = hasMore
-      ? Buffer.from(
-          JSON.stringify({ page: page + 1, userId }),
-        ).toString('base64url')
+      ? Buffer.from(JSON.stringify({ page: page + 1, userId })).toString('base64url')
       : null;
 
     const scoreMs = Date.now() - startMs;
@@ -134,8 +132,7 @@ export class FeedRankerService {
     const pipeline = redis.pipeline();
 
     const keys = items.map(
-      (item) =>
-        `${APP_CONSTANTS.REDIS_KEYS.FEED_SCORE}${userId}:${item.postId}`,
+      (item) => `${APP_CONSTANTS.REDIS_KEYS.FEED_SCORE}${userId}:${item.postId}`,
     );
 
     // Batch GET in a single pipeline — 1 round-trip regardless of item count
@@ -173,18 +170,14 @@ export class FeedRankerService {
    *
    * This matches Pinterest's Smooth algorithm and Netflix's diversity logic.
    */
-  private applyDiversityPenalty(
-    items: ScoredFeedItem[],
-  ): ScoredFeedItem[] {
+  private applyDiversityPenalty(items: ScoredFeedItem[]): ScoredFeedItem[] {
     const authorWindow: string[] = []; // recent author IDs (last 5)
     const WINDOW_SIZE = 5;
     const PENALTY_PER_OCCURRENCE = 0.15; // 15% penalty per repeat
 
     return items
       .map((item) => {
-        const authorOccurrences = authorWindow.filter(
-          (id) => id === item.authorId,
-        ).length;
+        const authorOccurrences = authorWindow.filter((id) => id === item.authorId).length;
 
         if (authorOccurrences > 0) {
           const penalty = Math.min(authorOccurrences * PENALTY_PER_OCCURRENCE, 0.7);
@@ -226,20 +219,14 @@ export class FeedRankerService {
   }
 
   /** Get trending posts for a country */
-  async getTrending(
-    country: string,
-    limit: number,
-  ): Promise<RankedFeedResult> {
+  async getTrending(country: string, limit: number): Promise<RankedFeedResult> {
     // In full implementation: trending index from search-service / Redis sorted set
     this.logger.debug(`getTrending: ${country} limit=${limit}`);
     return { items: [], cursor: null, hasMore: false };
   }
 
   /** Get live streams ranked by viewer count + relevance */
-  async getLiveStreams(
-    userId: string,
-    limit: number,
-  ): Promise<RankedFeedResult> {
+  async getLiveStreams(userId: string, limit: number): Promise<RankedFeedResult> {
     // In full implementation: live-service gRPC call
     this.logger.debug(`getLiveStreams: ${userId} limit=${limit}`);
     return { items: [], cursor: null, hasMore: false };

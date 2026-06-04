@@ -1,6 +1,7 @@
 import { Controller, Get, Query, UseGuards } from '@nestjs/common';
-import { JwtAuthGuard, CurrentUser, JwtPayload } from '@hypercommerce/common';
-import { FeedRankerService } from './ranking/feed-ranker.service';
+import type { JwtPayload } from '@hypercommerce/common';
+import { JwtAuthGuard, CurrentUser } from '@hypercommerce/common';
+import type { FeedRankerService } from './ranking/feed-ranker.service';
 
 @Controller({ path: 'feed', version: '1' })
 @UseGuards(JwtAuthGuard)
@@ -41,10 +42,7 @@ export class FeedController {
    * GET /v1/feed/live — live streams ranked by viewer count + relevance.
    */
   @Get('live')
-  async liveFeed(
-    @CurrentUser() user: JwtPayload,
-    @Query('limit') limit = '20',
-  ) {
+  async liveFeed(@CurrentUser() user: JwtPayload, @Query('limit') limit = '20') {
     return this.ranker.getLiveStreams(user.sub, Math.min(parseInt(limit), 50));
   }
 }

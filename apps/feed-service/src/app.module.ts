@@ -27,12 +27,16 @@ const cassandraProvider = {
 };
 
 @Module({
-  imports: [
-    ConfigModule.forRoot({ isGlobal: true }),
-    KafkaModule,
-    RedisModule,
-  ],
+  imports: [ConfigModule.forRoot({ isGlobal: true }), KafkaModule, RedisModule],
   controllers: [FeedController],
-  providers: [cassandraProvider, FeedFanoutWorker, FeedRankerService, ScoringHelper, FeedRepository, FollowRepository, CelebrityDetectorHelper],
+  providers: [
+    cassandraProvider,
+    FeedFanoutWorker,
+    FeedRankerService,
+    ScoringHelper,
+    FeedRepository,
+    FollowRepository,
+    CelebrityDetectorHelper,
+  ],
 })
 export class AppModule {}

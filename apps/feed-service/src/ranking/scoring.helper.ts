@@ -7,13 +7,13 @@
 // ============================================================
 
 import { Injectable } from '@nestjs/common';
-import { FeedItem } from '../repositories/feed.repository';
+import type { FeedItem } from '../repositories/feed.repository';
 
 export interface PostSignals {
   // Precomputed by ML Rank Worker (offline)
-  mlScore?: number;           // 0-1, model-predicted CTR
+  mlScore?: number; // 0-1, model-predicted CTR
   authorRelationshipScore?: number; // 0-1, viewer↔author interaction strength
-  trendingScore?: number;     // 0-1, viral velocity in last 2h
+  trendingScore?: number; // 0-1, viral velocity in last 2h
 
   // Online signals (computed at serve time)
   viewerHistory?: {
@@ -40,10 +40,10 @@ export interface ScoredFeedItem extends FeedItem {
 export class ScoringHelper {
   // Weights — must sum to 1.0 (validated at startup)
   private readonly W_ENGAGEMENT = 0.35;
-  private readonly W_RECENCY = 0.30;
-  private readonly W_RELATIONSHIP = 0.20;
-  private readonly W_DIVERSITY = 0.10;
-  private readonly W_ML = 0.05;          // Blend ML score on top
+  private readonly W_RECENCY = 0.3;
+  private readonly W_RELATIONSHIP = 0.2;
+  private readonly W_DIVERSITY = 0.1;
+  private readonly W_ML = 0.05; // Blend ML score on top
 
   // Recency decay half-life = 6 hours
   // After 6h, recency score = 0.5; after 12h = 0.25; etc.
@@ -53,11 +53,7 @@ export class ScoringHelper {
    * Score a single feed item for a user.
    * All signals are normalized [0, 1] before weighting.
    */
-  score(
-    item: FeedItem,
-    userId: string,
-    signals: PostSignals | null,
-  ): ScoredFeedItem {
+  score(item: FeedItem, userId: string, signals: PostSignals | null): ScoredFeedItem {
     const engagement = this.computeEngagementScore(item);
     const recency = this.computeRecencyScore(item.createdAt);
     const relationship = this.computeRelationshipScore(signals);
@@ -102,10 +98,7 @@ export class ScoringHelper {
    * Normalize by total impressions (estimated via view count or follower count).
    */
   private computeEngagementScore(item: FeedItem): number {
-    const weightedEngagement =
-      item.likeCount * 1 +
-      item.commentCount * 3 +
-      item.shareCount * 5;
+    const weightedEngagement = item.likeCount * 1 + item.commentCount * 3 + item.shareCount * 5;
 
     // Use item.engagementRate if precomputed, or estimate
     if (item.engagementRate > 0) {
@@ -172,11 +165,7 @@ export class ScoringHelper {
    */
   validateWeights(): boolean {
     const sum =
-      this.W_ENGAGEMENT +
-      this.W_RECENCY +
-      this.W_RELATIONSHIP +
-      this.W_DIVERSITY +
-      this.W_ML;
+      this.W_ENGAGEMENT + this.W_RECENCY + this.W_RELATIONSHIP + this.W_DIVERSITY + this.W_ML;
     return Math.abs(sum - 1.0) < 0.001;
   }
 }

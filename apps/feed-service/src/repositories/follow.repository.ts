@@ -14,8 +14,8 @@
  *   - Single seam for follower data access
  */
 import { Injectable, Logger } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import { RedisClientService } from '@hypercommerce/redis';
+import type { ConfigService } from '@nestjs/config';
+import type { RedisClientService } from '@hypercommerce/redis';
 
 export interface FollowerItem {
   id: string;
@@ -67,9 +67,8 @@ export class FollowRepository {
         lastActiveAt: entry.score > 0 ? new Date(entry.score) : null,
       }));
 
-      const nextCursor = items.length === limit
-        ? Buffer.from(String(offset + limit)).toString('base64url')
-        : null;
+      const nextCursor =
+        items.length === limit ? Buffer.from(String(offset + limit)).toString('base64url') : null;
 
       return { items, nextCursor };
     } catch (err) {

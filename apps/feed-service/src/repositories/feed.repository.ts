@@ -6,13 +6,14 @@
 // ============================================================
 
 import { Injectable, Logger } from '@nestjs/common';
-import { Client as CassandraClient, types as CassandraTypes } from 'cassandra-driver';
+import type { Client as CassandraClient } from 'cassandra-driver';
+import { types as CassandraTypes } from 'cassandra-driver';
 import { Inject } from '@nestjs/common';
 import { INJECTION_TOKENS } from '@hypercommerce/common/constants/app.constants';
 
 export interface FeedItem {
   userId: string;
-  bucket: string;           // 'YYYYMM' — e.g. '202501'
+  bucket: string; // 'YYYYMM' — e.g. '202501'
   createdAt: Date;
   postId: string;
   authorId: string;
@@ -21,7 +22,7 @@ export interface FeedItem {
   contentPreview: string;
   mediaUrl?: string;
   productId?: string;
-  score: number;            // precomputed ML score
+  score: number; // precomputed ML score
   engagementRate: number;
   likeCount: number;
   commentCount: number;
@@ -30,9 +31,10 @@ export interface FeedItem {
 
 export interface FeedQueryOptions {
   userId: string;
-  buckets: string[];        // Which months to scan
+  buckets: string[]; // Which months to scan
   limit: number;
-  cursor?: {                // Cassandra paging state (opaque bytes)
+  cursor?: {
+    // Cassandra paging state (opaque bytes)
     bucket: string;
     pagingState: Buffer;
   };
@@ -182,24 +184,16 @@ export class FeedRepository {
 
     // Query each bucket in parallel — different Cassandra partitions
     const bucketResults = await Promise.all(
-      buckets.map((bucket) =>
-        this.fetchBucket(userId, bucket, limit),
-      ),
+      buckets.map((bucket) => this.fetchBucket(userId, bucket, limit)),
     );
 
     // Merge and sort by created_at DESC — client-side merge sort
-    const all = bucketResults.flat().sort(
-      (a, b) => b.createdAt.getTime() - a.createdAt.getTime(),
-    );
+    const all = bucketResults.flat().sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
 
     return all.slice(0, limit);
   }
 
-  private async fetchBucket(
-    userId: string,
-    bucket: string,
-    limit: number,
-  ): Promise<FeedItem[]> {
+  private async fetchBucket(userId: string, bucket: string, limit: number): Promise<FeedItem[]> {
     const result = await this.cassandra.execute(
       this.SQL_SELECT_FEED_BY_BUCKET,
       [userId, bucket, limit],
@@ -219,11 +213,10 @@ export class FeedRepository {
     createdAt: Date,
     postId: string,
   ): Promise<void> {
-    await this.cassandra.execute(
-      this.SQL_DELETE_FEED_ITEM,
-      [userId, bucket, createdAt, postId],
-      { consistency: CassandraTypes.consistencies.localQuorum, prepare: true },
-    );
+    await this.cassandra.execute(this.SQL_DELETE_FEED_ITEM, [userId, bucket, createdAt, postId], {
+      consistency: CassandraTypes.consistencies.localQuorum,
+      prepare: true,
+    });
   }
 
   // ── Helpers ───────────────────────────────────────────────
@@ -231,21 +224,21 @@ export class FeedRepository {
   private rowToFeedItem(row: Record<string, unknown>): FeedItem {
     const get = <T>(field: string): T => (row as Record<string, T>)[field];
     return {
-      userId:        String(get('user_id') ?? ''),
-      bucket:        String(get('bucket') ?? ''),
-      createdAt:     get<Date>('created_at') ?? new Date(),
-      postId:        String(get('post_id') ?? ''),
-      authorId:      String(get('author_id') ?? ''),
+      userId: String(get('user_id') ?? ''),
+      bucket: String(get('bucket') ?? ''),
+      createdAt: get<Date>('created_at') ?? new Date(),
+      postId: String(get('post_id') ?? ''),
+      authorId: String(get('author_id') ?? ''),
       authorUsername: String(get('author_username') ?? ''),
-      postType:      get<FeedItem['postType']>('post_type'),
+      postType: get<FeedItem['postType']>('post_type'),
       contentPreview: String(get('content_preview') ?? ''),
-      mediaUrl:      get<string | undefined>('media_url'),
-      productId:     get<string | undefined>('product_id'),
-      score:         Number(get('score') ?? 0),
+      mediaUrl: get<string | undefined>('media_url'),
+      productId: get<string | undefined>('product_id'),
+      score: Number(get('score') ?? 0),
       engagementRate: Number(get('engagement_rate') ?? 0),
-      likeCount:     Number(get('like_count') ?? 0),
-      commentCount:  Number(get('comment_count') ?? 0),
-      shareCount:    Number(get('share_count') ?? 0),
+      likeCount: Number(get('like_count') ?? 0),
+      commentCount: Number(get('comment_count') ?? 0),
+      shareCount: Number(get('share_count') ?? 0),
     };
   }
 
