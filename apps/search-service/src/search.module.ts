@@ -13,6 +13,9 @@ import { SearchRankingService } from './ranking/search-ranking.service';
 import { ReciprocalRankFusionHelper } from './ranking/reciprocal-rank-fusion.helper';
 import { SearchAnalyticsService } from './analytics/search-analytics.service';
 import { VectorSearchService } from './vector/vector-search.service';
+import { QdrantInitService } from './vector/qdrant-init.service';
+import { EmbeddingService } from './vector/embedding.service';
+import { ProductEmbeddingConsumer } from './vector/product-embedding.consumer';
 
 @Module({
   imports: [
@@ -41,7 +44,10 @@ import { VectorSearchService } from './vector/vector-search.service';
     SearchRankingService,
     ReciprocalRankFusionHelper,
     SearchAnalyticsService,
+    QdrantInitService,
+    EmbeddingService,
     VectorSearchService,
+    ProductEmbeddingConsumer,
   ],
 })
 export class SearchModule {}

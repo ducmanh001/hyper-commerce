@@ -10,9 +10,26 @@ import {
   Logger,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiQuery } from '@nestjs/swagger';
+import { IsOptional, IsString } from 'class-validator';
 import { JwtAuthGuard, RolesGuard, Public, Roles } from '@hypercommerce/common';
 import type { SearchService } from './search.service';
 import type { SearchAnalyticsService } from './analytics/search-analytics.service';
+
+class IndexProductDto {
+  @IsString()
+  id!: string;
+
+  @IsString()
+  name!: string;
+
+  @IsString()
+  @IsOptional()
+  description?: string;
+
+  @IsString()
+  @IsOptional()
+  category?: string;
+}
 
 @ApiTags('search')
 @Controller('search')
@@ -77,6 +94,16 @@ export class SearchController {
     // Fire-and-forget — actual indexing is async
     void this.searchService.triggerIndex(body.productId);
     return { queued: true };
+  }
+
+  @Post('index-product')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN', 'SELLER')
+  @HttpCode(HttpStatus.ACCEPTED)
+  @ApiOperation({ summary: 'Embed and index a product in Qdrant + Elasticsearch (AC2)' })
+  async indexProduct(@Body() body: IndexProductDto) {
+    await this.searchService.indexProduct(body as unknown as Record<string, unknown>);
+    return { indexed: true };
   }
 
   @Get('analytics/top-queries')

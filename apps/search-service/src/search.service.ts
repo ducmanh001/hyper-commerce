@@ -14,6 +14,7 @@ import type {
   ParsedQuery,
 } from './query-understanding/query-understanding.service';
 import type { VectorSearchService } from './vector/vector-search.service';
+import type { EmbeddingService } from './vector/embedding.service';
 import type { RankedResult } from './ranking/reciprocal-rank-fusion.helper';
 import { ReciprocalRankFusionHelper } from './ranking/reciprocal-rank-fusion.helper';
 
@@ -100,6 +101,7 @@ export class SearchService {
     private readonly config: ConfigService,
     private readonly queryUnderstanding: QueryUnderstandingService,
     private readonly vectorSearch: VectorSearchService,
+    private readonly embeddingService: EmbeddingService,
   ) {}
 
   /**
@@ -128,15 +130,14 @@ export class SearchService {
     const mergedFilters = this.mergeFilters(req.filters, parsedQuery);
 
     // 2+3. BM25 and vector search in parallel — P90 latency target: 50ms each
-    // Note: vectorSearch requires an embedding vector; if not available, skip and use bm25 only
+    // OpenAI timeout (>10s) → embedQuery returns null → fall back to BM25-only (graceful degradation)
     const [bm25Results, vectorHits] = await Promise.all([
       this.bm25Search(parsedQuery, mergedFilters, from + limit * 3), // Fetch 3x for fusion
-      // Generate query embedding is done inside VectorSearchService; we pass empty vector as placeholder
-      // In production: embed parsedQuery.corrected via OpenAI → pass vector
-      this.vectorSearch
-        .search([], {
-          index: this.INDEX,
-          topK: this.VECTOR_CANDIDATES,
+      this.embeddingService
+        .embedQuery(parsedQuery.corrected || parsedQuery.normalized)
+        .then((vector) => {
+          if (!vector?.length) return [] as Array<{ id: string; score: number }>;
+          return this.vectorSearch.knnSearch(vector, this.VECTOR_CANDIDATES);
         })
         .catch(() => [] as Array<{ id: string; score: number }>),
     ]);
@@ -556,6 +557,12 @@ export class SearchService {
       index: this.INDEX,
       id: product['id'] as string,
       document: { ...product, indexedAt: new Date().toISOString() },
+    });
+    await this.embeddingService.embedProduct({
+      id: product['id'] as string,
+      name: ((product['name'] ?? product['title']) as string) || '',
+      description: product['description'] as string | undefined,
+      category: product['category'] as string | undefined,
     });
   }
 }
