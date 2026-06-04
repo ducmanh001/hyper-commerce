@@ -14,9 +14,11 @@
 // - Stream viewer trends
 // ============================================================
 
-import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import { createClient, ClickHouseClient } from '@clickhouse/client';
+import type { OnModuleInit } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
+import type { ConfigService } from '@nestjs/config';
+import type { ClickHouseClient } from '@clickhouse/client';
+import { createClient } from '@clickhouse/client';
 
 @Injectable()
 export class ClickHouseService implements OnModuleInit {
@@ -47,10 +49,7 @@ export class ClickHouseService implements OnModuleInit {
    * Never insert one row at a time → O(N) latency per event.
    * Batch insert → amortized insert cost.
    */
-  async insertBatch<T extends object>(
-    table: string,
-    rows: T[],
-  ): Promise<void> {
+  async insertBatch<T extends object>(table: string, rows: T[]): Promise<void> {
     if (!rows.length) return;
 
     await this.client.insert({
@@ -64,11 +63,16 @@ export class ClickHouseService implements OnModuleInit {
    * Real-time aggregation queries.
    * ClickHouse executes these in milliseconds even on billions of rows.
    */
-  async getDailyRevenue(startDate: string, endDate: string): Promise<Array<{
-    date: string;
-    revenue: number;
-    orderCount: number;
-  }>> {
+  async getDailyRevenue(
+    startDate: string,
+    endDate: string,
+  ): Promise<
+    Array<{
+      date: string;
+      revenue: number;
+      orderCount: number;
+    }>
+  > {
     const result = await this.client.query({
       query: `
         SELECT
@@ -88,12 +92,17 @@ export class ClickHouseService implements OnModuleInit {
     return result.json<{ date: string; revenue: number; orderCount: number }>();
   }
 
-  async getTopProducts(limit = 20, windowHours = 24): Promise<Array<{
-    productId: string;
-    views: number;
-    purchases: number;
-    conversionRate: number;
-  }>> {
+  async getTopProducts(
+    limit = 20,
+    windowHours = 24,
+  ): Promise<
+    Array<{
+      productId: string;
+      views: number;
+      purchases: number;
+      conversionRate: number;
+    }>
+  > {
     const result = await this.client.query({
       query: `
         SELECT
@@ -114,7 +123,12 @@ export class ClickHouseService implements OnModuleInit {
       format: 'JSONEachRow',
     });
 
-    return result.json<{ productId: string; views: number; purchases: number; conversionRate: number }>();
+    return result.json<{
+      productId: string;
+      views: number;
+      purchases: number;
+      conversionRate: number;
+    }>();
   }
 
   async getStreamAnalytics(streamId: string): Promise<{
@@ -150,14 +164,16 @@ export class ClickHouseService implements OnModuleInit {
       revenue: number;
     }>();
 
-    return rows[0] ?? {
-      peakViewers: 0,
-      totalViews: 0,
-      avgWatchTime: 0,
-      commentsCount: 0,
-      giftsCount: 0,
-      revenue: 0,
-    };
+    return (
+      rows[0] ?? {
+        peakViewers: 0,
+        totalViews: 0,
+        avgWatchTime: 0,
+        commentsCount: 0,
+        giftsCount: 0,
+        revenue: 0,
+      }
+    );
   }
 
   /**

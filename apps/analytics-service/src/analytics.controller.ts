@@ -1,7 +1,7 @@
 import { Controller, Get, Query, UseGuards } from '@nestjs/common';
 import { JwtAuthGuard } from '@hypercommerce/common';
 import { Roles } from '@hypercommerce/common';
-import { ClickHouseService } from './clickhouse/clickhouse.service';
+import type { ClickHouseService } from './clickhouse/clickhouse.service';
 
 @Controller({ path: 'analytics', version: '1' })
 @UseGuards(JwtAuthGuard)
@@ -15,7 +15,12 @@ export class AnalyticsController {
     @Query('from') from?: string,
     @Query('to') to?: string,
   ) {
-    return this.clickhouse.query<{ product_id: string; views: number; orders: number; revenue: number }>(
+    return this.clickhouse.query<{
+      product_id: string;
+      views: number;
+      orders: number;
+      revenue: number;
+    }>(
       `SELECT product_id,
               countIf(event = 'view') AS views,
               countIf(event = 'order') AS orders,
@@ -59,10 +64,7 @@ export class AnalyticsController {
 
   @Get('funnel')
   @Roles('ADMIN', 'SELLER')
-  async conversionFunnel(
-    @Query('from') from?: string,
-    @Query('to') to?: string,
-  ) {
+  async conversionFunnel(@Query('from') from?: string, @Query('to') to?: string) {
     return this.clickhouse.query<{ step: string; users: number }>(
       `SELECT event AS step, uniq(user_id) AS users
        FROM events

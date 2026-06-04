@@ -12,12 +12,13 @@
 // Insert throughput target: 1M events/second sustained
 // ============================================================
 
-import { Injectable, Logger, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
+import type { OnModuleInit, OnModuleDestroy } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { KafkaConsumerService, MessageMetadata } from '@hypercommerce/kafka';
+import type { KafkaConsumerService, MessageMetadata } from '@hypercommerce/kafka';
 import { APP_CONSTANTS } from '@hypercommerce/common/constants/app.constants';
-import { ClickHouseService } from './clickhouse/clickhouse.service';
+import type { ClickHouseService } from './clickhouse/clickhouse.service';
 
 export interface AnalyticsEvent {
   eventId: string;
@@ -29,7 +30,7 @@ export interface AnalyticsEvent {
   orderId?: string;
   searchQuery?: string;
   properties: Record<string, unknown>;
-  timestamp: string;  // ISO 8601
+  timestamp: string; // ISO 8601
   appVersion?: string;
   platform?: 'IOS' | 'ANDROID' | 'WEB';
   countryCode?: string;
@@ -45,7 +46,7 @@ export class EventCollectorService implements OnModuleInit, OnModuleDestroy {
   private flushInterval: NodeJS.Timeout | null = null;
 
   // Flush config
-  private readonly FLUSH_SIZE = 5000;    // Flush when buffer reaches 5K events
+  private readonly FLUSH_SIZE = 5000; // Flush when buffer reaches 5K events
   private readonly FLUSH_INTERVAL_MS = 1000; // Or every 1 second — whichever comes first
 
   constructor(
@@ -99,10 +100,7 @@ export class EventCollectorService implements OnModuleInit, OnModuleDestroy {
     this.addToBuffer(event as unknown as AnalyticsEvent);
   }
 
-  private async onOrderEvent(
-    event: Record<string, unknown>,
-    meta: MessageMetadata,
-  ): Promise<void> {
+  private async onOrderEvent(event: Record<string, unknown>, meta: MessageMetadata): Promise<void> {
     if (event.type !== 'ORDER_CONFIRMED') return;
 
     // Normalize to analytics event
@@ -120,10 +118,7 @@ export class EventCollectorService implements OnModuleInit, OnModuleDestroy {
     });
   }
 
-  private async onLiveEvent(
-    event: Record<string, unknown>,
-    meta: MessageMetadata,
-  ): Promise<void> {
+  private async onLiveEvent(event: Record<string, unknown>, meta: MessageMetadata): Promise<void> {
     this.addToBuffer({
       eventId: String(event.id ?? `live_${Date.now()}`),
       eventType: event.type as string,
