@@ -5,7 +5,6 @@
   "liveNow": true,
   "id": null,
   "panels": [
-
     {
       "type": "row",
       "title": "⚡ Flash Sale Monitor",
@@ -92,8 +91,16 @@
       },
       "datasource": { "type": "prometheus", "uid": "prometheus" },
       "targets": [
-        { "expr": "sum(rate(hc_orders_created_total[10s]))", "legendFormat": "Orders/sec", "refId": "A" },
-        { "expr": "sum(rate(hc_inventory_conflicts_total[10s]))", "legendFormat": "Stock Conflicts/sec", "refId": "B" }
+        {
+          "expr": "sum(rate(hc_orders_created_total[10s]))",
+          "legendFormat": "Orders/sec",
+          "refId": "A"
+        },
+        {
+          "expr": "sum(rate(hc_inventory_conflicts_total[10s]))",
+          "legendFormat": "Stock Conflicts/sec",
+          "refId": "B"
+        }
       ]
     },
 
@@ -124,7 +131,11 @@
       },
       "datasource": { "type": "prometheus", "uid": "prometheus" },
       "targets": [
-        { "expr": "count(hc_active_stream_viewers > 0) or vector(0)", "legendFormat": "Active Streams", "refId": "A" }
+        {
+          "expr": "count(hc_active_stream_viewers > 0) or vector(0)",
+          "legendFormat": "Active Streams",
+          "refId": "A"
+        }
       ]
     },
 
@@ -291,7 +302,6 @@
         }
       ]
     }
-
   ],
   "refresh": "5s",
   "schemaVersion": 38,

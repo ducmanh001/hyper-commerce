@@ -11,7 +11,7 @@ const config: Config = {
       colors: {
         primary: {
           DEFAULT: '#EE4D2D',
-          50:  '#fff4f2',
+          50: '#fff4f2',
           100: '#ffe8e3',
           200: '#ffcfc7',
           300: '#ffaa99',
@@ -34,10 +34,10 @@ const config: Config = {
         'flash-pulse': 'flashPulse 1.2s ease-in-out infinite',
         'slide-in-right': 'slideInRight 0.3s ease-out',
         'fade-in': 'fadeIn 0.2s ease-out',
-        'float': 'float 3s ease-in-out infinite',
+        float: 'float 3s ease-in-out infinite',
         'fade-up': 'fadeUp 0.5s ease-out',
         'slide-in': 'slideIn 0.4s ease-out',
-        'shimmer': 'shimmer 1.5s infinite',
+        shimmer: 'shimmer 1.5s infinite',
       },
       keyframes: {
         slideInRight: {

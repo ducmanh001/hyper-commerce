@@ -32,7 +32,7 @@ route:
     - match:
         severity: critical
       receiver: 'pagerduty-critical'
-      continue: true  # Also send to Slack
+      continue: true # Also send to Slack
 
     - match:
         severity: critical

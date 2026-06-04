@@ -6,11 +6,11 @@ import { Product } from '@/types';
 
 interface WishlistState {
   items: Product[];
-  addItem:    (product: Product) => void;
+  addItem: (product: Product) => void;
   removeItem: (id: string) => void;
-  toggle:     (product: Product) => void;
-  hasItem:    (id: string) => boolean;
-  clear:      () => void;
+  toggle: (product: Product) => void;
+  hasItem: (id: string) => boolean;
+  clear: () => void;
 }
 
 export const useWishlistStore = create<WishlistState>()(
@@ -25,8 +25,7 @@ export const useWishlistStore = create<WishlistState>()(
             : [...state.items, product],
         })),
 
-      removeItem: (id) =>
-        set((state) => ({ items: state.items.filter((i) => i.id !== id) })),
+      removeItem: (id) => set((state) => ({ items: state.items.filter((i) => i.id !== id) })),
 
       toggle: (product) => {
         if (get().hasItem(product.id)) get().removeItem(product.id);
@@ -38,9 +37,11 @@ export const useWishlistStore = create<WishlistState>()(
       clear: () => set({ items: [] }),
     }),
     {
-      name:    'hc-wishlist',
+      name: 'hc-wishlist',
       storage: createJSONStorage(() =>
-        typeof window !== 'undefined' ? localStorage : { getItem: () => null, setItem: () => void 0, removeItem: () => void 0 },
+        typeof window !== 'undefined'
+          ? localStorage
+          : { getItem: () => null, setItem: () => void 0, removeItem: () => void 0 },
       ),
     },
   ),

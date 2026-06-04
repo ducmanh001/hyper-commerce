@@ -28,7 +28,11 @@ export async function proxyToGateway(
   if (options.body !== undefined) {
     bodyStr = JSON.stringify(options.body);
   } else if (!['GET', 'HEAD'].includes(method)) {
-    try { bodyStr = JSON.stringify(await req.json()); } catch { /* no body */ }
+    try {
+      bodyStr = JSON.stringify(await req.json());
+    } catch {
+      /* no body */
+    }
   }
 
   try {
@@ -41,7 +45,11 @@ export async function proxyToGateway(
 
     const text = await res.text();
     let data: unknown;
-    try { data = JSON.parse(text); } catch { data = { message: text }; }
+    try {
+      data = JSON.parse(text);
+    } catch {
+      data = { message: text };
+    }
 
     return NextResponse.json(data, { status: res.status });
   } catch (err: unknown) {

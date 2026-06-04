@@ -29,16 +29,16 @@ HyperCommerce là một monorepo NestJS (Nx) chứa **14 microservice** + **1 Ne
 
 ### Tính năng nổi bật
 
-| Tính năng | Mô tả |
-|---|---|
-| **Livestream mua sắm** | WebRTC P2P — seller bật camera, viewer nhận stream thời gian thực |
-| **Flash sale 50K người** | Redis Lua atomic + FIFO queue — không race condition |
-| **Feed cá nhân hóa** | Fan-out on write (TikTok model) + ranking ML |
-| **Tìm kiếm hybrid** | BM25 (Elasticsearch) + kNN vector (Qdrant) + Reciprocal Rank Fusion |
-| **Thanh toán đa cổng** | VNPay, MoMo, Stripe — webhook idempotent |
-| **Quảng cáo GSP auction** | Generalized Second-Price, budget atomic Lua script |
-| **Fraud detection** | AI-service scoring real-time theo đơn hàng |
-| **Distributed tracing** | OpenTelemetry → Jaeger, mỗi log có `traceId` |
+| Tính năng                 | Mô tả                                                               |
+| ------------------------- | ------------------------------------------------------------------- |
+| **Livestream mua sắm**    | WebRTC P2P — seller bật camera, viewer nhận stream thời gian thực   |
+| **Flash sale 50K người**  | Redis Lua atomic + FIFO queue — không race condition                |
+| **Feed cá nhân hóa**      | Fan-out on write (TikTok model) + ranking ML                        |
+| **Tìm kiếm hybrid**       | BM25 (Elasticsearch) + kNN vector (Qdrant) + Reciprocal Rank Fusion |
+| **Thanh toán đa cổng**    | VNPay, MoMo, Stripe — webhook idempotent                            |
+| **Quảng cáo GSP auction** | Generalized Second-Price, budget atomic Lua script                  |
+| **Fraud detection**       | AI-service scoring real-time theo đơn hàng                          |
+| **Distributed tracing**   | OpenTelemetry → Jaeger, mỗi log có `traceId`                        |
 
 ---
 
@@ -198,43 +198,43 @@ Orders được shard theo `userId` — tất cả JOIN cho một đơn hàng (i
 
 ### Infrastructure (Docker)
 
-| Service | Port | Mô tả |
-|---|---|---|
-| **PostgreSQL** | 5432 | Primary DB — users, orders, payments, products |
-| **PgBouncer** | 6432 | Connection pooler (transaction mode, 1000 clients) |
-| **Redis** | 6379 | Cache, sessions, cart, pub/sub, Lua atomic ops |
-| **Kafka** | 29092 | Message bus (PLAINTEXT_HOST cho dev) |
-| **Kafka UI** | 8080 | Web UI quản lý topics/consumers |
-| **Elasticsearch** | 9200 | Full-text search + kNN vector |
-| **ClickHouse** | 8123 | OLAP analytics (HTTP interface) |
-| **Qdrant** | 6333 | Vector DB cho recommendation/semantic search |
-| **Cassandra** | 9042 | Feed timeline, comments, activity log |
-| **Nginx** | 80 / 443 | Reverse proxy, TLS termination |
-| **Grafana** | 9001 | Metrics + logs dashboard |
-| **Prometheus** | 9090 | Metrics scraping |
-| **Loki** | 3100 | Log aggregation |
-| **Jaeger** | 16686 | Distributed tracing UI |
-| **Alertmanager** | 9093 | Alert routing (Slack / PagerDuty) |
+| Service           | Port     | Mô tả                                              |
+| ----------------- | -------- | -------------------------------------------------- |
+| **PostgreSQL**    | 5432     | Primary DB — users, orders, payments, products     |
+| **PgBouncer**     | 6432     | Connection pooler (transaction mode, 1000 clients) |
+| **Redis**         | 6379     | Cache, sessions, cart, pub/sub, Lua atomic ops     |
+| **Kafka**         | 29092    | Message bus (PLAINTEXT_HOST cho dev)               |
+| **Kafka UI**      | 8080     | Web UI quản lý topics/consumers                    |
+| **Elasticsearch** | 9200     | Full-text search + kNN vector                      |
+| **ClickHouse**    | 8123     | OLAP analytics (HTTP interface)                    |
+| **Qdrant**        | 6333     | Vector DB cho recommendation/semantic search       |
+| **Cassandra**     | 9042     | Feed timeline, comments, activity log              |
+| **Nginx**         | 80 / 443 | Reverse proxy, TLS termination                     |
+| **Grafana**       | 9001     | Metrics + logs dashboard                           |
+| **Prometheus**    | 9090     | Metrics scraping                                   |
+| **Loki**          | 3100     | Log aggregation                                    |
+| **Jaeger**        | 16686    | Distributed tracing UI                             |
+| **Alertmanager**  | 9093     | Alert routing (Slack / PagerDuty)                  |
 
 ### Application Layer
 
-| Service | Port | Ngôn ngữ | Mô tả |
-|---|---|---|---|
-| **api-gateway** | **4000** | Node.js (Express) | **Cổng duy nhất** — JWT auth, RBAC, Socket.IO WebRTC, REST proxy |
-| **web** | **3000** | Next.js 14 | Storefront — App Router, SSR, BFF pattern |
-| **user-service** | 3001 | NestJS | Đăng ký/đăng nhập, hồ sơ, seller onboarding |
-| **feed-service** | 3002 | NestJS | Feed cá nhân hóa, fan-out, ranking |
-| **order-service** | 3003 | NestJS | Vòng đời đơn hàng, Saga, hoa hồng, tranh chấp |
-| **inventory-service** | 3004 | NestJS | Tồn kho real-time, flash sale, gRPC interface |
-| **search-service** | 3005 | NestJS | Hybrid BM25 + kNN, query understanding |
-| **live-service** | 3006 | NestJS | WebSocket sessions, viewer tracking |
-| **payment-service** | 3007 | NestJS | VNPay, MoMo, Stripe — webhook idempotent |
-| **notification-service** | 3008 | NestJS | Email, push, SMS — multi-channel fan-out |
-| **analytics-service** | 3009 | NestJS | Event ingestion → ClickHouse |
-| **ai-service** | 3010 | NestJS | Recommendations (ANN), fraud scoring |
-| **admin-service** | 3011 | NestJS | Dashboard nội bộ (localhost-only) |
-| **ads-service** | 3012 | NestJS | GSP auction engine, campaign management |
-| **subscription-service** | 3013 | NestJS | Gói seller, Stripe Billing |
+| Service                  | Port     | Ngôn ngữ          | Mô tả                                                            |
+| ------------------------ | -------- | ----------------- | ---------------------------------------------------------------- |
+| **api-gateway**          | **4000** | Node.js (Express) | **Cổng duy nhất** — JWT auth, RBAC, Socket.IO WebRTC, REST proxy |
+| **web**                  | **3000** | Next.js 14        | Storefront — App Router, SSR, BFF pattern                        |
+| **user-service**         | 3001     | NestJS            | Đăng ký/đăng nhập, hồ sơ, seller onboarding                      |
+| **feed-service**         | 3002     | NestJS            | Feed cá nhân hóa, fan-out, ranking                               |
+| **order-service**        | 3003     | NestJS            | Vòng đời đơn hàng, Saga, hoa hồng, tranh chấp                    |
+| **inventory-service**    | 3004     | NestJS            | Tồn kho real-time, flash sale, gRPC interface                    |
+| **search-service**       | 3005     | NestJS            | Hybrid BM25 + kNN, query understanding                           |
+| **live-service**         | 3006     | NestJS            | WebSocket sessions, viewer tracking                              |
+| **payment-service**      | 3007     | NestJS            | VNPay, MoMo, Stripe — webhook idempotent                         |
+| **notification-service** | 3008     | NestJS            | Email, push, SMS — multi-channel fan-out                         |
+| **analytics-service**    | 3009     | NestJS            | Event ingestion → ClickHouse                                     |
+| **ai-service**           | 3010     | NestJS            | Recommendations (ANN), fraud scoring                             |
+| **admin-service**        | 3011     | NestJS            | Dashboard nội bộ (localhost-only)                                |
+| **ads-service**          | 3012     | NestJS            | GSP auction engine, campaign management                          |
+| **subscription-service** | 3013     | NestJS            | Gói seller, Stripe Billing                                       |
 
 ---
 
@@ -242,11 +242,11 @@ Orders được shard theo `userId` — tất cả JOIN cho một đơn hàng (i
 
 ### Yêu cầu
 
-| Tool | Phiên bản tối thiểu | Ghi chú |
-|---|---|---|
-| Docker + Docker Compose | 24.x + v2 | `docker compose version` để kiểm tra |
-| RAM | 8 GB | 16 GB nếu chạy Elasticsearch |
-| Node.js | 22.x (optional) | Chỉ cần nếu muốn chạy ngoài Docker |
+| Tool                    | Phiên bản tối thiểu | Ghi chú                              |
+| ----------------------- | ------------------- | ------------------------------------ |
+| Docker + Docker Compose | 24.x + v2           | `docker compose version` để kiểm tra |
+| RAM                     | 8 GB                | 16 GB nếu chạy Elasticsearch         |
+| Node.js                 | 22.x (optional)     | Chỉ cần nếu muốn chạy ngoài Docker   |
 
 ### Chạy toàn bộ hệ thống (1 lệnh)
 
@@ -263,14 +263,14 @@ docker compose up -d
 
 Sau khi up xong:
 
-| URL | Service |
-|---|---|
-| http://localhost:3000 | Storefront (Next.js) |
-| http://localhost:4000/health | API Gateway |
-| http://localhost:8080 | Kafka UI |
-| http://localhost:9001 | Grafana (`admin` / `admin_secret`) |
-| http://localhost:9090 | Prometheus |
-| http://localhost:16686 | Jaeger (Tracing) |
+| URL                          | Service                            |
+| ---------------------------- | ---------------------------------- |
+| http://localhost:3000        | Storefront (Next.js)               |
+| http://localhost:4000/health | API Gateway                        |
+| http://localhost:8080        | Kafka UI                           |
+| http://localhost:9001        | Grafana (`admin` / `admin_secret`) |
+| http://localhost:9090        | Prometheus                         |
+| http://localhost:16686       | Jaeger (Tracing)                   |
 
 ### Các lệnh thường dùng
 
@@ -306,8 +306,8 @@ Docker Compose dùng **bind mount** — source code của bạn được mount t
 
 ```yaml
 volumes:
-  - .:/app                        # source code → container (hot reload)
-  - nestjs_modules:/app/node_modules  # node_modules Node 20 (tránh conflict)
+  - .:/app # source code → container (hot reload)
+  - nestjs_modules:/app/node_modules # node_modules Node 20 (tránh conflict)
 ```
 
 Khi bạn sửa file `.ts` trên máy host → NestJS `--watch` mode tự detect và reload.
@@ -356,11 +356,11 @@ curl http://localhost:4000/api/products
 
 Các tài khoản này **không cần DB** — hoạt động ngay sau khi gateway khởi động:
 
-| Email | Mật khẩu | Vai trò | Quyền |
-|---|---|---|---|
-| `admin@hypercommerce.vn` | `password` | **ADMIN** | Toàn quyền — quản lý users, orders, feature flags |
-| `seller@hypercommerce.vn` | `password` | **SELLER** | Quản lý sản phẩm, livestream, đơn hàng shop |
-| `user@hypercommerce.vn` | `password` | **BUYER** | Mua hàng, giỏ hàng, đặt đơn |
+| Email                     | Mật khẩu   | Vai trò    | Quyền                                             |
+| ------------------------- | ---------- | ---------- | ------------------------------------------------- |
+| `admin@hypercommerce.vn`  | `password` | **ADMIN**  | Toàn quyền — quản lý users, orders, feature flags |
+| `seller@hypercommerce.vn` | `password` | **SELLER** | Quản lý sản phẩm, livestream, đơn hàng shop       |
+| `user@hypercommerce.vn`   | `password` | **BUYER**  | Mua hàng, giỏ hàng, đặt đơn                       |
 
 > Token demo có format `demo.<base64_payload>.sig` — Gateway decode nội bộ, không truy vấn DB.
 
@@ -368,13 +368,13 @@ Các tài khoản này **không cần DB** — hoạt động ngay sau khi gatew
 
 ### PostgreSQL
 
-| Thông số | Giá trị |
-|---|---|
-| **Host** | `localhost` |
-| **Port** | `5432` (trực tiếp) · `6432` (qua PgBouncer) |
-| **Database** | `hypercommerce` |
-| **Username** | `hypercommerce` |
-| **Password** | `hypercommerce_secret` |
+| Thông số              | Giá trị                                                                        |
+| --------------------- | ------------------------------------------------------------------------------ |
+| **Host**              | `localhost`                                                                    |
+| **Port**              | `5432` (trực tiếp) · `6432` (qua PgBouncer)                                    |
+| **Database**          | `hypercommerce`                                                                |
+| **Username**          | `hypercommerce`                                                                |
+| **Password**          | `hypercommerce_secret`                                                         |
 | **Connection string** | `postgresql://hypercommerce:hypercommerce_secret@localhost:5432/hypercommerce` |
 
 ```bash
@@ -387,6 +387,7 @@ psql -h localhost -U hypercommerce -d hypercommerce -c "\dt"
 ```
 
 Các bảng do API Gateway tự tạo khi khởi động:
+
 ```sql
 users           -- Tài khoản (bcrypt password, role: ADMIN/SELLER/BUYER)
 products        -- Sản phẩm (random Unsplash image)
@@ -403,11 +404,11 @@ ad_campaigns    -- Chiến dịch quảng cáo
 
 ### Redis
 
-| Thông số | Giá trị |
-|---|---|
-| **Host** | `localhost` |
-| **Port** | `6379` |
-| **Password** | `redis_secret` |
+| Thông số              | Giá trị                                |
+| --------------------- | -------------------------------------- |
+| **Host**              | `localhost`                            |
+| **Port**              | `6379`                                 |
+| **Password**          | `redis_secret`                         |
 | **Connection string** | `redis://:redis_secret@localhost:6379` |
 
 ```bash
@@ -432,11 +433,11 @@ Keys quan trọng:
 
 ### Kafka
 
-| Thông số | Giá trị |
-|---|---|
-| **Broker (từ host)** | `localhost:29092` |
-| **Broker (từ container)** | `kafka:9092` |
-| **Kafka UI** | http://localhost:8080 |
+| Thông số                  | Giá trị               |
+| ------------------------- | --------------------- |
+| **Broker (từ host)**      | `localhost:29092`     |
+| **Broker (từ container)** | `kafka:9092`          |
+| **Kafka UI**              | http://localhost:8080 |
 
 Topics và ý nghĩa:
 | Topic | Publisher | Consumers | Mô tả |
@@ -453,17 +454,17 @@ Topics và ý nghĩa:
 
 ### Grafana
 
-| Thông số | Giá trị |
-|---|---|
-| **URL** | http://localhost:9001 |
-| **Username** | `admin` |
-| **Password** | `admin_secret` |
+| Thông số     | Giá trị               |
+| ------------ | --------------------- |
+| **URL**      | http://localhost:9001 |
+| **Username** | `admin`               |
+| **Password** | `admin_secret`        |
 
 ### Elasticsearch
 
-| URL | http://localhost:9200 |
-|---|---|
-| **Username/Password** | Không cần (dev mode) |
+| URL                   | http://localhost:9200 |
+| --------------------- | --------------------- |
+| **Username/Password** | Không cần (dev mode)  |
 
 ```bash
 curl http://localhost:9200/_cluster/health?pretty
@@ -472,11 +473,11 @@ curl http://localhost:9200/_cat/indices?v    # Liệt kê indices
 
 ### ClickHouse
 
-| Thông số | Giá trị |
-|---|---|
+| Thông số           | Giá trị               |
+| ------------------ | --------------------- |
 | **HTTP Interface** | http://localhost:8123 |
-| **User** | `default` |
-| **Password** | (trống) |
+| **User**           | `default`             |
+| **Password**       | (trống)               |
 
 ```bash
 curl "http://localhost:8123/?query=SELECT+version()"
@@ -485,21 +486,21 @@ curl "http://localhost:8123/?query=SHOW+DATABASES"
 
 ### Jaeger (Distributed Tracing)
 
-| URL | http://localhost:16686 |
-|---|---|
-| Không cần đăng nhập | — |
+| URL                 | http://localhost:16686 |
+| ------------------- | ---------------------- |
+| Không cần đăng nhập | —                      |
 
 Tìm trace: nhập `traceId` từ log vào ô **Trace ID** trên giao diện Jaeger.
 
 ### Công cụ khác
 
-| Tool | URL | Ghi chú |
-|---|---|---|
-| **Prometheus** | http://localhost:9090 | Không cần đăng nhập |
-| **Alertmanager** | http://localhost:9093 | Không cần đăng nhập |
-| **Kafka UI** | http://localhost:8080 | Không cần đăng nhập |
-| **Cassandra** | `localhost:9042` | `docker exec -it hc-cassandra cqlsh` |
-| **Qdrant** | http://localhost:6333/dashboard | Không cần đăng nhập |
+| Tool             | URL                             | Ghi chú                              |
+| ---------------- | ------------------------------- | ------------------------------------ |
+| **Prometheus**   | http://localhost:9090           | Không cần đăng nhập                  |
+| **Alertmanager** | http://localhost:9093           | Không cần đăng nhập                  |
+| **Kafka UI**     | http://localhost:8080           | Không cần đăng nhập                  |
+| **Cassandra**    | `localhost:9042`                | `docker exec -it hc-cassandra cqlsh` |
+| **Qdrant**       | http://localhost:6333/dashboard | Không cần đăng nhập                  |
 
 ---
 
@@ -574,16 +575,16 @@ openssl rand -base64 32
 openssl rand -base64 32
 ```
 
-| Biến | Lý do cần đổi |
-|---|---|
-| `JWT_SECRET` | Tối thiểu 32 ký tự random |
-| `NEXTAUTH_SECRET` | Tương tự |
-| `DB_PASSWORD` | Không để `hypercommerce_secret` |
-| `REDIS_PASSWORD` | Không để `redis_secret` |
-| `INTERNAL_SERVICE_TOKEN` | Token bí mật giữa các service |
-| `STRIPE_SECRET_KEY` | Key thật từ Stripe Dashboard |
-| `VNPAY_HASH_SECRET` | Key thật từ VNPay merchant |
-| `GF_SECURITY_ADMIN_PASSWORD` | Đổi mật khẩu Grafana |
+| Biến                         | Lý do cần đổi                   |
+| ---------------------------- | ------------------------------- |
+| `JWT_SECRET`                 | Tối thiểu 32 ký tự random       |
+| `NEXTAUTH_SECRET`            | Tương tự                        |
+| `DB_PASSWORD`                | Không để `hypercommerce_secret` |
+| `REDIS_PASSWORD`             | Không để `redis_secret`         |
+| `INTERNAL_SERVICE_TOKEN`     | Token bí mật giữa các service   |
+| `STRIPE_SECRET_KEY`          | Key thật từ Stripe Dashboard    |
+| `VNPAY_HASH_SECRET`          | Key thật từ VNPay merchant      |
+| `GF_SECURITY_ADMIN_PASSWORD` | Đổi mật khẩu Grafana            |
 
 ---
 
@@ -591,29 +592,29 @@ openssl rand -base64 32
 
 ### Tất cả URLs
 
-| Tool | URL | Credentials |
-|---|---|---|
-| **Storefront** | http://localhost:3000 | Demo accounts |
-| **API Gateway** | http://localhost:4000 | — |
-| **API Gateway Health** | http://localhost:4000/health | — |
-| **Grafana** | http://localhost:9001 | `admin` / `admin_secret` |
-| **Prometheus** | http://localhost:9090 | — |
-| **Alertmanager** | http://localhost:9093 | — |
-| **Kafka UI** | http://localhost:8080 | — |
-| **Jaeger** | http://localhost:16686 | — |
-| **Elasticsearch** | http://localhost:9200 | — |
-| **ClickHouse** | http://localhost:8123 | `default` / (trống) |
-| **Qdrant Dashboard** | http://localhost:6333/dashboard | — |
+| Tool                   | URL                             | Credentials              |
+| ---------------------- | ------------------------------- | ------------------------ |
+| **Storefront**         | http://localhost:3000           | Demo accounts            |
+| **API Gateway**        | http://localhost:4000           | —                        |
+| **API Gateway Health** | http://localhost:4000/health    | —                        |
+| **Grafana**            | http://localhost:9001           | `admin` / `admin_secret` |
+| **Prometheus**         | http://localhost:9090           | —                        |
+| **Alertmanager**       | http://localhost:9093           | —                        |
+| **Kafka UI**           | http://localhost:8080           | —                        |
+| **Jaeger**             | http://localhost:16686          | —                        |
+| **Elasticsearch**      | http://localhost:9200           | —                        |
+| **ClickHouse**         | http://localhost:8123           | `default` / (trống)      |
+| **Qdrant Dashboard**   | http://localhost:6333/dashboard | —                        |
 
 ### Grafana Dashboards
 
-| Dashboard UID | Tên | Mô tả |
-|---|---|---|
-| `hc-overview` | Platform Overview | Request rate, error rate, p99 latency per service |
-| `hc-business` | Business KPIs | GMV, orders/phút, tỷ lệ thanh toán thành công |
-| `hc-infra` | Infrastructure | CPU, RAM, disk, container stats (cAdvisor) |
-| `hc-logs` | Log Explorer | Loki stream với level/service filter |
-| `hc-ads` | Ads & Subscriptions | CTR, spend theo campaign, MRR subscription |
+| Dashboard UID | Tên                 | Mô tả                                             |
+| ------------- | ------------------- | ------------------------------------------------- |
+| `hc-overview` | Platform Overview   | Request rate, error rate, p99 latency per service |
+| `hc-business` | Business KPIs       | GMV, orders/phút, tỷ lệ thanh toán thành công     |
+| `hc-infra`    | Infrastructure      | CPU, RAM, disk, container stats (cAdvisor)        |
+| `hc-logs`     | Log Explorer        | Loki stream với level/service filter              |
+| `hc-ads`      | Ads & Subscriptions | CTR, spend theo campaign, MRR subscription        |
 
 ### Distributed Tracing
 
@@ -627,12 +628,12 @@ Click vào `traceId` trong Grafana → tự động mở Jaeger trace (derived f
 
 ### Alert Routing
 
-| Mức | Ví dụ | Kênh |
-|---|---|---|
-| **Critical** | `PostgresDown`, `PaymentGatewayDown` | PagerDuty + `#critical` |
-| **Warning** | `HighMemoryUsage`, `KafkaLagHigh` | `#alerts` Slack |
-| **Business** | `GMVDrop30pct`, `ConversionRateDrop` | `#business` Slack |
-| **Trust & Safety** | `FraudSpike`, `ChargebackRateHigh` | `#trust-safety` Slack |
+| Mức                | Ví dụ                                | Kênh                    |
+| ------------------ | ------------------------------------ | ----------------------- |
+| **Critical**       | `PostgresDown`, `PaymentGatewayDown` | PagerDuty + `#critical` |
+| **Warning**        | `HighMemoryUsage`, `KafkaLagHigh`    | `#alerts` Slack         |
+| **Business**       | `GMVDrop30pct`, `ConversionRateDrop` | `#business` Slack       |
+| **Trust & Safety** | `FraudSpike`, `ChargebackRateHigh`   | `#trust-safety` Slack   |
 
 ---
 
@@ -715,30 +716,30 @@ STUN: stun:stun.l.google.com:19302
 
 ### Hoa hồng giao dịch
 
-| Gói seller | Tỷ lệ | Phí VNPay | Phí MoMo | Phí Stripe |
-|---|---|---|---|---|
-| FREE | 5.0% | 1.1% | 1.5% | 2.9% + ₫5K |
-| BASIC | 4.0% | 1.1% | 1.5% | 2.9% + ₫5K |
-| PROFESSIONAL | 3.0% | 1.1% | 1.5% | 2.9% + ₫5K |
-| ENTERPRISE | 2.0% | 1.1% | 1.5% | 2.9% + ₫5K |
+| Gói seller   | Tỷ lệ | Phí VNPay | Phí MoMo | Phí Stripe |
+| ------------ | ----- | --------- | -------- | ---------- |
+| FREE         | 5.0%  | 1.1%      | 1.5%     | 2.9% + ₫5K |
+| BASIC        | 4.0%  | 1.1%      | 1.5%     | 2.9% + ₫5K |
+| PROFESSIONAL | 3.0%  | 1.1%      | 1.5%     | 2.9% + ₫5K |
+| ENTERPRISE   | 2.0%  | 1.1%      | 1.5%     | 2.9% + ₫5K |
 
 ### Quảng cáo CPC/CPM
 
-| Loại | Tính phí khi | Ghi chú |
-|---|---|---|
-| **CPC** | User click | Async BullMQ — không block page render |
-| **CPM** | Mỗi 1.000 impression | Trừ ngay khi auction thắng |
+| Loại    | Tính phí khi         | Ghi chú                                |
+| ------- | -------------------- | -------------------------------------- |
+| **CPC** | User click           | Async BullMQ — không block page render |
+| **CPM** | Mỗi 1.000 impression | Trừ ngay khi auction thắng             |
 
 Budget bảo vệ bằng Redis Lua atomic (lifetime budget + daily budget).
 
 ### Gói đăng ký seller
 
-| Gói | Giá / tháng | Quyền lợi |
-|---|---|---|
-| **FREE** | ₫0 | Tối đa 50 sản phẩm |
-| **BASIC** | ₫299,000 | Hoa hồng -1%, 100 sản phẩm |
-| **PROFESSIONAL** | ₫799,000 | Hoa hồng -2%, 500 sản phẩm, badge, ₫200K ad credit |
-| **ENTERPRISE** | Thương lượng | Hoa hồng -3%, unlimited, SLA 4h |
+| Gói              | Giá / tháng  | Quyền lợi                                          |
+| ---------------- | ------------ | -------------------------------------------------- |
+| **FREE**         | ₫0           | Tối đa 50 sản phẩm                                 |
+| **BASIC**        | ₫299,000     | Hoa hồng -1%, 100 sản phẩm                         |
+| **PROFESSIONAL** | ₫799,000     | Hoa hồng -2%, 500 sản phẩm, badge, ₫200K ad credit |
+| **ENTERPRISE**   | Thương lượng | Hoa hồng -3%, unlimited, SLA 4h                    |
 
 ---
 
@@ -878,18 +879,18 @@ git push origin feat/my-feature
 
 ### Bảo mật (OWASP Top 10)
 
-| Layer | Giải pháp |
-|---|---|
-| **Auth** | JWT (user 24h TTL, admin 8h TTL) — 2 secret riêng biệt |
-| **RBAC** | `requireRole('ADMIN','SELLER','BUYER')` middleware tại Gateway |
-| **Inter-service** | `INTERNAL_SERVICE_TOKEN` header bắt buộc |
-| **Rate limiting** | Redis sliding window per-IP per-endpoint |
-| **Input validation** | `class-validator` + DTO tại mọi controller boundary |
-| **SQL injection** | Parameterized queries — tuyệt đối không concatenate |
-| **XSS** | Next.js auto-escape + CSP header tại Nginx |
-| **Secrets** | `.env` không commit — dùng `.env.example` làm template |
-| **Logging** | Không log password, token, PAN (credit card) vào Loki |
+| Layer                | Giải pháp                                                      |
+| -------------------- | -------------------------------------------------------------- |
+| **Auth**             | JWT (user 24h TTL, admin 8h TTL) — 2 secret riêng biệt         |
+| **RBAC**             | `requireRole('ADMIN','SELLER','BUYER')` middleware tại Gateway |
+| **Inter-service**    | `INTERNAL_SERVICE_TOKEN` header bắt buộc                       |
+| **Rate limiting**    | Redis sliding window per-IP per-endpoint                       |
+| **Input validation** | `class-validator` + DTO tại mọi controller boundary            |
+| **SQL injection**    | Parameterized queries — tuyệt đối không concatenate            |
+| **XSS**              | Next.js auto-escape + CSP header tại Nginx                     |
+| **Secrets**          | `.env` không commit — dùng `.env.example` làm template         |
+| **Logging**          | Không log password, token, PAN (credit card) vào Loki          |
 
 ---
 
-*HyperCommerce — Xây dựng cho scale, thiết kế cho thị trường thương mại điện tử Việt Nam.*
+_HyperCommerce — Xây dựng cho scale, thiết kế cho thị trường thương mại điện tử Việt Nam._

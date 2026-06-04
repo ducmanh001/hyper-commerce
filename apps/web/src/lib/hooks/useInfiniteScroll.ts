@@ -3,11 +3,11 @@
 import { useEffect, useRef, useCallback } from 'react';
 
 interface UseInfiniteScrollOptions {
-  onLoadMore:  () => void;
-  hasMore:     boolean;
-  loading:     boolean;
+  onLoadMore: () => void;
+  hasMore: boolean;
+  loading: boolean;
   rootMargin?: string;
-  threshold?:  number;
+  threshold?: number;
 }
 
 /**
@@ -19,7 +19,7 @@ export function useInfiniteScroll({
   hasMore,
   loading,
   rootMargin = '200px',
-  threshold  = 0,
+  threshold = 0,
 }: UseInfiniteScrollOptions) {
   const sentinelRef = useRef<HTMLDivElement | null>(null);
   const observerRef = useRef<IntersectionObserver | null>(null);

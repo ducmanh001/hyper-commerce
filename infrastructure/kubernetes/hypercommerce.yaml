@@ -4,7 +4,7 @@ metadata:
   name: hypercommerce
   labels:
     app.kubernetes.io/name: hypercommerce
-    istio-injection: enabled   # Service mesh for mTLS + observability
+    istio-injection: enabled # Service mesh for mTLS + observability
 
 ---
 # ── HPA for User Service ──────────────────────────────────────
@@ -35,13 +35,13 @@ spec:
           averageUtilization: 75
   behavior:
     scaleUp:
-      stabilizationWindowSeconds: 30    # Fast scale-up during flash sales
+      stabilizationWindowSeconds: 30 # Fast scale-up during flash sales
       policies:
         - type: Pods
           value: 5
           periodSeconds: 30
     scaleDown:
-      stabilizationWindowSeconds: 300   # Slow scale-down — avoid flapping
+      stabilizationWindowSeconds: 300 # Slow scale-down — avoid flapping
 
 ---
 # ── User Service Deployment ──────────────────────────────────
@@ -64,11 +64,11 @@ spec:
     metadata:
       labels:
         app: user-service
-        version: "1.0.0"
+        version: '1.0.0'
       annotations:
-        prometheus.io/scrape: "true"
-        prometheus.io/port: "3001"
-        prometheus.io/path: "/metrics"
+        prometheus.io/scrape: 'true'
+        prometheus.io/port: '3001'
+        prometheus.io/path: '/metrics'
     spec:
       topologySpreadConstraints:
         # Spread pods across AZs — resilience to zone failure
@@ -89,7 +89,7 @@ spec:
             - name: NODE_ENV
               value: production
             - name: PORT
-              value: "3001"
+              value: '3001'
             - name: DB_HOST
               valueFrom:
                 secretKeyRef:
@@ -107,11 +107,11 @@ spec:
                   key: host
           resources:
             requests:
-              cpu: "250m"
-              memory: "256Mi"
+              cpu: '250m'
+              memory: '256Mi'
             limits:
-              cpu: "1000m"
-              memory: "512Mi"
+              cpu: '1000m'
+              memory: '512Mi'
           livenessProbe:
             httpGet:
               path: /health/live
@@ -134,7 +134,7 @@ spec:
             readOnlyRootFilesystem: true
             allowPrivilegeEscalation: false
             capabilities:
-              drop: ["ALL"]
+              drop: ['ALL']
 
 ---
 apiVersion: v1
@@ -182,11 +182,11 @@ spec:
             - containerPort: 3006
           resources:
             requests:
-              cpu: "500m"      # WebSocket is CPU-heavy for JSON serialization
-              memory: "512Mi"
+              cpu: '500m' # WebSocket is CPU-heavy for JSON serialization
+              memory: '512Mi'
             limits:
-              cpu: "2000m"
-              memory: "1Gi"
+              cpu: '2000m'
+              memory: '1Gi'
           env:
             - name: REDIS_ADAPTER_HOST
               valueFrom:
@@ -203,7 +203,7 @@ metadata:
 spec:
   selector:
     app: live-service
-  sessionAffinity: ClientIP  # WebSocket — keep same pod
+  sessionAffinity: ClientIP # WebSocket — keep same pod
   sessionAffinityConfig:
     clientIP:
       timeoutSeconds: 3600
@@ -225,7 +225,7 @@ spec:
     kind: Deployment
     name: live-service
   minReplicas: 5
-  maxReplicas: 200   # Large max — flash sale events spike to 500K concurrent
+  maxReplicas: 200 # Large max — flash sale events spike to 500K concurrent
   metrics:
     - type: Resource
       resource:
@@ -242,8 +242,8 @@ metadata:
   name: redis-config
   namespace: hypercommerce
 data:
-  host: "redis-cluster.hypercommerce.svc.cluster.local"
-  port: "6379"
+  host: 'redis-cluster.hypercommerce.svc.cluster.local'
+  port: '6379'
 
 ---
 # ── Network Policy ────────────────────────────────────────────

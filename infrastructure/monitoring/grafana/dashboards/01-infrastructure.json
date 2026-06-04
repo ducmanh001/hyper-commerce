@@ -4,7 +4,6 @@
   "graphTooltip": 1,
   "id": null,
   "panels": [
-
     {
       "type": "row",
       "title": "🖥️ Service Resource Usage",
@@ -121,7 +120,7 @@
           "thresholds": {
             "steps": [
               { "color": "red", "value": null },
-              { "color": "yellow", "value": 0.80 },
+              { "color": "yellow", "value": 0.8 },
               { "color": "green", "value": 0.95 }
             ]
           }
@@ -254,12 +253,22 @@
           "custom": { "lineInterpolation": "smooth" }
         },
         "overrides": [
-          { "matcher": { "id": "byName", "options": "Max Connections" }, "properties": [{ "id": "custom.lineStyle", "value": { "dash": [10, 10], "fill": "dash" } }, { "id": "color", "value": { "mode": "fixed", "fixedColor": "red" } }] }
+          {
+            "matcher": { "id": "byName", "options": "Max Connections" },
+            "properties": [
+              { "id": "custom.lineStyle", "value": { "dash": [10, 10], "fill": "dash" } },
+              { "id": "color", "value": { "mode": "fixed", "fixedColor": "red" } }
+            ]
+          }
         ]
       },
       "datasource": { "type": "prometheus", "uid": "prometheus" },
       "targets": [
-        { "expr": "pg_stat_database_numbackends{datname='hypercommerce'}", "legendFormat": "Active Connections", "refId": "A" },
+        {
+          "expr": "pg_stat_database_numbackends{datname='hypercommerce'}",
+          "legendFormat": "Active Connections",
+          "refId": "A"
+        },
         { "expr": "pg_settings_max_connections", "legendFormat": "Max Connections", "refId": "B" }
       ]
     },
@@ -278,11 +287,18 @@
       },
       "datasource": { "type": "prometheus", "uid": "prometheus" },
       "targets": [
-        { "expr": "rate(pg_stat_database_xact_commit{datname='hypercommerce'}[1m])", "legendFormat": "Commits/sec", "refId": "A" },
-        { "expr": "rate(pg_stat_database_xact_rollback{datname='hypercommerce'}[1m])", "legendFormat": "Rollbacks/sec", "refId": "B" }
+        {
+          "expr": "rate(pg_stat_database_xact_commit{datname='hypercommerce'}[1m])",
+          "legendFormat": "Commits/sec",
+          "refId": "A"
+        },
+        {
+          "expr": "rate(pg_stat_database_xact_rollback{datname='hypercommerce'}[1m])",
+          "legendFormat": "Rollbacks/sec",
+          "refId": "B"
+        }
       ]
     }
-
   ],
   "refresh": "30s",
   "schemaVersion": 38,

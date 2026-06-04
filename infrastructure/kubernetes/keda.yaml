@@ -38,35 +38,36 @@ metadata:
   name: inventory-service-scaler
   namespace: hypercommerce
   annotations:
-    description: "Scale inventory-service based on stock.reserve Kafka topic lag.
+    description: 'Scale inventory-service based on stock.reserve Kafka topic lag.
       Target: 1 pod per 1000 pending messages.
-      Min 3 pods for HA; max 50 pods during flash sales."
+      Min 3 pods for HA; max 50 pods during flash sales.'
 spec:
   scaleTargetRef:
     apiVersion: apps/v1
     kind: Deployment
     name: inventory-service
-  pollingInterval: 15    # Check lag every 15 seconds
-  cooldownPeriod: 60     # Wait 60s after scale-down trigger before scaling down
-                         # WHY 60s? Kafka consumers take ~10s to rebalance partitions
-  minReplicaCount: 3     # Always 3 for HA (zone spread = 1 per AZ)
-  maxReplicaCount: 50    # Max 50 during 11.11 flash sale
+  pollingInterval: 15 # Check lag every 15 seconds
+  cooldownPeriod:
+    60 # Wait 60s after scale-down trigger before scaling down
+    # WHY 60s? Kafka consumers take ~10s to rebalance partitions
+  minReplicaCount: 3 # Always 3 for HA (zone spread = 1 per AZ)
+  maxReplicaCount: 50 # Max 50 during 11.11 flash sale
   triggers:
     - type: kafka
       metadata:
-        bootstrapServers: "kafka:9092"
+        bootstrapServers: 'kafka:9092'
         consumerGroup: inventory-service
         topic: stock.reserve
-        lagThreshold: "1000"          # 1 pod per 1000 unprocessed messages
+        lagThreshold: '1000' # 1 pod per 1000 unprocessed messages
         offsetResetPolicy: latest
       authenticationRef:
-        name: kafka-trigger-auth       # Secret reference (do NOT hardcode credentials)
+        name: kafka-trigger-auth # Secret reference (do NOT hardcode credentials)
     - type: kafka
       metadata:
-        bootstrapServers: "kafka:9092"
+        bootstrapServers: 'kafka:9092'
         consumerGroup: inventory-service
         topic: stock.release
-        lagThreshold: "1000"
+        lagThreshold: '1000'
       authenticationRef:
         name: kafka-trigger-auth
 ---
@@ -79,25 +80,25 @@ metadata:
   name: notification-service-scaler
   namespace: hypercommerce
   annotations:
-    description: "Scale notification-service on Kafka notification.send lag.
+    description: 'Scale notification-service on Kafka notification.send lag.
       Notification sending is I/O bound (SMTP, FCM, SMS APIs).
-      Scale aggressively during flash sales."
+      Scale aggressively during flash sales.'
 spec:
   scaleTargetRef:
     apiVersion: apps/v1
     kind: Deployment
     name: notification-service
   pollingInterval: 10
-  cooldownPeriod: 120    # Longer cooldown: email providers throttle scale-in/out
+  cooldownPeriod: 120 # Longer cooldown: email providers throttle scale-in/out
   minReplicaCount: 2
   maxReplicaCount: 30
   triggers:
     - type: kafka
       metadata:
-        bootstrapServers: "kafka:9092"
+        bootstrapServers: 'kafka:9092'
         consumerGroup: notification-service
         topic: notification.send
-        lagThreshold: "500"          # 1 pod per 500 notification events
+        lagThreshold: '500' # 1 pod per 500 notification events
       authenticationRef:
         name: kafka-trigger-auth
 ---
@@ -126,16 +127,16 @@ spec:
   triggers:
     - type: redis
       metadata:
-        address: "redis:6379"
-        listName: "feed:fanout:queue"
-        listLength: "100"          # 1 pod per 100 pending fanout jobs
+        address: 'redis:6379'
+        listName: 'feed:fanout:queue'
+        listLength: '100' # 1 pod per 100 pending fanout jobs
       authenticationRef:
         name: redis-trigger-auth
     - type: redis
       metadata:
-        address: "redis:6379"
-        listName: "feed:celebrity:fanout"
-        listLength: "50"           # Celebrity fanout is heavier, lower threshold
+        address: 'redis:6379'
+        listName: 'feed:celebrity:fanout'
+        listLength: '50' # Celebrity fanout is heavier, lower threshold
       authenticationRef:
         name: redis-trigger-auth
 ---
@@ -151,17 +152,17 @@ spec:
     apiVersion: apps/v1
     kind: Deployment
     name: analytics-service
-  pollingInterval: 30    # Analytics: less time-sensitive, check less often
-  cooldownPeriod: 300    # Scale down slowly (ClickHouse writes need to drain)
+  pollingInterval: 30 # Analytics: less time-sensitive, check less often
+  cooldownPeriod: 300 # Scale down slowly (ClickHouse writes need to drain)
   minReplicaCount: 2
   maxReplicaCount: 15
   triggers:
     - type: kafka
       metadata:
-        bootstrapServers: "kafka:9092"
+        bootstrapServers: 'kafka:9092'
         consumerGroup: analytics-service
         topic: analytics.events
-        lagThreshold: "5000"       # Analytics can tolerate more lag (not real-time)
+        lagThreshold: '5000' # Analytics can tolerate more lag (not real-time)
       authenticationRef:
         name: kafka-trigger-auth
 ---
@@ -184,10 +185,10 @@ spec:
   triggers:
     - type: kafka
       metadata:
-        bootstrapServers: "kafka:9092"
+        bootstrapServers: 'kafka:9092'
         consumerGroup: search-indexer
         topic: product.updated
-        lagThreshold: "100"        # 1 pod per 100 pending product index operations
+        lagThreshold: '100' # 1 pod per 100 pending product index operations
       authenticationRef:
         name: kafka-trigger-auth
 ---
@@ -212,10 +213,10 @@ spec:
   triggers:
     - type: cron
       metadata:
-        timezone: "Asia/Ho_Chi_Minh"
-        start: "50 22 11 11 *"   # 10:50 PM Nov 11 (10 min before midnight sale)
-        end: "0 1 12 11 *"       # 1 AM Nov 12
-        desiredReplicas: "40"    # Pre-scale to 40 pods
+        timezone: 'Asia/Ho_Chi_Minh'
+        start: '50 22 11 11 *' # 10:50 PM Nov 11 (10 min before midnight sale)
+        end: '0 1 12 11 *' # 1 AM Nov 12
+        desiredReplicas: '40' # Pre-scale to 40 pods
 ---
 # TriggerAuthentication — references Kubernetes secrets for Kafka credentials
 # WHY TriggerAuthentication vs inline credentials?

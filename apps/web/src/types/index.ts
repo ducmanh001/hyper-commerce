@@ -7,9 +7,9 @@ export interface Product {
   name: string;
   slug: string;
   description: string;
-  price: number;           // VND
-  originalPrice?: number;  // VND before discount
-  salePrice?: number;      // VND if on sale
+  price: number; // VND
+  originalPrice?: number; // VND before discount
+  salePrice?: number; // VND if on sale
   images: string[];
   thumbnailUrl: string;
   sellerId: string;
@@ -17,14 +17,14 @@ export interface Product {
   sellerAvatar?: string;
   categoryId: string;
   categoryName: string;
-  rating: number;          // 0.0 - 5.0
+  rating: number; // 0.0 - 5.0
   reviewCount: number;
   soldCount: number;
   stockQuantity: number;
   variants?: ProductVariant[];
   isFlashSale?: boolean;
   flashSaleEndsAt?: string;
-  isSponsored?: boolean;   // From ads service
+  isSponsored?: boolean; // From ads service
   adImpressionId?: string; // For click tracking
   tags: string[];
   shippingInfo?: {
@@ -152,7 +152,7 @@ export interface SearchResult {
     priceRanges: Array<{ min: number; max: number; count: number }>;
     sellers: Array<{ id: string; name: string; count: number }>;
   };
-  sponsored?: Product[];  // Top 3 sponsored slots
+  sponsored?: Product[]; // Top 3 sponsored slots
 }
 
 export interface ApiError {

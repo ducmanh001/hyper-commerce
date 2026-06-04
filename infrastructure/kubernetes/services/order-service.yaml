@@ -19,10 +19,10 @@ metadata:
   name: order-service-config
   namespace: hypercommerce
 data:
-  NODE_ENV: "production"
-  ORDER_PORT: "3001"
-  KAFKA_BROKERS: "kafka-broker-0.kafka:9092,kafka-broker-1.kafka:9092,kafka-broker-2.kafka:9092"
-  ELASTICSEARCH_URL: "http://elasticsearch:9200"
+  NODE_ENV: 'production'
+  ORDER_PORT: '3001'
+  KAFKA_BROKERS: 'kafka-broker-0.kafka:9092,kafka-broker-1.kafka:9092,kafka-broker-2.kafka:9092'
+  ELASTICSEARCH_URL: 'http://elasticsearch:9200'
 
 ---
 # ── Secret (managed by External Secrets Operator in prod) ────
@@ -33,9 +33,9 @@ metadata:
   namespace: hypercommerce
 type: Opaque
 stringData:
-  DATABASE_URL: "postgresql://hypercommerce:REPLACE_ME@pgbouncer:6432/hypercommerce"
-  REDIS_URL: "redis://:REPLACE_ME@redis-cluster:6379"
-  JWT_SECRET: "REPLACE_ME_WITH_STRONG_SECRET"
+  DATABASE_URL: 'postgresql://hypercommerce:REPLACE_ME@pgbouncer:6432/hypercommerce'
+  REDIS_URL: 'redis://:REPLACE_ME@redis-cluster:6379'
+  JWT_SECRET: 'REPLACE_ME_WITH_STRONG_SECRET'
 
 ---
 # ── Deployment ────────────────────────────────────────────────
@@ -57,16 +57,16 @@ spec:
     type: RollingUpdate
     rollingUpdate:
       maxSurge: 1
-      maxUnavailable: 0   # Zero-downtime deploy
+      maxUnavailable: 0 # Zero-downtime deploy
   template:
     metadata:
       labels:
         app: order-service
         version: v1
       annotations:
-        prometheus.io/scrape: "true"
-        prometheus.io/port: "3001"
-        prometheus.io/path: "/metrics"
+        prometheus.io/scrape: 'true'
+        prometheus.io/port: '3001'
+        prometheus.io/path: '/metrics'
     spec:
       # ── Security context ──────────────────────────────────
       securityContext:
@@ -113,11 +113,11 @@ spec:
           # ── Resource limits ───────────────────────────────
           resources:
             requests:
-              cpu: "200m"
-              memory: "256Mi"
+              cpu: '200m'
+              memory: '256Mi'
             limits:
-              cpu: "1000m"
-              memory: "512Mi"
+              cpu: '1000m'
+              memory: '512Mi'
 
           # ── Health probes ─────────────────────────────────
           livenessProbe:
@@ -202,18 +202,18 @@ spec:
         bootstrapServers: kafka-broker-0.kafka:9092,kafka-broker-1.kafka:9092
         consumerGroup: order-consumer
         topic: order.events
-        lagThreshold: "100"
+        lagThreshold: '100'
         offsetResetPolicy: latest
     # Scale on CPU
     - type: cpu
       metricType: Utilization
       metadata:
-        value: "70"
+        value: '70'
     # Scale on memory
     - type: memory
       metricType: Utilization
       metadata:
-        value: "80"
+        value: '80'
 
 ---
 # ── PodDisruptionBudget ───────────────────────────────────────
@@ -223,7 +223,7 @@ metadata:
   name: order-service-pdb
   namespace: hypercommerce
 spec:
-  minAvailable: 2  # Always keep 2 pods up during node drains
+  minAvailable: 2 # Always keep 2 pods up during node drains
   selector:
     matchLabels:
       app: order-service
@@ -305,7 +305,7 @@ spec:
       retries:
         attempts: 3
         perTryTimeout: 10s
-        retryOn: "5xx,reset,connect-failure"
+        retryOn: '5xx,reset,connect-failure'
 
 ---
 # ── Istio DestinationRule (Circuit Breaker) ───────────────────

@@ -66,7 +66,10 @@ export const useCartStore = create<CartState>()(
 
         if (existingIdx >= 0) {
           const items = [...get().items];
-          items[existingIdx] = { ...items[existingIdx], quantity: items[existingIdx].quantity + quantity };
+          items[existingIdx] = {
+            ...items[existingIdx],
+            quantity: items[existingIdx].quantity + quantity,
+          };
           set({ items, isLoading: false });
         } else {
           const newItem: CartItem = {
@@ -93,7 +96,10 @@ export const useCartStore = create<CartState>()(
               productId: si.productId,
               variantId: si.variantId,
               quantity: si.quantity,
-              unitPrice: (si as CartItem & { price?: number }).unitPrice ?? (si as CartItem & { price?: number }).price ?? effectivePrice,
+              unitPrice:
+                (si as CartItem & { price?: number }).unitPrice ??
+                (si as CartItem & { price?: number }).price ??
+                effectivePrice,
               product: si.product ?? {
                 id: si.productId,
                 name: (si as CartItem & { name?: string }).name ?? product.name,
@@ -111,17 +117,32 @@ export const useCartStore = create<CartState>()(
 
       removeItem: (productId, variantId) => {
         // Optimistic local remove
-        set({ items: get().items.filter((i) => !(i.productId === productId && i.variantId === variantId)) });
+        set({
+          items: get().items.filter(
+            (i) => !(i.productId === productId && i.variantId === variantId),
+          ),
+        });
         // Backend sync (non-blocking)
-        clientApi.removeFromCart(productId, variantId).then((serverCart) => {
-          if (serverCart?.items) {
-            set({ items: serverCart.items, shippingFee: serverCart.shippingFee ?? get().shippingFee });
-          }
-        }).catch(() => { /* localStorage is fine */ });
+        clientApi
+          .removeFromCart(productId, variantId)
+          .then((serverCart) => {
+            if (serverCart?.items) {
+              set({
+                items: serverCart.items,
+                shippingFee: serverCart.shippingFee ?? get().shippingFee,
+              });
+            }
+          })
+          .catch(() => {
+            /* localStorage is fine */
+          });
       },
 
       updateQuantity: (productId, variantId, quantity) => {
-        if (quantity <= 0) { get().removeItem(productId, variantId); return; }
+        if (quantity <= 0) {
+          get().removeItem(productId, variantId);
+          return;
+        }
         set({
           items: get().items.map((i) =>
             i.productId === productId && i.variantId === variantId ? { ...i, quantity } : i,
@@ -134,9 +155,8 @@ export const useCartStore = create<CartState>()(
         try {
           const result = await clientApi.applyVoucher(code);
           const subtotal = get().getSubtotal();
-          const discount = result.type === 'PERCENT'
-            ? Math.round(subtotal * result.discount)
-            : result.discount;
+          const discount =
+            result.type === 'PERCENT' ? Math.round(subtotal * result.discount) : result.discount;
           set({ voucherCode: result.code, voucherDiscount: discount, isLoading: false });
         } catch (e) {
           set({ isLoading: false, error: (e as Error).message ?? 'Invalid voucher' });
@@ -148,7 +168,10 @@ export const useCartStore = create<CartState>()(
       clearCart: () => {
         set({ items: [], voucherCode: null, voucherDiscount: 0, shippingFee: 30_000 });
         // Clear server cart non-blocking
-        fetch('/api/cart', { method: 'DELETE', headers: { 'Content-Type': 'application/json' } }).catch(() => {});
+        fetch('/api/cart', {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+        }).catch(() => {});
       },
 
       syncFromServer: async () => {
@@ -161,7 +184,10 @@ export const useCartStore = create<CartState>()(
               productId: si.productId,
               variantId: si.variantId,
               quantity: si.quantity,
-              unitPrice: (si as CartItem & { price?: number }).unitPrice ?? (si as CartItem & { price?: number }).price ?? 0,
+              unitPrice:
+                (si as CartItem & { price?: number }).unitPrice ??
+                (si as CartItem & { price?: number }).price ??
+                0,
               product: si.product ?? {
                 id: si.productId,
                 name: (si as CartItem & { name?: string }).name ?? 'Product',
@@ -174,10 +200,14 @@ export const useCartStore = create<CartState>()(
           } else if (get().items.length > 0) {
             // Server cart empty but local has items — push local to server
             for (const item of get().items) {
-              await clientApi.addToCart(item.productId, item.variantId, item.quantity).catch(() => {});
+              await clientApi
+                .addToCart(item.productId, item.variantId, item.quantity)
+                .catch(() => {});
             }
           }
-        } catch { /* non-fatal */ }
+        } catch {
+          /* non-fatal */
+        }
       },
     }),
     {

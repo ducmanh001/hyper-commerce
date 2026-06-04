@@ -33,7 +33,7 @@ datasources:
     access: proxy
     url: postgres:5432
     database: hypercommerce
-    user: hc_grafana_readonly  # Read-only user for security
+    user: hc_grafana_readonly # Read-only user for security
     secureJsonData:
       password: ${GRAFANA_POSTGRES_PASSWORD}
     jsonData:

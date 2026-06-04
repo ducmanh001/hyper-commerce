@@ -39,7 +39,13 @@
           "unit": "locale",
           "decimals": 0,
           "color": { "mode": "thresholds" },
-          "thresholds": { "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 5000000 }, { "color": "red", "value": 50000000 }] }
+          "thresholds": {
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 5000000 },
+              { "color": "red", "value": 50000000 }
+            ]
+          }
         }
       }
     },
@@ -56,7 +62,9 @@
           "refId": "A"
         }
       ],
-      "fieldConfig": { "defaults": { "unit": "short", "color": { "fixedColor": "blue", "mode": "fixed" } } }
+      "fieldConfig": {
+        "defaults": { "unit": "short", "color": { "fixedColor": "blue", "mode": "fixed" } }
+      }
     },
     {
       "id": 3,
@@ -71,7 +79,9 @@
           "refId": "A"
         }
       ],
-      "fieldConfig": { "defaults": { "unit": "short", "color": { "fixedColor": "purple", "mode": "fixed" } } }
+      "fieldConfig": {
+        "defaults": { "unit": "short", "color": { "fixedColor": "purple", "mode": "fixed" } }
+      }
     },
     {
       "id": 4,
@@ -89,7 +99,13 @@
       "fieldConfig": {
         "defaults": {
           "unit": "percent",
-          "thresholds": { "steps": [{ "color": "red", "value": null }, { "color": "yellow", "value": 1.5 }, { "color": "green", "value": 3.0 }] }
+          "thresholds": {
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "yellow", "value": 1.5 },
+              { "color": "green", "value": 3.0 }
+            ]
+          }
         }
       }
     },
@@ -106,7 +122,18 @@
           "refId": "A"
         }
       ],
-      "fieldConfig": { "defaults": { "unit": "short", "color": { "mode": "thresholds" }, "thresholds": { "steps": [{ "color": "green", "value": null }, { "color": "red", "value": 1 }] } } }
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "red", "value": 1 }
+            ]
+          }
+        }
+      }
     },
     {
       "id": 6,
@@ -137,7 +164,10 @@
           "refId": "A"
         }
       ],
-      "options": { "orientation": "horizontal", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "total_spent" } },
+      "options": {
+        "orientation": "horizontal",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "total_spent" }
+      },
       "fieldConfig": { "defaults": { "unit": "locale" } }
     },
     {

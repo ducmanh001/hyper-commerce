@@ -39,7 +39,12 @@ export function formatRelativeTime(dateStr: string): string {
 }
 
 /** Format countdown: returns { hours, minutes, seconds } */
-export function parseCountdown(endsAt: string): { hours: number; minutes: number; seconds: number; expired: boolean } {
+export function parseCountdown(endsAt: string): {
+  hours: number;
+  minutes: number;
+  seconds: number;
+  expired: boolean;
+} {
   const diff = Math.max(0, new Date(endsAt).getTime() - Date.now());
   if (diff === 0) return { hours: 0, minutes: 0, seconds: 0, expired: true };
   const seconds = Math.floor(diff / 1000) % 60;

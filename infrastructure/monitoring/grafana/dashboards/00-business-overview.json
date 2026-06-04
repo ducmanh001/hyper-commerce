@@ -14,7 +14,6 @@
   "links": [],
   "liveNow": false,
   "panels": [
-
     {
       "type": "stat",
       "title": "💰 GMV Today (VND)",
@@ -69,9 +68,7 @@
         "defaults": {
           "color": { "mode": "thresholds" },
           "thresholds": {
-            "steps": [
-              { "color": "blue", "value": null }
-            ]
+            "steps": [{ "color": "blue", "value": null }]
           },
           "unit": "short"
         },
@@ -136,7 +133,10 @@
         "defaults": {
           "color": { "mode": "thresholds" },
           "thresholds": {
-            "steps": [{ "color": "orange", "value": null }, { "color": "red", "value": 100 }]
+            "steps": [
+              { "color": "orange", "value": null },
+              { "color": "red", "value": 100 }
+            ]
           },
           "unit": "short"
         },
@@ -187,7 +187,11 @@
       "gridPos": { "h": 8, "w": 16, "x": 0, "y": 4 },
       "id": 6,
       "options": {
-        "legend": { "calcs": ["sum", "mean", "max"], "displayMode": "table", "placement": "bottom" },
+        "legend": {
+          "calcs": ["sum", "mean", "max"],
+          "displayMode": "table",
+          "placement": "bottom"
+        },
         "tooltip": { "mode": "multi", "sort": "desc" }
       },
       "fieldConfig": {
@@ -255,10 +259,26 @@
       },
       "datasource": { "type": "prometheus", "uid": "prometheus" },
       "targets": [
-        { "expr": "sum(increase(hc_orders_created_total[5m]))", "legendFormat": "Orders Created", "refId": "A" },
-        { "expr": "sum(increase(hc_orders_created_total{status='STOCK_RESERVED'}[5m]))", "legendFormat": "Stock Reserved", "refId": "B" },
-        { "expr": "sum(increase(hc_orders_created_total{status='CONFIRMED'}[5m]))", "legendFormat": "Confirmed", "refId": "C" },
-        { "expr": "sum(increase(hc_orders_created_total{status='CANCELLED'}[5m]))", "legendFormat": "Cancelled", "refId": "D" }
+        {
+          "expr": "sum(increase(hc_orders_created_total[5m]))",
+          "legendFormat": "Orders Created",
+          "refId": "A"
+        },
+        {
+          "expr": "sum(increase(hc_orders_created_total{status='STOCK_RESERVED'}[5m]))",
+          "legendFormat": "Stock Reserved",
+          "refId": "B"
+        },
+        {
+          "expr": "sum(increase(hc_orders_created_total{status='CONFIRMED'}[5m]))",
+          "legendFormat": "Confirmed",
+          "refId": "C"
+        },
+        {
+          "expr": "sum(increase(hc_orders_created_total{status='CANCELLED'}[5m]))",
+          "legendFormat": "Cancelled",
+          "refId": "D"
+        }
       ]
     },
 
@@ -298,7 +318,10 @@
       "fieldConfig": {
         "defaults": { "custom": { "align": "auto", "filterable": true } },
         "overrides": [
-          { "matcher": { "id": "byName", "options": "status" }, "properties": [{ "id": "custom.width", "value": 160 }] }
+          {
+            "matcher": { "id": "byName", "options": "status" },
+            "properties": [{ "id": "custom.width", "value": 160 }]
+          }
         ]
       },
       "datasource": { "type": "postgres", "uid": "postgres" },
@@ -332,7 +355,6 @@
         }
       ]
     }
-
   ],
   "refresh": "1m",
   "schemaVersion": 38,
@@ -349,7 +371,10 @@
         "multi": false,
         "name": "environment",
         "options": [],
-        "query": { "query": "label_values(hc_orders_created_total, environment)", "refId": "Prometheus-environment-Variable-Query" },
+        "query": {
+          "query": "label_values(hc_orders_created_total, environment)",
+          "refId": "Prometheus-environment-Variable-Query"
+        },
         "refresh": 1,
         "type": "query",
         "label": "Environment"
