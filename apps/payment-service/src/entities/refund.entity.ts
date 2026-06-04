@@ -1,6 +1,10 @@
 import {
-  Entity, PrimaryGeneratedColumn, Column,
-  CreateDateColumn, UpdateDateColumn, Index,
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  UpdateDateColumn,
+  Index,
 } from 'typeorm';
 
 @Entity('refunds')
@@ -29,7 +33,7 @@ export class Refund {
   reason?: string;
 
   @Column({ type: 'varchar', length: 200, nullable: true })
-  refundReference?: string;  // Processor refund ID
+  refundReference?: string; // Processor refund ID
 
   @Column({ type: 'varchar', length: 100 })
   idempotencyKey!: string;

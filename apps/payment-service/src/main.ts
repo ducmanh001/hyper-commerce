@@ -1,10 +1,16 @@
 import { NestFactory } from '@nestjs/core';
 import { VersioningType, Logger } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-import { MicroserviceOptions, Transport } from '@nestjs/microservices';
+import type { MicroserviceOptions } from '@nestjs/microservices';
+import { Transport } from '@nestjs/microservices';
 import { ConfigService } from '@nestjs/config';
 import { AppModule } from './app.module';
-import { GlobalExceptionFilter, LoggingInterceptor, TransformInterceptor, StrictValidationPipe } from '@hypercommerce/common';
+import {
+  GlobalExceptionFilter,
+  LoggingInterceptor,
+  TransformInterceptor,
+  StrictValidationPipe,
+} from '@hypercommerce/common';
 
 async function bootstrap() {
   const logger = new Logger('PaymentService');
@@ -20,8 +26,11 @@ async function bootstrap() {
 
   if (config.get('NODE_ENV') !== 'production') {
     const swaggerConfig = new DocumentBuilder()
-      .setTitle('Payment Service').setDescription('HYPERCOMMERCE Payment API').setVersion('1.0')
-      .addBearerAuth().build();
+      .setTitle('Payment Service')
+      .setDescription('HYPERCOMMERCE Payment API')
+      .setVersion('1.0')
+      .addBearerAuth()
+      .build();
     SwaggerModule.setup('api/docs', app, SwaggerModule.createDocument(app, swaggerConfig));
   }
 
@@ -38,4 +47,7 @@ async function bootstrap() {
   await app.listen(config.get<number>('PAYMENT_PORT', 3003));
   logger.log(`Payment Service running on port ${config.get('PAYMENT_PORT', 3003)}`);
 }
-bootstrap().catch((err) => { console.error(err); process.exit(1); });
+bootstrap().catch((err) => {
+  console.error(err);
+  process.exit(1);
+});

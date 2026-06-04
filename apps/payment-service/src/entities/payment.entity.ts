@@ -7,12 +7,7 @@ import {
   Index,
 } from 'typeorm';
 
-export type PaymentStatus =
-  | 'PENDING'
-  | 'CAPTURED'
-  | 'FAILED'
-  | 'REFUNDED'
-  | 'PARTIALLY_REFUNDED';
+export type PaymentStatus = 'PENDING' | 'CAPTURED' | 'FAILED' | 'REFUNDED' | 'PARTIALLY_REFUNDED';
 
 @Entity('payments')
 @Index(['orderId'])
@@ -28,7 +23,7 @@ export class Payment {
   userId!: string;
 
   @Column({ type: 'bigint' })
-  amount!: number;  // in smallest currency unit
+  amount!: number; // in smallest currency unit
 
   @Column({ type: 'varchar', length: 10, default: 'VND' })
   currency!: string;
@@ -37,10 +32,10 @@ export class Payment {
   status!: PaymentStatus;
 
   @Column({ type: 'varchar', length: 30 })
-  processorType!: string;  // CARD | WALLET | COD
+  processorType!: string; // CARD | WALLET | COD
 
   @Column({ type: 'varchar', length: 200, default: '' })
-  processorReference!: string;  // Stripe PaymentIntent ID etc.
+  processorReference!: string; // Stripe PaymentIntent ID etc.
 
   @Column({ type: 'bigint', default: 0 })
   refundedAmount!: number;

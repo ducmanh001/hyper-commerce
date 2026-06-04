@@ -1,5 +1,9 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { IPaymentProcessor, ChargeResult, RefundResult } from './interfaces/payment-processor.interface';
+import type {
+  IPaymentProcessor,
+  ChargeResult,
+  RefundResult,
+} from './interfaces/payment-processor.interface';
 
 /**
  * CodProcessor — Cash on Delivery handler.

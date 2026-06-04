@@ -45,17 +45,10 @@ export interface IPaymentProcessor {
   charge(input: PaymentChargeInput): Promise<ChargeResult>;
 
   /** Refund a previously captured charge */
-  refund(
-    transactionId: string,
-    amountCents: number,
-    reason: string,
-  ): Promise<RefundResult>;
+  refund(transactionId: string, amountCents: number, reason: string): Promise<RefundResult>;
 
   /** Validate a webhook payload. Returns parsed event or null if invalid. */
-  validateWebhook(
-    payload: Buffer,
-    signature: string,
-  ): Promise<Record<string, unknown> | null>;
+  validateWebhook(payload: Buffer, signature: string): Promise<Record<string, unknown> | null>;
 
   /** Calculate the processing fee for a given amount */
   calculateFee(amountCents: number): number;

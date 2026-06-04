@@ -11,10 +11,10 @@
  * Adding a new gateway = add new class implementing this interface + register in factory.
  */
 export interface ChargeResult {
-  processorReference: string;   // Gateway transaction ID
+  processorReference: string; // Gateway transaction ID
   status: 'CAPTURED' | 'PENDING' | 'FAILED';
   capturedAt?: Date;
-  rawResponse?: Record<string, unknown>;  // For audit logging
+  rawResponse?: Record<string, unknown>; // For audit logging
 }
 
 export interface RefundResult {

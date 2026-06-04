@@ -1,10 +1,19 @@
 import {
-  Controller, Post, Get, Param, Body,
-  ParseUUIDPipe, HttpCode, HttpStatus, UseGuards, Logger,
+  Controller,
+  Post,
+  Get,
+  Param,
+  Body,
+  ParseUUIDPipe,
+  HttpCode,
+  HttpStatus,
+  UseGuards,
+  Logger,
 } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
-import { JwtAuthGuard, RolesGuard, CurrentUser, JwtPayload } from '@hypercommerce/common';
-import { PaymentService } from './payment.service';
+import type { JwtPayload } from '@hypercommerce/common';
+import { JwtAuthGuard, RolesGuard, CurrentUser } from '@hypercommerce/common';
+import type { PaymentService } from './payment.service';
 
 @ApiTags('payments')
 @ApiBearerAuth()

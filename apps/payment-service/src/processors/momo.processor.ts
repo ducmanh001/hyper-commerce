@@ -1,7 +1,11 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
+import type { ConfigService } from '@nestjs/config';
 import * as crypto from 'crypto';
-import { IPaymentProcessor, ChargeResult, RefundResult } from './interfaces/payment-processor.interface';
+import type {
+  IPaymentProcessor,
+  ChargeResult,
+  RefundResult,
+} from './interfaces/payment-processor.interface';
 
 /**
  * MomoProcessor — MoMo e-wallet integration (Vietnam).
@@ -25,9 +29,18 @@ export class MomoProcessor implements IPaymentProcessor {
     this.partnerCode = config.get<string>('MOMO_PARTNER_CODE', '');
     this.accessKey = config.get<string>('MOMO_ACCESS_KEY', '');
     this.secretKey = config.get<string>('MOMO_SECRET_KEY', '');
-    this.momoApiUrl = config.get<string>('MOMO_API_URL', 'https://test-payment.momo.vn/v2/gateway/api/create');
-    this.notifyUrl = config.get<string>('MOMO_NOTIFY_URL', 'https://api.hypercommerce.vn/payment/momo/webhook');
-    this.returnUrl = config.get<string>('MOMO_RETURN_URL', 'https://app.hypercommerce.vn/payment/momo/return');
+    this.momoApiUrl = config.get<string>(
+      'MOMO_API_URL',
+      'https://test-payment.momo.vn/v2/gateway/api/create',
+    );
+    this.notifyUrl = config.get<string>(
+      'MOMO_NOTIFY_URL',
+      'https://api.hypercommerce.vn/payment/momo/webhook',
+    );
+    this.returnUrl = config.get<string>(
+      'MOMO_RETURN_URL',
+      'https://app.hypercommerce.vn/payment/momo/return',
+    );
   }
 
   async charge(params: {

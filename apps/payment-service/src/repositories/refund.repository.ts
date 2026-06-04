@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import type { Repository } from 'typeorm';
 import { Refund } from '../entities/refund.entity';
 
 @Injectable()
@@ -35,7 +35,11 @@ export class RefundRepository {
     return this.repo.save(entity);
   }
 
-  async updateStatus(id: string, status: Refund['status'], refundReference?: string): Promise<void> {
+  async updateStatus(
+    id: string,
+    status: Refund['status'],
+    refundReference?: string,
+  ): Promise<void> {
     await this.repo.update(id, { status, ...(refundReference ? { refundReference } : {}) });
   }
 }

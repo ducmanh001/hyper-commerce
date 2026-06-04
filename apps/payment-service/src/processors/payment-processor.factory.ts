@@ -1,9 +1,9 @@
 import { Injectable } from '@nestjs/common';
-import { IPaymentProcessor } from './interfaces/payment-processor.interface';
-import { StripeProcessor } from './stripe.processor';
-import { VnpayProcessor } from './vnpay.processor';
-import { MomoProcessor } from './momo.processor';
-import { CodProcessor } from './cod.processor';
+import type { IPaymentProcessor } from './interfaces/payment-processor.interface';
+import type { StripeProcessor } from './stripe.processor';
+import type { VnpayProcessor } from './vnpay.processor';
+import type { MomoProcessor } from './momo.processor';
+import type { CodProcessor } from './cod.processor';
 
 export type PaymentMethodType = 'STRIPE' | 'VNPAY' | 'MOMO' | 'COD' | 'BANK_TRANSFER';
 

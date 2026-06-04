@@ -6,20 +6,23 @@
 // ============================================================
 
 import { Injectable, Logger } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
+import type { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { KafkaConsumerService, MessageMetadata } from '@hypercommerce/kafka';
-import { KafkaProducerService } from '@hypercommerce/kafka';
-import { RedisClientService } from '@hypercommerce/redis';
+import type { Repository } from 'typeorm';
+import type { KafkaConsumerService, MessageMetadata } from '@hypercommerce/kafka';
+import type { KafkaProducerService } from '@hypercommerce/kafka';
+import type { RedisClientService } from '@hypercommerce/redis';
 import { APP_CONSTANTS } from '@hypercommerce/common/constants/app.constants';
 import {
   PaymentDeclinedException,
   PaymentAlreadyProcessedException,
 } from '@hypercommerce/common/exceptions/domain.exceptions';
 import { Payment } from './entities/payment.entity';
-import { PaymentProcessorFactory } from './processors/payment-processor.factory';
-import { IdempotencyService } from '../../order-service/src/idempotency/idempotency.service';
+import type {
+  PaymentProcessorFactory,
+  PaymentMethodType,
+} from './processors/payment-processor.factory';
+import type { IdempotencyService } from '../../order-service/src/idempotency/idempotency.service';
 
 export interface ChargeRequest {
   orderId: string;
@@ -28,7 +31,7 @@ export interface ChargeRequest {
   currency: string;
   paymentMethod: {
     type: 'CARD' | 'WALLET' | 'BANK_TRANSFER' | 'COD';
-    token?: string;       // Stripe payment method ID
+    token?: string; // Stripe payment method ID
     walletId?: string;
   };
   idempotencyKey: string;
@@ -84,11 +87,10 @@ export class PaymentService {
    */
   async charge(req: ChargeRequest): Promise<ChargeResult> {
     // ── Idempotency ───────────────────────────────────────
-    const { result: cached, wasIdempotent } =
-      await this.idempotency.withIdempotency<ChargeResult>(
-        `payment:${req.idempotencyKey}`,
-        async () => this.executeCharge(req),
-      );
+    const { result: cached, wasIdempotent } = await this.idempotency.withIdempotency<ChargeResult>(
+      `payment:${req.idempotencyKey}`,
+      async () => this.executeCharge(req),
+    );
 
     if (wasIdempotent) {
       this.logger.log(
@@ -122,7 +124,9 @@ export class PaymentService {
     const payment = await this.paymentRepo.findOne({ where: { id: paymentId } });
     if (!payment) throw new Error(`Payment ${paymentId} not found`);
 
-    const processor = this.processorFactory.getProcessor(payment.processorType as import('./processors/payment-processor.factory').PaymentMethodType);
+    const processor = this.processorFactory.getProcessor(
+      payment.processorType as PaymentMethodType,
+    );
 
     const refundAmount = amount ?? payment.amount;
     await processor.refund({
@@ -155,7 +159,7 @@ export class PaymentService {
 
   private async executeCharge(req: ChargeRequest): Promise<ChargeResult> {
     const processor = this.processorFactory.getProcessor(
-      req.paymentMethod.type as import('./processors/payment-processor.factory').PaymentMethodType,
+      req.paymentMethod.type as PaymentMethodType,
     );
 
     let processorResult: Awaited<ReturnType<typeof processor.charge>>;
@@ -173,8 +177,7 @@ export class PaymentService {
         idempotencyKey: req.idempotencyKey,
       });
     } catch (error) {
-      const declineCode =
-        error instanceof Error ? error.message : 'UNKNOWN';
+      const declineCode = error instanceof Error ? error.message : 'UNKNOWN';
 
       // Store failed payment record
       await this.paymentRepo.save({

@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
+import type { ConfigService } from '@nestjs/config';
 import Stripe from 'stripe';
-import {
+import type {
   IPaymentProcessor,
   ChargeResult,
   RefundResult,
@@ -22,10 +22,9 @@ export class StripeProcessor implements IPaymentProcessor {
   private readonly webhookSecret: string;
 
   constructor(private readonly config: ConfigService) {
-    this.stripe = new Stripe(
-      config.get<string>('STRIPE_SECRET_KEY', 'sk_test_placeholder'),
-      { apiVersion: '2024-06-20' },
-    );
+    this.stripe = new Stripe(config.get<string>('STRIPE_SECRET_KEY', 'sk_test_placeholder'), {
+      apiVersion: '2024-06-20',
+    });
     this.webhookSecret = config.get<string>('STRIPE_WEBHOOK_SECRET', '');
   }
 
@@ -44,7 +43,10 @@ export class StripeProcessor implements IPaymentProcessor {
           currency: params.currency.toLowerCase(),
           payment_method: params.paymentMethodToken,
           confirm: true,
-          return_url: this.config.get<string>('STRIPE_RETURN_URL', 'https://app.hypercommerce.vn/payment/complete'),
+          return_url: this.config.get<string>(
+            'STRIPE_RETURN_URL',
+            'https://app.hypercommerce.vn/payment/complete',
+          ),
           metadata: {
             orderId: params.orderId,
             ...(params.metadata as Record<string, string>),

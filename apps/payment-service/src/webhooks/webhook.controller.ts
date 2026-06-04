@@ -1,12 +1,22 @@
 import {
-  Controller, Post, Body, Param, Get, ParseUUIDPipe,
-  HttpCode, HttpStatus, UseGuards, Logger, Headers, Req,
+  Controller,
+  Post,
+  Body,
+  Param,
+  Get,
+  ParseUUIDPipe,
+  HttpCode,
+  HttpStatus,
+  UseGuards,
+  Logger,
+  Headers,
+  Req,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
-import { PaymentProcessorFactory } from '../processors/payment-processor.factory';
-import { PaymentRepository } from '../repositories/payment.repository';
-import { KafkaProducerService } from '@hypercommerce/kafka';
-import { Request } from 'express';
+import type { PaymentProcessorFactory } from '../processors/payment-processor.factory';
+import type { PaymentRepository } from '../repositories/payment.repository';
+import type { KafkaProducerService } from '@hypercommerce/kafka';
+import type { Request } from 'express';
 import { v4 as uuidv4 } from 'uuid';
 
 /**
@@ -30,10 +40,7 @@ export class WebhookController {
   @Post('stripe')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Stripe webhook endpoint' })
-  async handleStripe(
-    @Req() req: Request,
-    @Headers('stripe-signature') signature: string,
-  ) {
+  async handleStripe(@Req() req: Request, @Headers('stripe-signature') signature: string) {
     const rawBody = (req as Request & { rawBody?: Buffer }).rawBody ?? Buffer.from('');
     const processor = this.processorFactory.getByProcessorType('STRIPE');
 
@@ -42,7 +49,10 @@ export class WebhookController {
       return { received: false };
     }
 
-    const event = JSON.parse(rawBody.toString()) as { type: string; data: { object: { metadata?: { orderId?: string }; id?: string; amount_received?: number } } };
+    const event = JSON.parse(rawBody.toString()) as {
+      type: string;
+      data: { object: { metadata?: { orderId?: string }; id?: string; amount_received?: number } };
+    };
     this.logger.log(`Stripe webhook: ${event.type}`);
 
     if (event.type === 'payment_intent.succeeded') {
@@ -71,7 +81,9 @@ export class WebhookController {
   @ApiOperation({ summary: 'VNPay IPN webhook endpoint' })
   async handleVnpay(@Body() body: Record<string, string>) {
     const processor = this.processorFactory.getByProcessorType('VNPAY');
-    const isValid = (processor as { verifyIpn?: (p: Record<string, string>) => boolean })?.verifyIpn?.(body);
+    const isValid = (
+      processor as { verifyIpn?: (p: Record<string, string>) => boolean }
+    )?.verifyIpn?.(body);
 
     if (!isValid) {
       this.logger.warn('VNPay IPN signature invalid');

@@ -1,8 +1,12 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
+import type { ConfigService } from '@nestjs/config';
 import * as crypto from 'crypto';
 import * as querystring from 'querystring';
-import { IPaymentProcessor, ChargeResult, RefundResult } from './interfaces/payment-processor.interface';
+import type {
+  IPaymentProcessor,
+  ChargeResult,
+  RefundResult,
+} from './interfaces/payment-processor.interface';
 
 /**
  * VnpayProcessor — VNPay gateway integration (Vietnam).
@@ -23,8 +27,14 @@ export class VnpayProcessor implements IPaymentProcessor {
   constructor(private readonly config: ConfigService) {
     this.tmnCode = config.get<string>('VNPAY_TMN_CODE', '');
     this.hashSecret = config.get<string>('VNPAY_HASH_SECRET', '');
-    this.vnpUrl = config.get<string>('VNPAY_URL', 'https://sandbox.vnpayment.vn/paymentv2/vpcpay.html');
-    this.returnUrl = config.get<string>('VNPAY_RETURN_URL', 'https://app.hypercommerce.vn/payment/vnpay/return');
+    this.vnpUrl = config.get<string>(
+      'VNPAY_URL',
+      'https://sandbox.vnpayment.vn/paymentv2/vpcpay.html',
+    );
+    this.returnUrl = config.get<string>(
+      'VNPAY_RETURN_URL',
+      'https://app.hypercommerce.vn/payment/vnpay/return',
+    );
   }
 
   async charge(params: {
@@ -55,10 +65,9 @@ export class VnpayProcessor implements IPaymentProcessor {
       vnp_ExpireDate: expireDate,
     };
 
-    const sorted = Object.keys(vnpParams).sort().reduce(
-      (acc, key) => ({ ...acc, [key]: vnpParams[key] }),
-      {} as Record<string, string>,
-    );
+    const sorted = Object.keys(vnpParams)
+      .sort()
+      .reduce((acc, key) => ({ ...acc, [key]: vnpParams[key] }), {} as Record<string, string>);
 
     const signData = querystring.stringify(sorted);
     const hmac = crypto.createHmac('sha512', this.hashSecret);
@@ -90,10 +99,9 @@ export class VnpayProcessor implements IPaymentProcessor {
       }
     }
 
-    const sorted = Object.keys(paramsWithoutHash).sort().reduce(
-      (acc, k) => ({ ...acc, [k]: paramsWithoutHash[k] }),
-      {} as Record<string, string>,
-    );
+    const sorted = Object.keys(paramsWithoutHash)
+      .sort()
+      .reduce((acc, k) => ({ ...acc, [k]: paramsWithoutHash[k] }), {} as Record<string, string>);
     const signData = querystring.stringify(sorted);
     const hmac = crypto.createHmac('sha512', this.hashSecret);
     const calculatedHash = hmac.update(Buffer.from(signData, 'utf-8')).digest('hex');
