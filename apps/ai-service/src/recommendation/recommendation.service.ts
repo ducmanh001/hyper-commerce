@@ -17,18 +17,20 @@
 // - Model serving: TensorFlow Serving / ONNX Runtime
 // ============================================================
 
-import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import { HttpService } from '@nestjs/axios';
+import type { OnModuleInit } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
+import type { ConfigService } from '@nestjs/config';
+import type { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
-import { RedisClientService } from '@hypercommerce/redis';
+import type { RedisClientService } from '@hypercommerce/redis';
+import type { Redis } from 'ioredis';
 import { APP_CONSTANTS } from '@hypercommerce/common/constants/app.constants';
 
 export interface RecommendationContext {
   userId: string;
   sessionId: string;
-  currentProductId?: string;  // "More like this"
-  categoryId?: string;        // Category page context
+  currentProductId?: string; // "More like this"
+  categoryId?: string; // Category page context
   limit?: number;
   excludeProductIds?: string[];
   platform: 'IOS' | 'ANDROID' | 'WEB';
@@ -118,11 +120,7 @@ export class RecommendationService implements OnModuleInit {
       candidates = await this.getColdStartRecommendations(ctx, limit * 3);
     } else {
       // Warm start — fetch from vector store
-      candidates = await this.getCollaborativeRecommendations(
-        userEmbedding,
-        ctx,
-        limit * 3,
-      );
+      candidates = await this.getCollaborativeRecommendations(userEmbedding, ctx, limit * 3);
     }
 
     // ── Content-based re-rank ─────────────────────────────
@@ -153,10 +151,7 @@ export class RecommendationService implements OnModuleInit {
    * Get "more like this" recommendations.
    * Pure content-based: CLIP embedding similarity.
    */
-  async getSimilarProducts(
-    productId: string,
-    limit = 10,
-  ): Promise<RecommendedProduct[]> {
+  async getSimilarProducts(productId: string, limit = 10): Promise<RecommendedProduct[]> {
     const cacheKey = `rec:similar:${productId}`;
     const cached = await this.redis.get(cacheKey);
     if (cached) return JSON.parse(cached) as RecommendedProduct[];
@@ -164,12 +159,9 @@ export class RecommendationService implements OnModuleInit {
     const embedding = await this.getProductEmbedding(productId);
     if (!embedding) return [];
 
-    const similar = await this.vectorSearch(
-      embedding.vector,
-      'product_embeddings',
-      limit,
-      { excludeIds: [productId] },
-    );
+    const similar = await this.vectorSearch(embedding.vector, 'product_embeddings', limit, {
+      excludeIds: [productId],
+    });
 
     const result: RecommendedProduct[] = similar.map((item, i) => ({
       productId: item.id,
@@ -232,11 +224,9 @@ export class RecommendationService implements OnModuleInit {
     limit: number,
   ): Promise<RecommendedProduct[]> {
     // Trending products from Redis sorted set (updated every minute by Analytics)
-    const trendingKey = ctx.categoryId
-      ? `trending:category:${ctx.categoryId}`
-      : 'trending:global';
+    const trendingKey = ctx.categoryId ? `trending:category:${ctx.categoryId}` : 'trending:global';
 
-    const trending = await (this.redis.getClient() as import('ioredis').Redis).zrevrange(
+    const trending = await (this.redis.getClient() as Redis).zrevrange(
       trendingKey,
       0,
       limit - 1,
@@ -269,10 +259,7 @@ export class RecommendationService implements OnModuleInit {
     if (!embedding) return candidates;
 
     const candidateIds = candidates.map((c) => c.productId);
-    const similarities = await this.batchCosineSimilarity(
-      embedding.vector,
-      candidateIds,
-    );
+    const similarities = await this.batchCosineSimilarity(embedding.vector, candidateIds);
 
     return candidates.map((candidate) => ({
       ...candidate,
@@ -354,9 +341,7 @@ export class RecommendationService implements OnModuleInit {
     return null;
   }
 
-  private async getProductEmbedding(
-    productId: string,
-  ): Promise<ProductEmbedding | null> {
+  private async getProductEmbedding(productId: string): Promise<ProductEmbedding | null> {
     const cacheKey = `embedding:product:${productId}`;
     const cached = await this.redis.get(cacheKey);
     if (cached) return JSON.parse(cached) as ProductEmbedding;
@@ -383,10 +368,7 @@ export class RecommendationService implements OnModuleInit {
       const embedding = await this.getProductEmbedding(productId);
       if (!embedding) continue;
 
-      const dot = embedding.vector.reduce(
-        (sum, v, i) => sum + v * (queryVector[i] ?? 0),
-        0,
-      );
+      const dot = embedding.vector.reduce((sum, v, i) => sum + v * (queryVector[i] ?? 0), 0);
       const pNorm = Math.sqrt(embedding.vector.reduce((s, v) => s + v * v, 0));
 
       result.set(productId, pNorm === 0 ? 0 : dot / (qNorm * pNorm));

@@ -10,21 +10,17 @@
 //   - Fallback: BM25 popularity score when embeddings unavailable
 
 import { Injectable, Logger } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import { HttpService } from '@nestjs/axios';
+import type { ConfigService } from '@nestjs/config';
+import type { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
-import { RedisClientService } from '@hypercommerce/redis';
+import type { RedisClientService } from '@hypercommerce/redis';
 import {
   buildUserEmbedding,
   maximalMarginalRelevance,
   cosineSimilarity,
   l2Normalize,
 } from '@hypercommerce/algorithms';
-import {
-  AI_CACHE_KEYS,
-  AI_CACHE_TTL,
-  AI_LIMITS,
-} from '../constants/ai.constants';
+import { AI_CACHE_KEYS, AI_CACHE_TTL, AI_LIMITS } from '../constants/ai.constants';
 
 export interface TwoTowerRecommendInput {
   userId: string;
@@ -54,9 +50,7 @@ export class TwoTowerService {
     const userEmbedding = await this.getUserEmbedding(input.userId);
 
     if (!userEmbedding) {
-      this.logger.debug(
-        `Cold start for user ${input.userId} — falling back to popular`,
-      );
+      this.logger.debug(`Cold start for user ${input.userId} — falling back to popular`);
       return this.getPopularFallback(input.limit, input.excludeIds);
     }
 
@@ -74,7 +68,7 @@ export class TwoTowerService {
         score: c.score,
         embedding: c.embedding,
       })),
-      0.7,  // lambda: 70% relevance, 30% diversity
+      0.7, // lambda: 70% relevance, 30% diversity
       input.limit,
     );
 
@@ -107,9 +101,7 @@ export class TwoTowerService {
     const embeddings = await Promise.all(
       interactions.map(async (interaction) => {
         const embedding = await this.getProductEmbedding(interaction.productId);
-        return embedding
-          ? { embedding, timestampMs: interaction.timestampMs }
-          : null;
+        return embedding ? { embedding, timestampMs: interaction.timestampMs } : null;
       }),
     );
 
@@ -124,18 +116,12 @@ export class TwoTowerService {
     if (!userVector) return null;
 
     // Cache for 1 hour
-    await this.redis.set(
-      cacheKey,
-      JSON.stringify(userVector),
-      AI_CACHE_TTL.USER_EMBEDDING,
-    );
+    await this.redis.set(cacheKey, JSON.stringify(userVector), AI_CACHE_TTL.USER_EMBEDDING);
 
     return userVector;
   }
 
-  private async getProductEmbedding(
-    productId: string,
-  ): Promise<number[] | null> {
+  private async getProductEmbedding(productId: string): Promise<number[] | null> {
     const key = AI_CACHE_KEYS.productEmbedding(productId);
     const cached = await this.redis.get(key);
     if (cached) {
@@ -157,21 +143,16 @@ export class TwoTowerService {
 
     try {
       const response = await firstValueFrom(
-        this.httpService.post(
-          `http://${esHost}/hypercommerce_products/_search`,
-          {
-            knn: {
-              field: 'embedding',
-              query_vector: queryVector,
-              k,
-              num_candidates: k * 3,
-              filter: excludeIds.length
-                ? { must_not: [{ terms: { _id: excludeIds } }] }
-                : undefined,
-            },
-            _source: ['productId', 'embedding'],
+        this.httpService.post(`http://${esHost}/hypercommerce_products/_search`, {
+          knn: {
+            field: 'embedding',
+            query_vector: queryVector,
+            k,
+            num_candidates: k * 3,
+            filter: excludeIds.length ? { must_not: [{ terms: { _id: excludeIds } }] } : undefined,
           },
-        ),
+          _source: ['productId', 'embedding'],
+        }),
       );
 
       const hits = response.data?.hits?.hits ?? [];

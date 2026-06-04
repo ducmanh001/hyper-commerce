@@ -6,7 +6,7 @@
 // Real production systems use 200-500 features; this extracts ~30.
 
 import { Injectable, Logger } from '@nestjs/common';
-import { RedisClientService } from '@hypercommerce/redis';
+import type { RedisClientService } from '@hypercommerce/redis';
 import { CountMinSketch } from '@hypercommerce/algorithms';
 
 export interface TransactionEvent {
@@ -28,9 +28,9 @@ export interface TransactionEvent {
 
 export interface FraudFeatureVector {
   // Amount features
-  normalizedAmount: number;        // amount / user's avg order value
-  isHighValueTransaction: number;  // 1 if > 5M VND
-  amountRoundness: number;         // is it a suspiciously round number?
+  normalizedAmount: number; // amount / user's avg order value
+  isHighValueTransaction: number; // 1 if > 5M VND
+  amountRoundness: number; // is it a suspiciously round number?
 
   // Velocity features
   orderCountLast1h: number;
@@ -39,43 +39,55 @@ export interface FraudFeatureVector {
   failedPaymentLast7d: number;
 
   // Geographic features
-  isVpnOrProxy: number;            // 1 if IP is VPN/data center
-  countryMismatch: number;         // billing != shipping country
+  isVpnOrProxy: number; // 1 if IP is VPN/data center
+  countryMismatch: number; // billing != shipping country
   isHighRiskCountry: number;
 
   // Behavioral features
   accountAgeHours: number;
-  isNewAccount: number;            // < 7 days old
+  isNewAccount: number; // < 7 days old
   hasVerifiedEmail: number;
   isNewShippingAddress: number;
-  itemCountScore: number;          // anomaly: ordering 50 items as new user
+  itemCountScore: number; // anomaly: ordering 50 items as new user
 
   // Device features
   isKnownDevice: number;
   suspiciousUserAgent: number;
 
   // Email features
-  isDisposableEmail: number;       // mailinator, guerrillamail etc.
+  isDisposableEmail: number; // mailinator, guerrillamail etc.
   emailRiskScore: number;
 
   // Time features
-  hourOfDay: number;               // normalized 0-1
+  hourOfDay: number; // normalized 0-1
   isWeekend: number;
 
   // Platform features
   isFirstPurchase: number;
-  paymentMethodRisk: number;       // stripe=0.1, cod=0.3, etc.
+  paymentMethodRisk: number; // stripe=0.1, cod=0.3, etc.
 }
 
 const HIGH_RISK_COUNTRIES = new Set([
-  'NG', 'GH', 'CI', 'ZA', 'KE',   // African countries with high fraud
-  'BY', 'RU', 'UA',                 // Geopolitical risk
-  'IR', 'SY', 'IQ',                 // Sanctioned
+  'NG',
+  'GH',
+  'CI',
+  'ZA',
+  'KE', // African countries with high fraud
+  'BY',
+  'RU',
+  'UA', // Geopolitical risk
+  'IR',
+  'SY',
+  'IQ', // Sanctioned
 ]);
 
 const DISPOSABLE_EMAIL_DOMAINS = new Set([
-  'mailinator.com', 'guerrillamail.com', 'tempmail.com',
-  'throwaway.email', 'yopmail.com', '10minutemail.com',
+  'mailinator.com',
+  'guerrillamail.com',
+  'tempmail.com',
+  'throwaway.email',
+  'yopmail.com',
+  '10minutemail.com',
 ]);
 
 const PAYMENT_METHOD_RISK: Record<string, number> = {
@@ -83,7 +95,7 @@ const PAYMENT_METHOD_RISK: Record<string, number> = {
   vnpay: 0.15,
   momo: 0.15,
   zalopay: 0.15,
-  cod: 0.35,          // COD has higher fraud (fake address, return fraud)
+  cod: 0.35, // COD has higher fraud (fake address, return fraud)
   bank_transfer: 0.2,
 };
 
@@ -115,10 +127,7 @@ export class FraudFeatureExtractor {
 
     return {
       // Amount
-      normalizedAmount: this.normalizeAmount(
-        event.amountCents,
-        accountData.avgOrderValueCents,
-      ),
+      normalizedAmount: this.normalizeAmount(event.amountCents, accountData.avgOrderValueCents),
       isHighValueTransaction: event.amountCents > 5_000_000 ? 1 : 0,
       amountRoundness: this.isRoundAmount(event.amountCents) ? 1 : 0,
 
@@ -129,7 +138,7 @@ export class FraudFeatureExtractor {
       failedPaymentLast7d,
 
       // Geographic
-      isVpnOrProxy: 0,  // would call IP intelligence API
+      isVpnOrProxy: 0, // would call IP intelligence API
       countryMismatch: event.billingCountry !== event.shippingCountry ? 1 : 0,
       isHighRiskCountry: HIGH_RISK_COUNTRIES.has(event.shippingCountry) ? 1 : 0,
 

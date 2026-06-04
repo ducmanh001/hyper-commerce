@@ -15,9 +15,10 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { HttpService } from '@nestjs/axios';
+import type { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
-import { RedisClientService } from '@hypercommerce/redis';
+import type { RedisClientService } from '@hypercommerce/redis';
+import type { Redis } from 'ioredis';
 
 export type FraudDecision = 'ALLOW' | 'CHALLENGE' | 'BLOCK';
 
@@ -39,7 +40,7 @@ export interface FraudSignals {
 
 export interface FraudAssessment {
   decision: FraudDecision;
-  score: number;           // 0.0 - 1.0 (higher = riskier)
+  score: number; // 0.0 - 1.0 (higher = riskier)
   riskFactors: string[];
   challengeType?: 'OTP_SMS' | 'OTP_EMAIL' | 'CAPTCHA' | '3DS';
   blockedReason?: string;
@@ -209,17 +210,14 @@ export class FraudDetectionService {
 
   // ── Private helpers ───────────────────────────────────────
 
-  private async checkVelocity(
-    userId: string,
-    ipAddress: string,
-  ): Promise<VelocityResult> {
+  private async checkVelocity(userId: string, ipAddress: string): Promise<VelocityResult> {
     const now = Date.now();
     const key1h = `fraud:vel:1h:${userId}`;
     const key24h = `fraud:vel:24h:${userId}`;
     const keyIp1h = `fraud:vel:ip:1h:${ipAddress}`;
     const keyCards24h = `fraud:vel:cards:24h:${userId}`;
 
-    const pipeline = (this.redis.getClient() as import('ioredis').Redis).pipeline();
+    const pipeline = (this.redis.getClient() as Redis).pipeline();
     pipeline.get(key1h);
     pipeline.get(key24h);
     pipeline.get(keyIp1h);
@@ -239,7 +237,7 @@ export class FraudDetectionService {
    * Call this AFTER fraud assessment (not before — creates race).
    */
   async recordAttempt(userId: string, ipAddress: string): Promise<void> {
-    const pipeline = (this.redis.getClient() as import('ioredis').Redis).pipeline();
+    const pipeline = (this.redis.getClient() as Redis).pipeline();
 
     const key1h = `fraud:vel:1h:${userId}`;
     const key24h = `fraud:vel:24h:${userId}`;
@@ -260,7 +258,13 @@ export class FraudDetectionService {
   ): Promise<{ isVpn: boolean; isTor: boolean; fraudScore: number; countryCode: string }> {
     const cacheKey = `fraud:ip:${ipAddress}`;
     const cached = await this.redis.get(cacheKey);
-    if (cached) return JSON.parse(cached) as { isVpn: boolean; isTor: boolean; fraudScore: number; countryCode: string };
+    if (cached)
+      return JSON.parse(cached) as {
+        isVpn: boolean;
+        isTor: boolean;
+        fraudScore: number;
+        countryCode: string;
+      };
 
     try {
       const response = await firstValueFrom(
@@ -304,13 +308,15 @@ export class FraudDetectionService {
         this.http.post<{ fraud_score: number }>(
           `${mlHost}/v1/models/fraud:predict`,
           {
-            instances: [{
-              user_age_days: signals.accountAgeDays,
-              amount_usd: signals.amount / 100,
-              device_id_hash: this.hashString(signals.deviceId ?? ''),
-              ip_hash: this.hashString(signals.ipAddress),
-              cross_border: signals.billingCountry !== signals.shippingCountry ? 1 : 0,
-            }],
+            instances: [
+              {
+                user_age_days: signals.accountAgeDays,
+                amount_usd: signals.amount / 100,
+                device_id_hash: this.hashString(signals.deviceId ?? ''),
+                ip_hash: this.hashString(signals.ipAddress),
+                cross_border: signals.billingCountry !== signals.shippingCountry ? 1 : 0,
+              },
+            ],
           },
           { timeout: 30 }, // 30ms hard timeout — must not block payment
         ),
@@ -336,9 +342,9 @@ export class FraudDetectionService {
       flaggedAt: new Date().toISOString(),
     });
 
-    await (this.redis.getClient() as import('ioredis').Redis).lpush(reviewKey, payload);
+    await (this.redis.getClient() as Redis).lpush(reviewKey, payload);
     // Trim queue to 10K items to prevent unbounded growth
-    await (this.redis.getClient() as import('ioredis').Redis).ltrim(reviewKey, 0, 9999);
+    await (this.redis.getClient() as Redis).ltrim(reviewKey, 0, 9999);
   }
 
   private hashString(input: string): number {

@@ -3,6 +3,7 @@ import { ConfigModule } from '@nestjs/config';
 import { HttpModule } from '@nestjs/axios';
 import { KafkaModule } from '@hypercommerce/kafka';
 import { RedisModule } from '@hypercommerce/redis';
+import { AiAgentsModule } from '@app/ai-agents';
 import { RecommendationService } from './recommendation/recommendation.service';
 import { FraudDetectionService } from './fraud/fraud-detection.service';
 
@@ -12,6 +13,7 @@ import { FraudDetectionService } from './fraud/fraud-detection.service';
     HttpModule.register({ timeout: 5000, maxRedirects: 3 }),
     KafkaModule,
     RedisModule,
+    AiAgentsModule,
   ],
   providers: [RecommendationService, FraudDetectionService],
   exports: [RecommendationService, FraudDetectionService],

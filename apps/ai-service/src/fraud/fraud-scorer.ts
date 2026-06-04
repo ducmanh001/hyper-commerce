@@ -12,11 +12,11 @@
 // 5. countryMismatch (geographic anomaly)
 
 import { Injectable, Logger } from '@nestjs/common';
-import { FraudFeatureVector } from './feature-extractor';
+import type { FraudFeatureVector } from './feature-extractor';
 import { FRAUD_THRESHOLDS } from '../constants/ai.constants';
 
 export interface FraudScore {
-  score: number;              // 0-1 (1 = definitely fraud)
+  score: number; // 0-1 (1 = definitely fraud)
   risk: 'low' | 'medium' | 'high';
   recommendation: 'allow' | 'review' | 'block' | 'require_3ds';
   topFeatures: Array<{ feature: string; contribution: number }>;
@@ -41,9 +41,9 @@ export class FraudScorer {
     const WEIGHTS: Partial<Record<keyof FraudFeatureVector, number>> = {
       orderCountLast1h: 0.25,
       normalizedAmount: 0.15,
-      accountAgeHours: -0.10,    // older account = lower risk
+      accountAgeHours: -0.1, // older account = lower risk
       distinctIpLast24h: 0.12,
-      countryMismatch: 0.10,
+      countryMismatch: 0.1,
       isHighRiskCountry: 0.08,
       failedPaymentLast7d: 0.07,
       isNewAccount: 0.06,
@@ -88,12 +88,18 @@ export class FraudScorer {
   private normalizeFeature(feature: string, value: number): number {
     // Normalize some features to [0, 1] range
     switch (feature) {
-      case 'orderCountLast1h': return Math.min(value / 10, 1);
-      case 'orderCountLast24h': return Math.min(value / 50, 1);
-      case 'distinctIpLast24h': return Math.min(value / 5, 1);
-      case 'accountAgeHours': return Math.min(value / (30 * 24), 1);
-      case 'failedPaymentLast7d': return Math.min(value / 5, 1);
-      default: return Math.max(0, Math.min(1, value));
+      case 'orderCountLast1h':
+        return Math.min(value / 10, 1);
+      case 'orderCountLast24h':
+        return Math.min(value / 50, 1);
+      case 'distinctIpLast24h':
+        return Math.min(value / 5, 1);
+      case 'accountAgeHours':
+        return Math.min(value / (30 * 24), 1);
+      case 'failedPaymentLast7d':
+        return Math.min(value / 5, 1);
+      default:
+        return Math.max(0, Math.min(1, value));
     }
   }
 
@@ -103,9 +109,7 @@ export class FraudScorer {
     return 'low';
   }
 
-  private getRecommendation(
-    score: number,
-  ): 'allow' | 'review' | 'block' | 'require_3ds' {
+  private getRecommendation(score: number): 'allow' | 'review' | 'block' | 'require_3ds' {
     if (score >= FRAUD_THRESHOLDS.HIGH_RISK) return 'block';
     if (score >= FRAUD_THRESHOLDS.MEDIUM_RISK) return 'require_3ds';
     if (score >= FRAUD_THRESHOLDS.LOW_RISK) return 'review';

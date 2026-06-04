@@ -1,0 +1,26 @@
+{
+  "compilerOptions": {
+    "module": "commonjs",
+    "declaration": true,
+    "removeComments": true,
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "allowSyntheticDefaultImports": true,
+    "target": "ES2021",
+    "sourceMap": true,
+    "outDir": "../../dist/libs/ai-agents",
+    "baseUrl": ".",
+    "incremental": true,
+    "strict": false,
+    "skipLibCheck": true,
+    "paths": {
+      "@app/ai-agents": ["src/index.ts"],
+      "@app/ai-agents/*": ["src/*"],
+      "@app/redis": ["../redis/src/index.ts"],
+      "@app/kafka": ["../kafka/src/index.ts"],
+      "@app/common": ["../common/src/index.ts"]
+    }
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist"]
+}

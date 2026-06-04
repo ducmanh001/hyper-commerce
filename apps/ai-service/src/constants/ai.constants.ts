@@ -11,19 +11,19 @@ export const AI_ERRORS = {
 export const AI_LIMITS = {
   MAX_RECOMMENDATIONS: 100,
   DEFAULT_RECOMMENDATIONS: 20,
-  MAX_EMBEDDING_BATCH: 128,    // Max items per embedding API call
+  MAX_EMBEDDING_BATCH: 128, // Max items per embedding API call
   FRAUD_SCORE_TIMEOUT_MS: 2_000,
   RECOMMENDATION_TIMEOUT_MS: 5_000,
-  MAX_HISTORY_DEPTH: 50,       // Last N items for user embedding
-  COLD_START_MIN_INTERACTIONS: 5,  // Below this: use popularity
+  MAX_HISTORY_DEPTH: 50, // Last N items for user embedding
+  COLD_START_MIN_INTERACTIONS: 5, // Below this: use popularity
 } as const;
 
 export const AI_CACHE_TTL = {
-  USER_EMBEDDING: 3600,         // 1 hour — recompute when user acts
-  PRODUCT_EMBEDDING: 86400,     // 24 hours — stable
-  RECOMMENDATIONS: 300,         // 5 min — refresh periodically
-  FRAUD_SCORE: 60,              // 1 min — time-sensitive
-  TRENDING_PRODUCTS: 600,       // 10 min
+  USER_EMBEDDING: 3600, // 1 hour — recompute when user acts
+  PRODUCT_EMBEDDING: 86400, // 24 hours — stable
+  RECOMMENDATIONS: 300, // 5 min — refresh periodically
+  FRAUD_SCORE: 60, // 1 min — time-sensitive
+  TRENDING_PRODUCTS: 600, // 10 min
 } as const;
 
 export const AI_CACHE_KEYS = {
