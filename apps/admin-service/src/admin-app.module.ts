@@ -21,7 +21,7 @@ import { AdminModule } from './admin.module';
         synchronize: false,
         logging: ['warn', 'error'],
         extra: {
-          max: 10,           // smaller pool — admin queries are heavier but less frequent
+          max: 10, // smaller pool — admin queries are heavier but less frequent
           idleTimeoutMillis: 30000,
           application_name: 'admin-service',
         },

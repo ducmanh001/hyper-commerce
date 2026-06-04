@@ -23,8 +23,8 @@ import {
   ApiTags,
   ApiBody,
 } from '@nestjs/swagger';
-import { Request } from 'express';
-import { AdminService } from './admin.service';
+import type { Request } from 'express';
+import type { AdminService } from './admin.service';
 import { AdminJwtGuard } from './guards/admin-jwt.guard';
 
 // All admin endpoints require internal JWT auth
@@ -42,7 +42,11 @@ export class AdminController {
   @Get('dashboard/summary')
   @ApiTags('analytics')
   @ApiOperation({ summary: 'Top-level KPIs for dashboard home page' })
-  @ApiQuery({ name: 'date', required: false, description: 'ISO date (YYYY-MM-DD). Defaults to today.' })
+  @ApiQuery({
+    name: 'date',
+    required: false,
+    description: 'ISO date (YYYY-MM-DD). Defaults to today.',
+  })
   async getDashboardSummary(@Query('date') date?: string) {
     return this.adminService.getDashboardSummary(date);
   }
@@ -99,19 +103,25 @@ export class AdminController {
   @Get('users')
   @ApiTags('users')
   @ApiOperation({ summary: 'List users with search, filter, pagination' })
-  @ApiQuery({ name: 'q',       required: false, description: 'Search by email/name' })
-  @ApiQuery({ name: 'role',    required: false })
-  @ApiQuery({ name: 'status',  required: false, enum: ['active', 'banned', 'pending'] })
-  @ApiQuery({ name: 'page',    required: false })
-  @ApiQuery({ name: 'limit',   required: false })
+  @ApiQuery({ name: 'q', required: false, description: 'Search by email/name' })
+  @ApiQuery({ name: 'role', required: false })
+  @ApiQuery({ name: 'status', required: false, enum: ['active', 'banned', 'pending'] })
+  @ApiQuery({ name: 'page', required: false })
+  @ApiQuery({ name: 'limit', required: false })
   async listUsers(
-    @Query('q')      q?: string,
-    @Query('role')   role?: string,
+    @Query('q') q?: string,
+    @Query('role') role?: string,
     @Query('status') status?: string,
-    @Query('page')   page = 1,
-    @Query('limit')  limit = 50,
+    @Query('page') page = 1,
+    @Query('limit') limit = 50,
   ) {
-    return this.adminService.listUsers({ q, role, status, page: Number(page), limit: Number(limit) });
+    return this.adminService.listUsers({
+      q,
+      role,
+      status,
+      page: Number(page),
+      limit: Number(limit),
+    });
   }
 
   @Get('users/:id')
@@ -126,7 +136,9 @@ export class AdminController {
   @ApiTags('users')
   @ApiOperation({ summary: 'Ban a user (soft-delete session, add to blocklist)' })
   @ApiParam({ name: 'id' })
-  @ApiBody({ schema: { properties: { reason: { type: 'string' }, durationDays: { type: 'number' } } } })
+  @ApiBody({
+    schema: { properties: { reason: { type: 'string' }, durationDays: { type: 'number' } } },
+  })
   async banUser(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() body: { reason: string; durationDays?: number },
@@ -139,17 +151,14 @@ export class AdminController {
   @Patch('users/:id/unban')
   @ApiTags('users')
   @ApiOperation({ summary: 'Lift a user ban' })
-  async unbanUser(
-    @Param('id', ParseUUIDPipe) id: string,
-    @Req() req: Request,
-  ) {
+  async unbanUser(@Param('id', ParseUUIDPipe) id: string, @Req() req: Request) {
     const actor = (req as unknown as Record<string, unknown>)['adminUser'] as { sub: string };
     return this.adminService.unbanUser(id, actor.sub);
   }
 
   @Patch('users/:id/role')
   @ApiTags('users')
-  @ApiOperation({ summary: 'Change a user\'s platform role (admin only)' })
+  @ApiOperation({ summary: "Change a user's platform role (admin only)" })
   @ApiBody({ schema: { properties: { role: { type: 'string' } } } })
   async changeUserRole(
     @Param('id', ParseUUIDPipe) id: string,
@@ -164,11 +173,11 @@ export class AdminController {
   @HttpCode(HttpStatus.OK)
   @ApiTags('users')
   @ApiOperation({ summary: 'Issue a short-lived impersonation token (SUPER_ADMIN only)' })
-  async impersonateUser(
-    @Param('id', ParseUUIDPipe) id: string,
-    @Req() req: Request,
-  ) {
-    const actor = (req as unknown as Record<string, unknown>)['adminUser'] as { sub: string; role: string };
+  async impersonateUser(@Param('id', ParseUUIDPipe) id: string, @Req() req: Request) {
+    const actor = (req as unknown as Record<string, unknown>)['adminUser'] as {
+      sub: string;
+      role: string;
+    };
     return this.adminService.impersonateUser(id, actor);
   }
 
@@ -179,23 +188,31 @@ export class AdminController {
   @Get('orders')
   @ApiTags('orders')
   @ApiOperation({ summary: 'List all orders with filters' })
-  @ApiQuery({ name: 'status',   required: false })
+  @ApiQuery({ name: 'status', required: false })
   @ApiQuery({ name: 'sellerId', required: false })
-  @ApiQuery({ name: 'userId',   required: false })
-  @ApiQuery({ name: 'from',     required: false })
-  @ApiQuery({ name: 'to',       required: false })
-  @ApiQuery({ name: 'page',     required: false })
-  @ApiQuery({ name: 'limit',    required: false })
+  @ApiQuery({ name: 'userId', required: false })
+  @ApiQuery({ name: 'from', required: false })
+  @ApiQuery({ name: 'to', required: false })
+  @ApiQuery({ name: 'page', required: false })
+  @ApiQuery({ name: 'limit', required: false })
   async listOrders(
-    @Query('status')   status?: string,
+    @Query('status') status?: string,
     @Query('sellerId') sellerId?: string,
-    @Query('userId')   userId?: string,
-    @Query('from')     from?: string,
-    @Query('to')       to?: string,
-    @Query('page')     page = 1,
-    @Query('limit')    limit = 50,
+    @Query('userId') userId?: string,
+    @Query('from') from?: string,
+    @Query('to') to?: string,
+    @Query('page') page = 1,
+    @Query('limit') limit = 50,
   ) {
-    return this.adminService.listOrders({ status, sellerId, userId, from, to, page: Number(page), limit: Number(limit) });
+    return this.adminService.listOrders({
+      status,
+      sellerId,
+      userId,
+      from,
+      to,
+      page: Number(page),
+      limit: Number(limit),
+    });
   }
 
   @Get('orders/:id')
@@ -225,19 +242,25 @@ export class AdminController {
   @Get('sellers')
   @ApiTags('sellers')
   @ApiOperation({ summary: 'List sellers with KYC status, tier, GMV' })
-  @ApiQuery({ name: 'q',       required: false })
-  @ApiQuery({ name: 'status',  required: false, enum: ['pending', 'active', 'suspended'] })
-  @ApiQuery({ name: 'tier',    required: false })
-  @ApiQuery({ name: 'page',    required: false })
-  @ApiQuery({ name: 'limit',   required: false })
+  @ApiQuery({ name: 'q', required: false })
+  @ApiQuery({ name: 'status', required: false, enum: ['pending', 'active', 'suspended'] })
+  @ApiQuery({ name: 'tier', required: false })
+  @ApiQuery({ name: 'page', required: false })
+  @ApiQuery({ name: 'limit', required: false })
   async listSellers(
-    @Query('q')      q?: string,
+    @Query('q') q?: string,
     @Query('status') status?: string,
-    @Query('tier')   tier?: string,
-    @Query('page')   page = 1,
-    @Query('limit')  limit = 50,
+    @Query('tier') tier?: string,
+    @Query('page') page = 1,
+    @Query('limit') limit = 50,
   ) {
-    return this.adminService.listSellers({ q, status, tier, page: Number(page), limit: Number(limit) });
+    return this.adminService.listSellers({
+      q,
+      status,
+      tier,
+      page: Number(page),
+      limit: Number(limit),
+    });
   }
 
   @Get('sellers/:sellerId/commission-summary')
@@ -271,10 +294,7 @@ export class AdminController {
   @Patch('sellers/:id/verify')
   @ApiTags('sellers')
   @ApiOperation({ summary: 'Approve seller KYC verification' })
-  async verifySeller(
-    @Param('id', ParseUUIDPipe) id: string,
-    @Req() req: Request,
-  ) {
+  async verifySeller(@Param('id', ParseUUIDPipe) id: string, @Req() req: Request) {
     const actor = (req as unknown as Record<string, unknown>)['adminUser'] as { sub: string };
     return this.adminService.verifySeller(id, actor.sub);
   }
@@ -301,10 +321,7 @@ export class AdminController {
   @ApiOperation({ summary: 'Open disputes requiring action, sorted by urgency' })
   @ApiQuery({ name: 'page', required: false })
   @ApiQuery({ name: 'limit', required: false })
-  async getDisputeQueue(
-    @Query('page') page = 1,
-    @Query('limit') limit = 50,
-  ) {
+  async getDisputeQueue(@Query('page') page = 1, @Query('limit') limit = 50) {
     return this.adminService.getDisputeQueue(Number(page), Number(limit));
   }
 
@@ -318,13 +335,15 @@ export class AdminController {
   @Patch('disputes/:id/resolve')
   @ApiTags('disputes')
   @ApiOperation({ summary: 'Admin resolve a dispute — approve refund or deny' })
-  @ApiBody({ schema: {
-    properties: {
-      outcome:       { type: 'string', enum: ['REFUND', 'DENY', 'PARTIAL_REFUND'] },
-      refundAmount:  { type: 'number' },
-      resolution:    { type: 'string' },
+  @ApiBody({
+    schema: {
+      properties: {
+        outcome: { type: 'string', enum: ['REFUND', 'DENY', 'PARTIAL_REFUND'] },
+        refundAmount: { type: 'number' },
+        resolution: { type: 'string' },
+      },
     },
-  }})
+  })
   async resolveDispute(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() body: { outcome: string; refundAmount?: number; resolution: string },
@@ -349,10 +368,7 @@ export class AdminController {
   @HttpCode(HttpStatus.CREATED)
   @ApiTags('system')
   @ApiOperation({ summary: 'Create a new feature flag' })
-  async createFeatureFlag(
-    @Body() body: Record<string, unknown>,
-    @Req() req: Request,
-  ) {
+  async createFeatureFlag(@Body() body: Record<string, unknown>, @Req() req: Request) {
     const actor = (req as unknown as Record<string, unknown>)['adminUser'] as { sub: string };
     return this.adminService.upsertFeatureFlag(body['key'] as string, body, actor.sub);
   }
@@ -373,10 +389,7 @@ export class AdminController {
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiTags('system')
   @ApiOperation({ summary: 'Delete a feature flag (after cleanup)' })
-  async deleteFeatureFlag(
-    @Param('key') key: string,
-    @Req() req: Request,
-  ) {
+  async deleteFeatureFlag(@Param('key') key: string, @Req() req: Request) {
     const actor = (req as unknown as Record<string, unknown>)['adminUser'] as { sub: string };
     return this.adminService.deleteFeatureFlag(key, actor.sub);
   }
@@ -388,26 +401,28 @@ export class AdminController {
   @Get('audit-logs')
   @ApiTags('system')
   @ApiOperation({ summary: 'Query audit log — who did what when' })
-  @ApiQuery({ name: 'actorId',  required: false })
+  @ApiQuery({ name: 'actorId', required: false })
   @ApiQuery({ name: 'resource', required: false })
-  @ApiQuery({ name: 'action',   required: false })
-  @ApiQuery({ name: 'from',     required: false })
-  @ApiQuery({ name: 'to',       required: false })
-  @ApiQuery({ name: 'page',     required: false })
-  @ApiQuery({ name: 'limit',    required: false })
+  @ApiQuery({ name: 'action', required: false })
+  @ApiQuery({ name: 'from', required: false })
+  @ApiQuery({ name: 'to', required: false })
+  @ApiQuery({ name: 'page', required: false })
+  @ApiQuery({ name: 'limit', required: false })
   async getAuditLogs(
-    @Query('actorId')  actorId?: string,
+    @Query('actorId') actorId?: string,
     @Query('resource') resource?: string,
-    @Query('action')   action?: string,
-    @Query('from')     from?: string,
-    @Query('to')       to?: string,
-    @Query('page')     page = 1,
-    @Query('limit')    limit = 50,
+    @Query('action') action?: string,
+    @Query('from') from?: string,
+    @Query('to') to?: string,
+    @Query('page') page = 1,
+    @Query('limit') limit = 50,
   ) {
     return this.adminService.getAuditLogs({
-      actorId, resource, action,
+      actorId,
+      resource,
+      action,
       from: from ? new Date(from) : undefined,
-      to:   to   ? new Date(to)   : undefined,
+      to: to ? new Date(to) : undefined,
       page: Number(page),
       limit: Number(limit),
     });
@@ -427,10 +442,14 @@ export class AdminController {
   @Patch('roles/:userId/assign')
   @ApiTags('roles')
   @ApiOperation({ summary: 'Assign a role to a user (admin only)' })
-  @ApiBody({ schema: { properties: {
-    role:        { type: 'string' },
-    permissions: { type: 'array', items: { type: 'string' } },
-  } } })
+  @ApiBody({
+    schema: {
+      properties: {
+        role: { type: 'string' },
+        permissions: { type: 'array', items: { type: 'string' } },
+      },
+    },
+  })
   async assignRole(
     @Param('userId', ParseUUIDPipe) userId: string,
     @Body() body: { role: string; permissions?: string[] },
@@ -449,10 +468,7 @@ export class AdminController {
   @ApiOperation({ summary: 'High-risk orders and users flagged by fraud engine' })
   @ApiQuery({ name: 'riskLevel', required: false, enum: ['HIGH', 'MEDIUM'] })
   @ApiQuery({ name: 'page', required: false })
-  async getFraudSignals(
-    @Query('riskLevel') riskLevel?: string,
-    @Query('page') page = 1,
-  ) {
+  async getFraudSignals(@Query('riskLevel') riskLevel?: string, @Query('page') page = 1) {
     return this.adminService.getFraudSignals(riskLevel, Number(page));
   }
 
@@ -470,7 +486,7 @@ export class AdminController {
   @Get('moderation/queue')
   @ApiTags('trust-safety')
   @ApiOperation({ summary: 'Products pending moderation review' })
-  @ApiQuery({ name: 'page',  required: false })
+  @ApiQuery({ name: 'page', required: false })
   @ApiQuery({ name: 'limit', required: false })
   async getModerationQueue(@Query('page') page = 1, @Query('limit') limit = 50) {
     return this.adminService.getModerationQueue(Number(page), Number(limit));
@@ -479,10 +495,7 @@ export class AdminController {
   @Patch('moderation/:productId/approve')
   @ApiTags('trust-safety')
   @ApiOperation({ summary: 'Approve a product listing' })
-  async approveProduct(
-    @Param('productId', ParseUUIDPipe) productId: string,
-    @Req() req: Request,
-  ) {
+  async approveProduct(@Param('productId', ParseUUIDPipe) productId: string, @Req() req: Request) {
     const actor = (req as unknown as Record<string, unknown>)['adminUser'] as { sub: string };
     return this.adminService.moderateProduct(productId, 'APPROVED', undefined, actor.sub);
   }
@@ -508,7 +521,7 @@ export class AdminController {
   @ApiTags('finance')
   @ApiOperation({ summary: 'Platform revenue breakdown: commission + ads + subscriptions' })
   @ApiQuery({ name: 'from', required: false })
-  @ApiQuery({ name: 'to',   required: false })
+  @ApiQuery({ name: 'to', required: false })
   async getRevenueSummary(@Query('from') from?: string, @Query('to') to?: string) {
     return this.adminService.getRevenueSummary(from, to);
   }
@@ -516,8 +529,12 @@ export class AdminController {
   @Get('finance/payouts')
   @ApiTags('finance')
   @ApiOperation({ summary: 'Seller payout queue — pending disbursements' })
-  @ApiQuery({ name: 'status', required: false, enum: ['PENDING', 'PROCESSING', 'COMPLETED', 'FAILED'] })
-  @ApiQuery({ name: 'page',   required: false })
+  @ApiQuery({
+    name: 'status',
+    required: false,
+    enum: ['PENDING', 'PROCESSING', 'COMPLETED', 'FAILED'],
+  })
+  @ApiQuery({ name: 'page', required: false })
   async getPayouts(@Query('status') status?: string, @Query('page') page = 1) {
     return this.adminService.getPayouts(status, Number(page));
   }
@@ -526,10 +543,7 @@ export class AdminController {
   @HttpCode(HttpStatus.OK)
   @ApiTags('finance')
   @ApiOperation({ summary: 'Trigger payout processing for a pending disbursement' })
-  async processPayout(
-    @Param('id', ParseUUIDPipe) id: string,
-    @Req() req: Request,
-  ) {
+  async processPayout(@Param('id', ParseUUIDPipe) id: string, @Req() req: Request) {
     const actor = (req as unknown as Record<string, unknown>)['adminUser'] as { sub: string };
     return this.adminService.processPayout(id, actor.sub);
   }

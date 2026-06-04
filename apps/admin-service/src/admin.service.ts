@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { DataSource } from 'typeorm';
+import type { DataSource } from 'typeorm';
 
 // ====================================================================
 // WHY DIRECT SQL INSTEAD OF REPOSITORY PATTERN HERE?
@@ -159,8 +159,14 @@ export class AdminService {
       range: { from: fromDate, to: toDate },
       funnel: {
         created: { count: row['total_created'], rate: 1 },
-        stock_reserved: { count: row['stock_reserved'], rate: Number(row['stock_reserved']) / total },
-        payment_captured: { count: row['payment_captured'], rate: Number(row['payment_captured']) / total },
+        stock_reserved: {
+          count: row['stock_reserved'],
+          rate: Number(row['stock_reserved']) / total,
+        },
+        payment_captured: {
+          count: row['payment_captured'],
+          rate: Number(row['payment_captured']) / total,
+        },
         confirmed: { count: row['confirmed'], rate: Number(row['confirmed']) / total },
         delivered: { count: row['delivered'], rate: Number(row['delivered']) / total },
         cancelled: { count: row['cancelled'], rate: Number(row['cancelled']) / total },
@@ -207,7 +213,11 @@ export class AdminService {
     );
   }
 
-  async getSellerCommissionSummary(sellerId: string, from?: string, to?: string): Promise<unknown[]> {
+  async getSellerCommissionSummary(
+    sellerId: string,
+    from?: string,
+    to?: string,
+  ): Promise<unknown[]> {
     const fromDate = from ?? new Date(Date.now() - 30 * 86_400_000).toISOString().slice(0, 10);
     const toDate = to ?? new Date().toISOString().slice(0, 10);
 
@@ -306,7 +316,13 @@ export class AdminService {
   // USER MANAGEMENT
   // ------------------------------------------------------------------
 
-  async listUsers(opts: { q?: string; role?: string; status?: string; page: number; limit: number }) {
+  async listUsers(opts: {
+    q?: string;
+    role?: string;
+    status?: string;
+    page: number;
+    limit: number;
+  }) {
     const offset = (opts.page - 1) * opts.limit;
     const conditions: string[] = ['1=1'];
     const params: unknown[] = [];
@@ -317,8 +333,14 @@ export class AdminService {
       params.push(`%${opts.q}%`);
       pi++;
     }
-    if (opts.role)   { conditions.push(`u.role = $${pi++}`);   params.push(opts.role); }
-    if (opts.status) { conditions.push(`u.status = $${pi++}`); params.push(opts.status); }
+    if (opts.role) {
+      conditions.push(`u.role = $${pi++}`);
+      params.push(opts.role);
+    }
+    if (opts.status) {
+      conditions.push(`u.status = $${pi++}`);
+      params.push(opts.status);
+    }
 
     const where = conditions.join(' AND ');
 
@@ -398,17 +420,40 @@ export class AdminService {
   // ORDER MANAGEMENT
   // ------------------------------------------------------------------
 
-  async listOrders(opts: { status?: string; sellerId?: string; userId?: string; from?: string; to?: string; page: number; limit: number }) {
+  async listOrders(opts: {
+    status?: string;
+    sellerId?: string;
+    userId?: string;
+    from?: string;
+    to?: string;
+    page: number;
+    limit: number;
+  }) {
     const offset = (opts.page - 1) * opts.limit;
     const conditions: string[] = ['1=1'];
     const params: unknown[] = [];
     let pi = 1;
 
-    if (opts.status)   { conditions.push(`o.status = $${pi++}`);     params.push(opts.status); }
-    if (opts.sellerId) { conditions.push(`o.seller_id = $${pi++}`);  params.push(opts.sellerId); }
-    if (opts.userId)   { conditions.push(`o.user_id = $${pi++}`);    params.push(opts.userId); }
-    if (opts.from)     { conditions.push(`o.created_at >= $${pi++}`); params.push(opts.from); }
-    if (opts.to)       { conditions.push(`o.created_at <= $${pi++}`); params.push(opts.to); }
+    if (opts.status) {
+      conditions.push(`o.status = $${pi++}`);
+      params.push(opts.status);
+    }
+    if (opts.sellerId) {
+      conditions.push(`o.seller_id = $${pi++}`);
+      params.push(opts.sellerId);
+    }
+    if (opts.userId) {
+      conditions.push(`o.user_id = $${pi++}`);
+      params.push(opts.userId);
+    }
+    if (opts.from) {
+      conditions.push(`o.created_at >= $${pi++}`);
+      params.push(opts.from);
+    }
+    if (opts.to) {
+      conditions.push(`o.created_at <= $${pi++}`);
+      params.push(opts.to);
+    }
 
     const where = conditions.join(' AND ');
 
@@ -444,7 +489,13 @@ export class AdminService {
   async forceOrderStatus(id: string, status: string, reason: string, actorId: string) {
     await this.dataSource.query(
       `UPDATE orders SET status = $2, metadata = metadata || $3::jsonb WHERE id = $1`,
-      [id, status, JSON.stringify({ adminOverride: { status, reason, actorId, at: new Date().toISOString() } })],
+      [
+        id,
+        status,
+        JSON.stringify({
+          adminOverride: { status, reason, actorId, at: new Date().toISOString() },
+        }),
+      ],
     );
     return { id, status };
   }
@@ -453,15 +504,31 @@ export class AdminService {
   // SELLER MANAGEMENT
   // ------------------------------------------------------------------
 
-  async listSellers(opts: { q?: string; status?: string; tier?: string; page: number; limit: number }) {
+  async listSellers(opts: {
+    q?: string;
+    status?: string;
+    tier?: string;
+    page: number;
+    limit: number;
+  }) {
     const offset = (opts.page - 1) * opts.limit;
     const conditions: string[] = ['1=1'];
     const params: unknown[] = [];
     let pi = 1;
 
-    if (opts.q)      { conditions.push(`(s.business_name ILIKE $${pi} OR u.email ILIKE $${pi})`); params.push(`%${opts.q}%`); pi++; }
-    if (opts.status) { conditions.push(`s.status = $${pi++}`); params.push(opts.status); }
-    if (opts.tier)   { conditions.push(`s.tier = $${pi++}`);   params.push(opts.tier); }
+    if (opts.q) {
+      conditions.push(`(s.business_name ILIKE $${pi} OR u.email ILIKE $${pi})`);
+      params.push(`%${opts.q}%`);
+      pi++;
+    }
+    if (opts.status) {
+      conditions.push(`s.status = $${pi++}`);
+      params.push(opts.status);
+    }
+    if (opts.tier) {
+      conditions.push(`s.tier = $${pi++}`);
+      params.push(opts.tier);
+    }
 
     const where = conditions.join(' AND ');
 
@@ -504,7 +571,11 @@ export class AdminService {
   // DISPUTE RESOLUTION
   // ------------------------------------------------------------------
 
-  async resolveDispute(id: string, body: { outcome: string; refundAmount?: number; resolution: string }, actorId: string) {
+  async resolveDispute(
+    id: string,
+    body: { outcome: string; refundAmount?: number; resolution: string },
+    actorId: string,
+  ) {
     await this.dataSource.query(
       `UPDATE disputes SET status = 'RESOLVED', outcome = $2, resolved_refund_amount = $3, resolution_notes = $4, resolved_by = $5, resolved_at = NOW() WHERE id = $1`,
       [id, body.outcome, body.refundAmount ?? 0, body.resolution, actorId],
@@ -532,10 +603,20 @@ export class AdminService {
          owner          = EXCLUDED.owner,
          expires_at     = EXCLUDED.expires_at,
          updated_at     = NOW()`,
-      [key, dto['description'], dto['enabled'] ?? false, dto['rolloutPercent'] ?? 100, dto['environments'] ?? [], dto['owner'], dto['expiresAt']],
+      [
+        key,
+        dto['description'],
+        dto['enabled'] ?? false,
+        dto['rolloutPercent'] ?? 100,
+        dto['environments'] ?? [],
+        dto['owner'],
+        dto['expiresAt'],
+      ],
     );
     this.logger.log(`Feature flag '${key}' upserted by ${actorId}`);
-    return this.dataSource.query(`SELECT * FROM feature_flags WHERE key = $1`, [key]).then(([r]) => r);
+    return this.dataSource
+      .query(`SELECT * FROM feature_flags WHERE key = $1`, [key])
+      .then(([r]) => r);
   }
 
   async deleteFeatureFlag(key: string, actorId: string) {
@@ -547,22 +628,48 @@ export class AdminService {
   // AUDIT LOGS
   // ------------------------------------------------------------------
 
-  async getAuditLogs(opts: { actorId?: string; resource?: string; action?: string; from?: Date; to?: Date; page: number; limit: number }) {
+  async getAuditLogs(opts: {
+    actorId?: string;
+    resource?: string;
+    action?: string;
+    from?: Date;
+    to?: Date;
+    page: number;
+    limit: number;
+  }) {
     const offset = (opts.page - 1) * opts.limit;
     const conditions: string[] = ['1=1'];
     const params: unknown[] = [];
     let pi = 1;
 
-    if (opts.actorId)  { conditions.push(`actor_id = $${pi++}`);   params.push(opts.actorId); }
-    if (opts.resource) { conditions.push(`resource = $${pi++}`);   params.push(opts.resource); }
-    if (opts.action)   { conditions.push(`action = $${pi++}`);     params.push(opts.action); }
-    if (opts.from)     { conditions.push(`created_at >= $${pi++}`); params.push(opts.from); }
-    if (opts.to)       { conditions.push(`created_at <= $${pi++}`); params.push(opts.to); }
+    if (opts.actorId) {
+      conditions.push(`actor_id = $${pi++}`);
+      params.push(opts.actorId);
+    }
+    if (opts.resource) {
+      conditions.push(`resource = $${pi++}`);
+      params.push(opts.resource);
+    }
+    if (opts.action) {
+      conditions.push(`action = $${pi++}`);
+      params.push(opts.action);
+    }
+    if (opts.from) {
+      conditions.push(`created_at >= $${pi++}`);
+      params.push(opts.from);
+    }
+    if (opts.to) {
+      conditions.push(`created_at <= $${pi++}`);
+      params.push(opts.to);
+    }
 
     const where = conditions.join(' AND ');
 
     const [rows, [{ total }]] = await Promise.all([
-      this.dataSource.query(`SELECT * FROM audit_logs WHERE ${where} ORDER BY created_at DESC LIMIT $${pi} OFFSET $${pi + 1}`, [...params, opts.limit, offset]),
+      this.dataSource.query(
+        `SELECT * FROM audit_logs WHERE ${where} ORDER BY created_at DESC LIMIT $${pi} OFFSET $${pi + 1}`,
+        [...params, opts.limit, offset],
+      ),
       this.dataSource.query(`SELECT COUNT(*) AS total FROM audit_logs WHERE ${where}`, params),
     ]);
 
@@ -575,21 +682,109 @@ export class AdminService {
 
   async listRoles() {
     return [
-      { role: 'SUPER_ADMIN',  description: 'Full platform access including system config',   permissions: ['manage:all'] },
-      { role: 'ADMIN',        description: 'Full user/order/seller management',               permissions: ['manage:User', 'manage:Order', 'manage:Seller', 'manage:Dispute', 'manage:Product', 'manage:Campaign', 'manage:Subscription', 'manage:AuditLog', 'manage:FeatureFlag'] },
-      { role: 'OPS',          description: 'Customer service operations',                     permissions: ['read:User', 'update:User', 'read:Order', 'update:Order', 'read:Dispute', 'update:Dispute', 'approve:Dispute', 'reject:Dispute', 'read:Payment', 'refund:Payment'] },
-      { role: 'FINANCE',      description: 'Financial reporting and payout management',       permissions: ['read:Report', 'export:Report', 'read:Payout', 'payout:Payout', 'read:Commission', 'read:Payment', 'read:Subscription'] },
-      { role: 'TRUST_SAFETY', description: 'Content moderation and fraud investigation',      permissions: ['read:Product', 'update:Product', 'approve:Product', 'reject:Product', 'read:User', 'ban:User', 'unban:User', 'read:Seller', 'ban:Seller', 'unban:Seller', 'read:Dispute', 'update:Dispute'] },
-      { role: 'SELLER',       description: 'Seller portal — own resources only',              permissions: ['create:Product', 'read:Product', 'update:Product', 'delete:Product', 'create:Campaign', 'read:Campaign', 'update:Campaign', 'read:Order', 'read:Commission', 'read:Payout'] },
-      { role: 'BUYER',        description: 'Standard authenticated customer',                 permissions: ['create:Order', 'read:Order', 'create:Dispute', 'read:Dispute', 'read:Product'] },
+      {
+        role: 'SUPER_ADMIN',
+        description: 'Full platform access including system config',
+        permissions: ['manage:all'],
+      },
+      {
+        role: 'ADMIN',
+        description: 'Full user/order/seller management',
+        permissions: [
+          'manage:User',
+          'manage:Order',
+          'manage:Seller',
+          'manage:Dispute',
+          'manage:Product',
+          'manage:Campaign',
+          'manage:Subscription',
+          'manage:AuditLog',
+          'manage:FeatureFlag',
+        ],
+      },
+      {
+        role: 'OPS',
+        description: 'Customer service operations',
+        permissions: [
+          'read:User',
+          'update:User',
+          'read:Order',
+          'update:Order',
+          'read:Dispute',
+          'update:Dispute',
+          'approve:Dispute',
+          'reject:Dispute',
+          'read:Payment',
+          'refund:Payment',
+        ],
+      },
+      {
+        role: 'FINANCE',
+        description: 'Financial reporting and payout management',
+        permissions: [
+          'read:Report',
+          'export:Report',
+          'read:Payout',
+          'payout:Payout',
+          'read:Commission',
+          'read:Payment',
+          'read:Subscription',
+        ],
+      },
+      {
+        role: 'TRUST_SAFETY',
+        description: 'Content moderation and fraud investigation',
+        permissions: [
+          'read:Product',
+          'update:Product',
+          'approve:Product',
+          'reject:Product',
+          'read:User',
+          'ban:User',
+          'unban:User',
+          'read:Seller',
+          'ban:Seller',
+          'unban:Seller',
+          'read:Dispute',
+          'update:Dispute',
+        ],
+      },
+      {
+        role: 'SELLER',
+        description: 'Seller portal — own resources only',
+        permissions: [
+          'create:Product',
+          'read:Product',
+          'update:Product',
+          'delete:Product',
+          'create:Campaign',
+          'read:Campaign',
+          'update:Campaign',
+          'read:Order',
+          'read:Commission',
+          'read:Payout',
+        ],
+      },
+      {
+        role: 'BUYER',
+        description: 'Standard authenticated customer',
+        permissions: [
+          'create:Order',
+          'read:Order',
+          'create:Dispute',
+          'read:Dispute',
+          'read:Product',
+        ],
+      },
     ];
   }
 
   async assignRole(userId: string, role: string, permissions: string[], actorId: string) {
-    await this.dataSource.query(
-      `UPDATE users SET role = $2, permissions = $3 WHERE id = $1`,
-      [userId, role, JSON.stringify(permissions)],
-    );
+    await this.dataSource.query(`UPDATE users SET role = $2, permissions = $3 WHERE id = $1`, [
+      userId,
+      role,
+      JSON.stringify(permissions),
+    ]);
     this.logger.log(`Role ${role} assigned to user ${userId} by ${actorId}`);
     return { userId, role, permissions };
   }
@@ -601,7 +796,7 @@ export class AdminService {
   async getFraudSignals(riskLevel: string | undefined, page: number) {
     const limit = 50;
     const offset = (page - 1) * limit;
-    const conditions = riskLevel ? [`risk_level = $1`] : ['risk_level IN (\'HIGH\',\'MEDIUM\')'];
+    const conditions = riskLevel ? [`risk_level = $1`] : ["risk_level IN ('HIGH','MEDIUM')"];
     const params = riskLevel ? [riskLevel, limit, offset] : [limit, offset];
     const pi = riskLevel ? 2 : 1;
 
@@ -614,7 +809,7 @@ export class AdminService {
 
   async getChargebackRate(from?: string, to?: string) {
     const fromDate = from ?? new Date(Date.now() - 30 * 86400000).toISOString().slice(0, 10);
-    const toDate   = to   ?? new Date().toISOString().slice(0, 10);
+    const toDate = to ?? new Date().toISOString().slice(0, 10);
 
     const [row] = await this.dataSource.query(
       `SELECT
@@ -641,12 +836,19 @@ export class AdminService {
         `SELECT p.*, s.business_name AS seller_name FROM products p JOIN sellers s ON s.id = p.seller_id WHERE p.moderation_status = 'PENDING' ORDER BY p.created_at ASC LIMIT $1 OFFSET $2`,
         [limit, offset],
       ),
-      this.dataSource.query(`SELECT COUNT(*) AS total FROM products WHERE moderation_status = 'PENDING'`),
+      this.dataSource.query(
+        `SELECT COUNT(*) AS total FROM products WHERE moderation_status = 'PENDING'`,
+      ),
     ]);
     return { items: rows, total: Number(total), page, limit };
   }
 
-  async moderateProduct(productId: string, decision: 'APPROVED' | 'REJECTED', reason: string | undefined, actorId: string) {
+  async moderateProduct(
+    productId: string,
+    decision: 'APPROVED' | 'REJECTED',
+    reason: string | undefined,
+    actorId: string,
+  ) {
     await this.dataSource.query(
       `UPDATE products SET moderation_status = $2, moderation_reason = $3, moderated_by = $4, moderated_at = NOW() WHERE id = $1`,
       [productId, decision, reason, actorId],
@@ -660,20 +862,32 @@ export class AdminService {
 
   async getRevenueSummary(from?: string, to?: string) {
     const fromDate = from ?? new Date(Date.now() - 30 * 86400000).toISOString().slice(0, 10);
-    const toDate   = to ?? new Date().toISOString().slice(0, 10);
+    const toDate = to ?? new Date().toISOString().slice(0, 10);
 
     const [commissions, adRevenue, subscriptions] = await Promise.all([
-      this.dataSource.query(`SELECT SUM(platform_commission) AS total FROM commissions WHERE DATE(created_at) BETWEEN $1::date AND $2::date`, [fromDate, toDate]),
-      this.dataSource.query(`SELECT SUM(fee_vnd) AS total FROM ad_impressions WHERE DATE(created_at) BETWEEN $1::date AND $2::date`, [fromDate, toDate]),
-      this.dataSource.query(`SELECT SUM(last_paid_vnd) AS total FROM seller_subscriptions WHERE DATE(updated_at) BETWEEN $1::date AND $2::date`, [fromDate, toDate]),
+      this.dataSource.query(
+        `SELECT SUM(platform_commission) AS total FROM commissions WHERE DATE(created_at) BETWEEN $1::date AND $2::date`,
+        [fromDate, toDate],
+      ),
+      this.dataSource.query(
+        `SELECT SUM(fee_vnd) AS total FROM ad_impressions WHERE DATE(created_at) BETWEEN $1::date AND $2::date`,
+        [fromDate, toDate],
+      ),
+      this.dataSource.query(
+        `SELECT SUM(last_paid_vnd) AS total FROM seller_subscriptions WHERE DATE(updated_at) BETWEEN $1::date AND $2::date`,
+        [fromDate, toDate],
+      ),
     ]);
 
     return {
       range: { from: fromDate, to: toDate },
-      commissions:   Number(commissions[0]?.total ?? 0),
-      adRevenue:     Number(adRevenue[0]?.total ?? 0),
+      commissions: Number(commissions[0]?.total ?? 0),
+      adRevenue: Number(adRevenue[0]?.total ?? 0),
       subscriptions: Number(subscriptions[0]?.total ?? 0),
-      total: Number(commissions[0]?.total ?? 0) + Number(adRevenue[0]?.total ?? 0) + Number(subscriptions[0]?.total ?? 0),
+      total:
+        Number(commissions[0]?.total ?? 0) +
+        Number(adRevenue[0]?.total ?? 0) +
+        Number(subscriptions[0]?.total ?? 0),
     };
   }
 
@@ -707,9 +921,9 @@ export class AdminService {
     // Real implementation would query pg_stat_activity, Redis INFO, queue depths
     return {
       database: { activeConnections: 0, idleConnections: 0, waitingQueries: 0 },
-      redis:    { usedMemoryMb: 0, connectedClients: 0, opsPerSec: 0 },
-      kafka:    { consumerLag: {} },
-      uptime:   process.uptime(),
+      redis: { usedMemoryMb: 0, connectedClients: 0, opsPerSec: 0 },
+      kafka: { consumerLag: {} },
+      uptime: process.uptime(),
       nodeVersion: process.version,
       ts: new Date().toISOString(),
     };
@@ -717,22 +931,22 @@ export class AdminService {
 
   async getServiceHealthStatus() {
     const services = [
-      { name: 'user-service',          port: 3001 },
-      { name: 'feed-service',          port: 3002 },
-      { name: 'order-service',         port: 3003 },
-      { name: 'inventory-service',     port: 3004 },
-      { name: 'search-service',        port: 3005 },
-      { name: 'payment-service',       port: 3007 },
-      { name: 'notification-service',  port: 3008 },
-      { name: 'analytics-service',     port: 3009 },
-      { name: 'ai-service',            port: 3010 },
-      { name: 'ads-service',           port: 3012 },
-      { name: 'subscription-service',  port: 3013 },
+      { name: 'user-service', port: 3001 },
+      { name: 'feed-service', port: 3002 },
+      { name: 'order-service', port: 3003 },
+      { name: 'inventory-service', port: 3004 },
+      { name: 'search-service', port: 3005 },
+      { name: 'payment-service', port: 3007 },
+      { name: 'notification-service', port: 3008 },
+      { name: 'analytics-service', port: 3009 },
+      { name: 'ai-service', port: 3010 },
+      { name: 'ads-service', port: 3012 },
+      { name: 'subscription-service', port: 3013 },
     ];
 
     return services.map((s) => ({
       ...s,
-      status:  'unknown', // populated by health-check scraper in production
+      status: 'unknown', // populated by health-check scraper in production
       latency: null,
     }));
   }
