@@ -3,9 +3,9 @@
 > **Column details live in TypeORM entity files — read those, not this file.**
 > This file stores only: (1) next migration number, (2) table→service map, (3) business rules not in code.
 
-## Next migration number: **5**
+## Next migration number: **6**
 
-Planned sequence: 5=next · auto-update via `make context:index`
+Planned sequence: 6=next · auto-update via `make context:index`
 
 ---
 
@@ -40,6 +40,8 @@ Planned sequence: 5=next · auto-update via `make context:index`
 | `user_follows`         | user-service         | `apps/user-service/src/entities/user-follow.entity.ts`                 |
 | `user_profiles`        | user-service         | `apps/user-service/src/entities/user-profile.entity.ts`                |
 | `users`                | user-service         | `apps/user-service/src/entities/user.entity.ts`                        |
+| `wallet_transactions`  | wallet-service       | `apps/wallet-service/src/entities/wallet-transaction.entity.ts`        |
+| `wallet_outbox_events` | wallet-service       | `apps/wallet-service/src/entities/wallet-outbox.entity.ts`             |
 
 ---
 

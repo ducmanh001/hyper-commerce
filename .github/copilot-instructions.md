@@ -60,13 +60,17 @@ Multi-vendor social commerce platform. Target: 50M DAU, 500K orders/day, 100K co
 | docker, k8s, migration, prometheus, deploy                 | `agents/infra.agent.md`     |
 | lib, shared, kafka producer, redis client, queue           | `agents/backend.agent.md`   |
 | architecture, design, new service, sharding, saga          | `agents/architect.agent.md` |
+| feature idea, i want, phase 1, explore, plan card          | `agents/discovery.agent.md` |
 
 ## Workflow Files
 
 ```
 .github/prompts/        ← optional, only for repeatable team checklists — NOT required to implement
+.github/prompts/fragments/ ← reusable prompt fragments (+base, +kafka, +redis, +tx, +migration, +verify-L*)
 .github/chatmodes/      ← custom chat modes: feature-dev, code-review, debug
 .github/instructions/   ← code-gen rules (auto-load by applyTo: nestjs, nextjs, database)
+.github/agents/discovery.agent.md ← 2-mode agent: vague idea → Plan Card | confirmed plan → implement prompt
+.github/specs/          ← persistent feature specs — invoke with: @{agent} #file:.github/specs/{name}.spec.md +wrap
 ```
 
 > **To implement any feature: just describe it directly — no prompt file needed.**
@@ -133,6 +137,24 @@ For tasks spanning multiple turns or sessions:
 1. After each major step → write state to `/memories/session/` (files changed, decisions, what next step needs)
 2. At start of continuation session → read that session file first
 3. Handoff only what the next step cannot re-derive from code — skip file contents it will read itself
+
+## Prompt Fragments — Auto-resolution Rule (LCB v3 L7)
+
+When a prompt contains `+tag` tokens, resolve each by reading the corresponding fragment file **before** implementing. Fragments inherit into the prompt as if they were typed inline.
+
+| Tag          | File                                      | Auto-include when                                          |
+| ------------ | ----------------------------------------- | ---------------------------------------------------------- |
+| `+base`      | `.github/prompts/fragments/+base.md`      | Always (every L2+ prompt)                                  |
+| `+kafka`     | `.github/prompts/fragments/+kafka.md`     | Prompt mentions Kafka / event / consumer / producer        |
+| `+redis`     | `.github/prompts/fragments/+redis.md`     | Prompt mentions Redis / cache / TTL / lock                 |
+| `+tx`        | `.github/prompts/fragments/+tx.md`        | Prompt mentions transaction / debit / credit / multi-table |
+| `+migration` | `.github/prompts/fragments/+migration.md` | Prompt mentions new table / migration / entity             |
+| `+wrap`      | `.github/prompts/fragments/+wrap.md`      | Always when invoking a spec file (`#file:*.spec.md`)       |
+| `+verify-L2` | `.github/prompts/fragments/+verify-L2.md` | Level 2 prompt                                             |
+| `+verify-L3` | `.github/prompts/fragments/+verify-L3.md` | Level 3 prompt                                             |
+| `+verify-L4` | `.github/prompts/fragments/+verify-L4.md` | Level 4 prompt                                             |
+
+**Auto-include rule**: Even if `+tag` is not written explicitly, auto-include fragments whose "when" condition matches the prompt. Never ask — silently resolve.
 
 ## Learned Patterns (LCB v3 L6 — updated over time)
 

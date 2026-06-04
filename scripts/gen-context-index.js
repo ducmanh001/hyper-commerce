@@ -25,13 +25,14 @@ function getNextMigrationNumber() {
   const migrationsDir = path.join(ROOT, 'infrastructure/postgres/migrations');
   if (!fs.existsSync(migrationsDir)) return 1;
 
-  const files = fs.readdirSync(migrationsDir)
-    .filter(f => f.endsWith('.sql') || f.endsWith('.ts'))
-    .map(f => {
+  const files = fs
+    .readdirSync(migrationsDir)
+    .filter((f) => f.endsWith('.sql') || f.endsWith('.ts'))
+    .map((f) => {
       const match = f.match(/^(\d+)/);
       return match ? parseInt(match[1], 10) : 0;
     })
-    .filter(n => n > 0)
+    .filter((n) => n > 0)
     .sort((a, b) => a - b);
 
   return files.length > 0 ? files[files.length - 1] + 1 : 1;
@@ -124,7 +125,8 @@ function updateSchemaFile(nextMigration, tableRows) {
     // Section not found — append before business rules
     const bizRulesIdx = content.indexOf('## Business Rules');
     if (bizRulesIdx !== -1) {
-      content = content.slice(0, bizRulesIdx) + newSection + '\n\n---\n\n' + content.slice(bizRulesIdx);
+      content =
+        content.slice(0, bizRulesIdx) + newSection + '\n\n---\n\n' + content.slice(bizRulesIdx);
     } else {
       content += '\n\n' + newSection + '\n';
     }
@@ -144,10 +146,12 @@ function main() {
   const tableRows = parseEntityFiles();
   console.log(`  Entity files found: ${tableRows.length} tables`);
 
-  tableRows.forEach(r => console.log(`    ${r.tableName.padEnd(30)} ← ${r.relPath}`));
+  tableRows.forEach((r) => console.log(`    ${r.tableName.padEnd(30)} ← ${r.relPath}`));
 
   updateSchemaFile(nextMigration, tableRows);
-  console.log(`\n✅ SCHEMA.md updated (${tableRows.length} tables, next migration: ${nextMigration})`);
+  console.log(
+    `\n✅ SCHEMA.md updated (${tableRows.length} tables, next migration: ${nextMigration})`,
+  );
   console.log('   Business rules section preserved.\n');
   console.log('NOTE: EVENTS.md routing is manually maintained (topic→service mapping');
   console.log('      is not inferrable from code alone — update after adding topics).');

@@ -929,6 +929,7 @@ const INTERNAL_SERVICES = {
   notification: process.env.NOTIFICATION_SERVICE_URL ?? 'http://notification-service:3008',
   review:       process.env.REVIEW_SERVICE_URL      ?? 'http://review-service:3016',
   chat:         process.env.CHAT_SERVICE_URL        ?? 'http://chat-service:3015',
+  wallet:       process.env.WALLET_SERVICE_URL      ?? 'http://wallet-service:3017',
 };
 
 const INTERNAL_TOKEN = process.env.INTERNAL_SERVICE_TOKEN ?? 'internal_dev_token_change_in_prod';
@@ -1841,6 +1842,46 @@ io.on('connection', (socket) => {
       } catch {}
     }
   });
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// ── WALLET SERVICE PROXY ───────────────────────────────────────────────────
+// Route /api/v1/wallet/* → wallet-service:3017
+// All wallet routes require authentication.
+// ═══════════════════════════════════════════════════════════════════════════
+
+// GET /api/v1/wallet/balance
+app.get('/api/v1/wallet/balance', authMiddleware, async (req, res) => {
+  const result = await callInternal(
+    INTERNAL_SERVICES.wallet,
+    '/api/v1/wallet/balance',
+    { timeoutMs: 3000 },
+  );
+  if (!result) return res.status(503).json({ message: 'Wallet service unavailable' });
+  res.json(result.data);
+});
+
+// POST /api/v1/wallet/topup  (rate-limited: 5/hour per user — enforced by wallet-service via Redis)
+app.post('/api/v1/wallet/topup', authMiddleware, strictLimit, async (req, res) => {
+  const result = await callInternal(
+    INTERNAL_SERVICES.wallet,
+    '/api/v1/wallet/topup',
+    { method: 'POST', body: { ...req.body, userId: req.user.id }, timeoutMs: 5000 },
+  );
+  if (!result) return res.status(503).json({ message: 'Wallet service unavailable' });
+  res.status(201).json(result.data);
+});
+
+// GET /api/v1/wallet/transactions
+app.get('/api/v1/wallet/transactions', authMiddleware, async (req, res) => {
+  const qs     = new URLSearchParams(req.query).toString();
+  const result = await callInternal(
+    INTERNAL_SERVICES.wallet,
+    `/api/v1/wallet/transactions?${qs}`,
+    { timeoutMs: 3000 },
+  );
+  if (!result) return res.status(503).json({ message: 'Wallet service unavailable' });
+  res.json(result.data);
 });
 
 // ═══════════════════════════════════════════════════════════════════════════

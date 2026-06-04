@@ -201,3 +201,44 @@ export interface ReviewHelpfulMarkedEvent extends DomainEvent {
   userId: string;
   newHelpfulCount: number;
 }
+
+// ── Order Delivered Event ─────────────────────────────────────────────────
+export interface OrderDeliveredEvent extends DomainEvent {
+  eventType: 'ORDER_DELIVERED';
+  orderId: string;
+  userId: string;
+  sellerId: string;
+  totalAmount: number; // VND dong — used for loyalty cashback
+  deliveredAt: string;
+}
+
+// ── Wallet Events ─────────────────────────────────────────────────────────
+export interface WalletCreditedEvent extends DomainEvent {
+  eventType: 'WALLET_CREDITED' | 'WALLET_CASHBACK_CREDITED' | 'WALLET_GIFT_CREDITED';
+  userId: string;
+  type: string; // TransactionType
+  amount: number; // VND dong
+  balanceAfter: number;
+  refId?: string;
+  metadata?: Record<string, unknown>;
+}
+
+export interface WalletDebitedEvent extends DomainEvent {
+  eventType: 'WALLET_DEBITED';
+  userId: string;
+  type: string;
+  amount: number;
+  balanceAfter: number;
+  refId?: string;
+}
+
+// ── Live Gift Event ───────────────────────────────────────────────────────
+export interface LiveGiftSentEvent extends DomainEvent {
+  eventType: 'LIVE_GIFT_SENT';
+  streamId: string;
+  hostUserId: string;
+  senderId: string;
+  giftType: string; // ROSE | HEART | DIAMOND | CROWN | ROCKET
+  quantity: number;
+  totalCoinValue: number; // total VND coin value = giftCoinValue * quantity
+}

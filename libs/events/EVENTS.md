@@ -11,7 +11,7 @@
 | `inventory.events`    | inventory-service | order-service, notification-service                                                         |
 | `payment.events`      | payment-service   | order-service, notification-service                                                         |
 | `user.events`         | user-service      | notification-service, feed-service                                                          |
-| `live.events`         | live-service      | feed-service, notification-service, analytics-service                                       |
+| `live.events`         | live-service      | feed-service, notification-service, analytics-service, wallet-service                       |
 | `review.events`       | review-service    | ai-service, search-service, notification-service                                            |
 | `notification.events` | any service       | notification-service                                                                        |
 | `flash.events`        | inventory-service | feed-service, notification-service, analytics-service                                       |
