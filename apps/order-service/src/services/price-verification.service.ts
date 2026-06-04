@@ -25,14 +25,14 @@
 // ============================================================
 
 import { Injectable, Logger } from '@nestjs/common';
-import { ElasticsearchService } from '@nestjs/elasticsearch';
-import { RedisClientService } from '@hypercommerce/redis';
+import type { ElasticsearchService } from '@nestjs/elasticsearch';
+import type { RedisClientService } from '@hypercommerce/redis';
 import { APP_CONSTANTS } from '@hypercommerce/common/constants/app.constants';
 import {
   NotFoundException,
   PriceMismatchException,
 } from '@hypercommerce/common/exceptions/domain.exceptions';
-import { OrderItemDto } from '../dto/order-item.dto';
+import type { OrderItemDto } from '../dto/order-item.dto';
 
 export interface VerifiedItem {
   productId: string;
@@ -58,8 +58,8 @@ export interface CatalogProduct {
   imageUrl: string;
   sellerId: string;
   categoryId: string;
-  price: number;            // base price
-  salePrice?: number;       // active flash sale price (null if no sale)
+  price: number; // base price
+  salePrice?: number; // active flash sale price (null if no sale)
   currency: string;
   variants?: Array<{
     id: string;
@@ -68,7 +68,7 @@ export interface CatalogProduct {
   }>;
 }
 
-const PRICE_CACHE_TTL = 60;  // 60 seconds — balance freshness vs DB load
+const PRICE_CACHE_TTL = 60; // 60 seconds — balance freshness vs DB load
 const TOLERANCE_PERCENT = 1; // 1% max client/server price deviation
 
 @Injectable()
@@ -91,10 +91,7 @@ export class PriceVerificationService {
    * @throws NotFoundException if product not found
    * @throws PriceMismatchException if price tampered beyond tolerance
    */
-  async verifyAndEnrich(
-    items: OrderItemDto[],
-    currency: string,
-  ): Promise<VerifiedItem[]> {
+  async verifyAndEnrich(items: OrderItemDto[], currency: string): Promise<VerifiedItem[]> {
     // Fetch all prices in parallel — one round trip per unique product
     const productIds = [...new Set(items.map((i) => i.productId))];
     const catalogMap = await this.fetchCatalogBatch(productIds);
@@ -129,15 +126,13 @@ export class PriceVerificationService {
             clientPrice: item.clientUnitPrice,
             serverPrice,
             diff: Math.abs(item.clientUnitPrice - serverPrice),
-            diffPct: (Math.abs(item.clientUnitPrice - serverPrice) / serverPrice * 100).toFixed(2),
+            diffPct: ((Math.abs(item.clientUnitPrice - serverPrice) / serverPrice) * 100).toFixed(
+              2,
+            ),
           }),
         );
 
-        throw new PriceMismatchException(
-          item.productId,
-          item.clientUnitPrice,
-          serverPrice,
-        );
+        throw new PriceMismatchException(item.productId, item.clientUnitPrice, serverPrice);
       }
 
       const variantAttrs = product.variants?.find((v) => v.id === item.variantId)?.attributes;
@@ -165,9 +160,7 @@ export class PriceVerificationService {
    * Batch fetch products: Redis L1 → Elasticsearch L2.
    * Cache results in Redis for subsequent requests.
    */
-  private async fetchCatalogBatch(
-    productIds: string[],
-  ): Promise<Map<string, CatalogProduct>> {
+  private async fetchCatalogBatch(productIds: string[]): Promise<Map<string, CatalogProduct>> {
     const result = new Map<string, CatalogProduct>();
     const cacheMisses: string[] = [];
 
@@ -216,10 +209,7 @@ export class PriceVerificationService {
    * 2. Flash sale price (salePrice field, if active)
    * 3. Base product price
    */
-  private resolveEffectivePrice(
-    product: CatalogProduct,
-    variantId?: string,
-  ): number {
+  private resolveEffectivePrice(product: CatalogProduct, variantId?: string): number {
     if (variantId) {
       const variant = product.variants?.find((v) => v.id === variantId);
       if (variant) return variant.price;

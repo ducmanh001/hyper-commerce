@@ -11,11 +11,32 @@ import {
   IsUrl,
   ArrayMaxSize,
 } from 'class-validator';
-import { DisputeReason } from '../entities/dispute.entity';
+import type { DisputeReason } from '../entities/dispute.entity';
 
 export class CreateDisputeDto {
-  @ApiProperty({ example: 'ITEM_NOT_RECEIVED', enum: ['ITEM_NOT_RECEIVED', 'ITEM_NOT_AS_DESCRIBED', 'DEFECTIVE_ITEM', 'WRONG_ITEM_SENT', 'COUNTERFEIT_ITEM', 'DAMAGED_IN_TRANSIT', 'MISSING_PARTS', 'SELLER_CANCELLED'] })
-  @IsEnum(['ITEM_NOT_RECEIVED', 'ITEM_NOT_AS_DESCRIBED', 'DEFECTIVE_ITEM', 'WRONG_ITEM_SENT', 'COUNTERFEIT_ITEM', 'DAMAGED_IN_TRANSIT', 'MISSING_PARTS', 'SELLER_CANCELLED'])
+  @ApiProperty({
+    example: 'ITEM_NOT_RECEIVED',
+    enum: [
+      'ITEM_NOT_RECEIVED',
+      'ITEM_NOT_AS_DESCRIBED',
+      'DEFECTIVE_ITEM',
+      'WRONG_ITEM_SENT',
+      'COUNTERFEIT_ITEM',
+      'DAMAGED_IN_TRANSIT',
+      'MISSING_PARTS',
+      'SELLER_CANCELLED',
+    ],
+  })
+  @IsEnum([
+    'ITEM_NOT_RECEIVED',
+    'ITEM_NOT_AS_DESCRIBED',
+    'DEFECTIVE_ITEM',
+    'WRONG_ITEM_SENT',
+    'COUNTERFEIT_ITEM',
+    'DAMAGED_IN_TRANSIT',
+    'MISSING_PARTS',
+    'SELLER_CANCELLED',
+  ])
   reason!: DisputeReason;
 
   @ApiProperty({ example: 'The package arrived but the box was empty. I have photos as evidence.' })
@@ -46,7 +67,10 @@ export class CreateDisputeDto {
 }
 
 export class ResolveDisputeDto {
-  @ApiProperty({ example: 'FULL_REFUND', enum: ['FULL_REFUND', 'PARTIAL_REFUND', 'REPLACEMENT', 'NO_ACTION', 'WITHDRAWAL'] })
+  @ApiProperty({
+    example: 'FULL_REFUND',
+    enum: ['FULL_REFUND', 'PARTIAL_REFUND', 'REPLACEMENT', 'NO_ACTION', 'WITHDRAWAL'],
+  })
   @IsEnum(['FULL_REFUND', 'PARTIAL_REFUND', 'REPLACEMENT', 'NO_ACTION', 'WITHDRAWAL'])
   resolution!: string;
 
@@ -56,7 +80,9 @@ export class ResolveDisputeDto {
   @Min(0)
   refundAmount?: number;
 
-  @ApiPropertyOptional({ example: 'Customer provided valid evidence of empty package. Full refund approved.' })
+  @ApiPropertyOptional({
+    example: 'Customer provided valid evidence of empty package. Full refund approved.',
+  })
   @IsOptional()
   @IsString()
   @MaxLength(1000)

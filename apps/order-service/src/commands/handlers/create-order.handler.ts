@@ -3,12 +3,13 @@
 // This is where ALL create-order logic lives; order.service.ts stays thin.
 
 import { Injectable, Logger } from '@nestjs/common';
-import { CreateOrderCommand } from '../create-order.command';
-import { OrderFactory } from '../../factories/order.factory';
-import { OrderStateMachine } from '../../state-machine/order-state-machine';
-import { OrderRepository } from '../../repositories/order.repository';
-import { OrderSagaOrchestrator } from '../../saga/order-saga.orchestrator';
+import type { CreateOrderCommand } from '../create-order.command';
+import type { OrderFactory } from '../../factories/order.factory';
+import type { OrderStateMachine } from '../../state-machine/order-state-machine';
+import type { OrderRepository } from '../../repositories/order.repository';
+import type { OrderSagaOrchestrator } from '../../saga/order-saga.orchestrator';
 import { ORDER_LIMITS, ORDER_ERRORS, ORDER_CACHE_KEYS } from '../../constants/order.constants';
+import type { OrderStatus } from '../../entities/order.entity';
 
 export class EmptyOrderError extends Error {
   readonly code = ORDER_ERRORS.EMPTY_CART;
@@ -70,7 +71,7 @@ export class CreateOrderHandler {
     // 4. Persist order in PENDING state — map factory OrderEntity → TypeORM Order
     const savedOrder = await this.repo.create({
       userId: orderData.userId,
-      status: orderData.status as string as import('../../entities/order.entity').OrderStatus,
+      status: orderData.status as string as OrderStatus,
       totalAmount: orderData.totalCents,
       currency: orderData.currency,
       shippingAddress: orderData.shippingAddress as Record<string, string>,
@@ -91,9 +92,11 @@ export class CreateOrderHandler {
 
     // 5. Start Saga (async: reserve stock → charge payment → confirm order)
     // Fire-and-forget: saga publishes events, order status updated via callbacks
-    this.sagaOrchestrator.start(savedOrder.id, savedOrder as unknown as Record<string, unknown>).catch((err: unknown) => {
-      this.logger.error(`Saga failed to start for order ${savedOrder.id}`, err);
-    });
+    this.sagaOrchestrator
+      .start(savedOrder.id, savedOrder as unknown as Record<string, unknown>)
+      .catch((err: unknown) => {
+        this.logger.error(`Saga failed to start for order ${savedOrder.id}`, err);
+      });
 
     return { orderId: savedOrder.id };
   }

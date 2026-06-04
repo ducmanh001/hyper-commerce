@@ -35,13 +35,13 @@ export class OrderItem {
   quantity!: number;
 
   @Column({ type: 'bigint' })
-  unitPrice!: number;  // in smallest currency unit
+  unitPrice!: number; // in smallest currency unit
 
   @Column({ type: 'bigint' })
   subtotal!: number;
 
   @Column({ type: 'jsonb', nullable: true })
-  snapshot?: Record<string, unknown>;  // Product snapshot at time of order
+  snapshot?: Record<string, unknown>; // Product snapshot at time of order
 
   @CreateDateColumn()
   createdAt!: Date;

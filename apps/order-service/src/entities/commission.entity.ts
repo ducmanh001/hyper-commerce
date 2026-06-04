@@ -25,18 +25,18 @@ import {
 } from 'typeorm';
 
 export type CommissionStatus =
-  | 'PENDING'    // order confirmed, not yet delivered
-  | 'EARNED'     // delivery confirmed, awaiting settlement
-  | 'SETTLED'    // paid out to seller
-  | 'REVERSED'   // refund occurred
-  | 'DISPUTED';  // under review
+  | 'PENDING' // order confirmed, not yet delivered
+  | 'EARNED' // delivery confirmed, awaiting settlement
+  | 'SETTLED' // paid out to seller
+  | 'REVERSED' // refund occurred
+  | 'DISPUTED'; // under review
 
 export type SellerTier = 'STANDARD' | 'PREMIUM' | 'ENTERPRISE' | 'FLAGSHIP';
 
 @Entity('commissions')
 @Index(['orderId'], { unique: true })
 @Index(['sellerId', 'status'])
-@Index(['settlementPeriod', 'status'])  // for batch settlement queries
+@Index(['settlementPeriod', 'status']) // for batch settlement queries
 export class Commission {
   @PrimaryGeneratedColumn('uuid')
   id!: string;

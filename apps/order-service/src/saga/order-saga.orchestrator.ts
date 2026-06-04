@@ -20,11 +20,12 @@
 //       → [NotificationService] send cancellation
 // ============================================================
 
-import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
-import { KafkaConsumerService, MessageMetadata } from '@hypercommerce/kafka';
-import { KafkaProducerService } from '@hypercommerce/kafka';
+import type { OnModuleInit } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
+import type { KafkaConsumerService, MessageMetadata } from '@hypercommerce/kafka';
+import type { KafkaProducerService } from '@hypercommerce/kafka';
 import { APP_CONSTANTS } from '@hypercommerce/common/constants/app.constants';
-import { OrderService } from '../order.service';
+import type { OrderService } from '../order.service';
 import { NotificationTrigger } from '../types/notification.types';
 
 interface StockReservedEvent {
@@ -79,10 +80,34 @@ export class OrderSagaOrchestrator implements OnModuleInit {
         APP_CONSTANTS.KAFKA_TOPICS.PAYMENT_FAILED,
       ],
       handlers: [
-        { topic: APP_CONSTANTS.KAFKA_TOPICS.STOCK_RESERVED, handle: this.onStockReserved.bind(this) as unknown as (m: Record<string, unknown>, meta: MessageMetadata) => Promise<void> },
-        { topic: APP_CONSTANTS.KAFKA_TOPICS.STOCK_INSUFFICIENT, handle: this.onStockInsufficient.bind(this) as unknown as (m: Record<string, unknown>, meta: MessageMetadata) => Promise<void> },
-        { topic: APP_CONSTANTS.KAFKA_TOPICS.PAYMENT_CAPTURED, handle: this.onPaymentCaptured.bind(this) as unknown as (m: Record<string, unknown>, meta: MessageMetadata) => Promise<void> },
-        { topic: APP_CONSTANTS.KAFKA_TOPICS.PAYMENT_FAILED, handle: this.onPaymentFailed.bind(this) as unknown as (m: Record<string, unknown>, meta: MessageMetadata) => Promise<void> },
+        {
+          topic: APP_CONSTANTS.KAFKA_TOPICS.STOCK_RESERVED,
+          handle: this.onStockReserved.bind(this) as unknown as (
+            m: Record<string, unknown>,
+            meta: MessageMetadata,
+          ) => Promise<void>,
+        },
+        {
+          topic: APP_CONSTANTS.KAFKA_TOPICS.STOCK_INSUFFICIENT,
+          handle: this.onStockInsufficient.bind(this) as unknown as (
+            m: Record<string, unknown>,
+            meta: MessageMetadata,
+          ) => Promise<void>,
+        },
+        {
+          topic: APP_CONSTANTS.KAFKA_TOPICS.PAYMENT_CAPTURED,
+          handle: this.onPaymentCaptured.bind(this) as unknown as (
+            m: Record<string, unknown>,
+            meta: MessageMetadata,
+          ) => Promise<void>,
+        },
+        {
+          topic: APP_CONSTANTS.KAFKA_TOPICS.PAYMENT_FAILED,
+          handle: this.onPaymentFailed.bind(this) as unknown as (
+            m: Record<string, unknown>,
+            meta: MessageMetadata,
+          ) => Promise<void>,
+        },
       ],
       maxRetries: 3,
       retryBackoffMs: 500,
@@ -95,12 +120,13 @@ export class OrderSagaOrchestrator implements OnModuleInit {
    * Inventory has locked the stock (TTL reservation).
    * Now trigger payment processing.
    */
-  private async onStockReserved(
-    event: StockReservedEvent,
-    meta: MessageMetadata,
-  ): Promise<void> {
+  private async onStockReserved(event: StockReservedEvent, meta: MessageMetadata): Promise<void> {
     this.logger.log(
-      JSON.stringify({ event: 'saga_stock_reserved', orderId: event.orderId, traceId: meta.traceId }),
+      JSON.stringify({
+        event: 'saga_stock_reserved',
+        orderId: event.orderId,
+        traceId: meta.traceId,
+      }),
     );
 
     await this.orderService.transitionState(event.orderId, 'RESERVE_STOCK');
@@ -188,10 +214,7 @@ export class OrderSagaOrchestrator implements OnModuleInit {
    * IMPORTANT: We publish order.cancelled, NOT directly release stock.
    * Each service listens to events it owns — maintains loose coupling.
    */
-  private async onPaymentFailed(
-    event: PaymentFailedEvent,
-    meta: MessageMetadata,
-  ): Promise<void> {
+  private async onPaymentFailed(event: PaymentFailedEvent, meta: MessageMetadata): Promise<void> {
     this.logger.warn(
       JSON.stringify({
         event: 'saga_payment_failed',

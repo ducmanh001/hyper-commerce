@@ -24,9 +24,10 @@
 
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, DataSource } from 'typeorm';
-import { RedisClientService } from '@hypercommerce/redis';
-import { Commission, CommissionStatus, SellerTier } from '../entities/commission.entity';
+import type { Repository, DataSource } from 'typeorm';
+import type { RedisClientService } from '@hypercommerce/redis';
+import type { CommissionStatus, SellerTier } from '../entities/commission.entity';
+import { Commission } from '../entities/commission.entity';
 
 // ── Rate Tables ───────────────────────────────────────────────
 
@@ -45,13 +46,13 @@ const CATEGORY_SURCHARGES: Record<string, number> = {
 };
 
 const PAYMENT_FEE_RATES: Record<string, number> = {
-  CARD: 2.9,    // Stripe %
-  WALLET: 0.5,  // MoMo/ZaloPay
+  CARD: 2.9, // Stripe %
+  WALLET: 0.5, // MoMo/ZaloPay
   BANK_TRANSFER: 0.0,
   COD: 0.0,
 };
 const PAYMENT_FIXED_FEE_VND: Record<string, number> = {
-  CARD: 7_000,  // ~30¢ USD
+  CARD: 7_000, // ~30¢ USD
   WALLET: 0,
   BANK_TRANSFER: 3_000,
   COD: 0,
@@ -153,10 +154,7 @@ export class CommissionService {
     const commission = await this.commissionRepo.findOne({ where: { orderId } });
     if (!commission || commission.status === 'REVERSED') return;
 
-    await this.commissionRepo.update(
-      { orderId },
-      { status: 'REVERSED' as CommissionStatus },
-    );
+    await this.commissionRepo.update({ orderId }, { status: 'REVERSED' as CommissionStatus });
 
     this.logger.log(
       JSON.stringify({

@@ -40,7 +40,7 @@ export class Order {
   status!: OrderStatus;
 
   @Column({ type: 'bigint' })
-  totalAmount!: number;  // in smallest currency unit (VND, cents)
+  totalAmount!: number; // in smallest currency unit (VND, cents)
 
   @Column({ type: 'varchar', length: 10, default: 'VND' })
   currency!: string;

@@ -10,7 +10,7 @@
 // Each transition maps to a Saga compensation action if reversed.
 // ============================================================
 
-import { APP_CONSTANTS } from '@hypercommerce/common/constants/app.constants';
+import type { APP_CONSTANTS } from '@hypercommerce/common/constants/app.constants';
 
 export type OrderStatus = keyof typeof APP_CONSTANTS.ORDER_STATUS;
 export type OrderTransition = string;

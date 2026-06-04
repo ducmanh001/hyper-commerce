@@ -2,10 +2,7 @@
 // Creates Order + OrderItem entities from CreateOrderDto.
 // Encapsulates all entity construction logic — service files stay clean.
 
-import {
-  OrderStatus,
-  ORDER_LIMITS,
-} from '../constants/order.constants';
+import { OrderStatus, ORDER_LIMITS } from '../constants/order.constants';
 
 export interface CreateOrderInput {
   userId: string;
@@ -91,9 +88,7 @@ export class OrderFactory {
     };
   }
 
-  private createOrderItem(
-    item: CreateOrderInput['items'][0],
-  ): OrderItemEntity {
+  private createOrderItem(item: CreateOrderInput['items'][0]): OrderItemEntity {
     const quantity = Math.min(item.quantity, ORDER_LIMITS.MAX_QUANTITY_PER_ITEM);
     return {
       productId: item.productId,

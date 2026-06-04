@@ -2,11 +2,7 @@
 // Validates and applies order status transitions.
 // Extracted from order.service.ts to keep each file focused.
 
-import {
-  OrderStatus,
-  ORDER_TRANSITIONS,
-  ORDER_ERRORS,
-} from '../constants/order.constants';
+import { OrderStatus, ORDER_TRANSITIONS, ORDER_ERRORS } from '../constants/order.constants';
 
 export class InvalidOrderTransitionError extends Error {
   readonly code = ORDER_ERRORS.INVALID_STATUS_TRANSITION;
@@ -51,8 +47,10 @@ export class OrderStateMachine {
    * Returns true if the order can still be cancelled by the user.
    */
   isCancellableByUser(status: OrderStatus): boolean {
-    return this.canTransition(status, OrderStatus.CANCELLED) &&
+    return (
+      this.canTransition(status, OrderStatus.CANCELLED) &&
       status !== OrderStatus.SHIPPED &&
-      status !== OrderStatus.DELIVERED;
+      status !== OrderStatus.DELIVERED
+    );
   }
 }

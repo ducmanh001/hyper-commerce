@@ -6,7 +6,8 @@
 import { NestFactory } from '@nestjs/core';
 import { VersioningType, Logger } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-import { MicroserviceOptions, Transport } from '@nestjs/microservices';
+import type { MicroserviceOptions } from '@nestjs/microservices';
+import { Transport } from '@nestjs/microservices';
 import { ConfigService } from '@nestjs/config';
 import { AppModule } from './app.module';
 import { GlobalExceptionFilter } from '@hypercommerce/common';
@@ -50,17 +51,11 @@ async function bootstrap() {
       .addBearerAuth()
       .addTag('orders', 'Order CRUD and lifecycle')
       .build();
-    SwaggerModule.setup(
-      'api/docs',
-      app,
-      SwaggerModule.createDocument(app, swaggerConfig),
-    );
+    SwaggerModule.setup('api/docs', app, SwaggerModule.createDocument(app, swaggerConfig));
   }
 
   // ── Kafka microservice (listen for saga events) ──────────
-  const kafkaBrokers = config
-    .get<string>('KAFKA_BROKERS', 'localhost:9092')
-    .split(',');
+  const kafkaBrokers = config.get<string>('KAFKA_BROKERS', 'localhost:9092').split(',');
 
   app.connectMicroservice<MicroserviceOptions>({
     transport: Transport.KAFKA,

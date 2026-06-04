@@ -1,13 +1,8 @@
-import {
-  Injectable,
-  CanActivate,
-  ExecutionContext,
-  ForbiddenException,
-  NotFoundException,
-} from '@nestjs/common';
-import { Request } from 'express';
-import { JwtPayload } from '@hypercommerce/common';
-import { OrderRepository } from '../repositories/order.repository';
+import type { CanActivate, ExecutionContext } from '@nestjs/common';
+import { Injectable, ForbiddenException, NotFoundException } from '@nestjs/common';
+import type { Request } from 'express';
+import type { JwtPayload } from '@hypercommerce/common';
+import type { OrderRepository } from '../repositories/order.repository';
 
 /**
  * OrderOwnershipGuard

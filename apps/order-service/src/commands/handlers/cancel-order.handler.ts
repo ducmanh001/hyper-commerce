@@ -1,10 +1,10 @@
 // apps/order-service/src/commands/handlers/cancel-order.handler.ts
 
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
-import { CancelOrderCommand } from '../cancel-order.command';
-import { OrderRepository } from '../../repositories/order.repository';
-import { OrderStateMachine } from '../../state-machine/order-state-machine';
-import { OrderSagaOrchestrator } from '../../saga/order-saga.orchestrator';
+import type { CancelOrderCommand } from '../cancel-order.command';
+import type { OrderRepository } from '../../repositories/order.repository';
+import type { OrderStateMachine } from '../../state-machine/order-state-machine';
+import type { OrderSagaOrchestrator } from '../../saga/order-saga.orchestrator';
 import { ORDER_ERRORS, ORDER_KAFKA_TOPICS, OrderStatus } from '../../constants/order.constants';
 
 export class OrderNotCancellableError extends Error {
@@ -48,10 +48,7 @@ export class CancelOrderHandler {
     }
 
     // Transition to CANCELLED
-    this.stateMachine.assertTransition(
-      order.status as OrderStatus,
-      OrderStatus.CANCELLED,
-    );
+    this.stateMachine.assertTransition(order.status as OrderStatus, OrderStatus.CANCELLED);
 
     await this.repo.updateStatus(cmd.orderId, OrderStatus.CANCELLED, {
       cancelledAt: new Date(),

@@ -1,8 +1,8 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
-import { OrderRepository, PaginatedOrders } from '../repositories/order.repository';
+import type { OrderRepository, PaginatedOrders } from '../repositories/order.repository';
 import { OrderResponseDto } from '../dto/order-response.dto';
-import { OrderItemRepository } from '../repositories/order-item.repository';
-import { CursorPaginationDto } from '@hypercommerce/common';
+import type { OrderItemRepository } from '../repositories/order-item.repository';
+import type { CursorPaginationDto } from '@hypercommerce/common';
 
 /**
  * OrderQueryService — handles all READ operations.

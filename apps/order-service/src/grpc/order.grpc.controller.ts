@@ -5,8 +5,8 @@
 import { Controller, UseFilters } from '@nestjs/common';
 import { GrpcMethod } from '@nestjs/microservices';
 import { GrpcExceptionFilter } from '@hypercommerce/grpc';
-import { OrderQueryHandler } from '../queries/handlers/order-query.handler';
-import { CancelOrderHandler } from '../commands/handlers/cancel-order.handler';
+import type { OrderQueryHandler } from '../queries/handlers/order-query.handler';
+import type { CancelOrderHandler } from '../commands/handlers/cancel-order.handler';
 import { GetOrderQuery, ListOrdersQuery } from '../queries/order.queries';
 import { CancelOrderCommand } from '../commands/cancel-order.command';
 
@@ -48,9 +48,7 @@ export class OrderGrpcController {
 
   @GrpcMethod('OrderService', 'GetOrder')
   async getOrder(data: GetOrderRequest) {
-    const order = await this.queryHandler.getOrder(
-      new GetOrderQuery(data.orderId),
-    );
+    const order = await this.queryHandler.getOrder(new GetOrderQuery(data.orderId));
     return this.mapToResponse(order);
   }
 
@@ -67,12 +65,7 @@ export class OrderGrpcController {
   @GrpcMethod('OrderService', 'GetOrdersByUser')
   async getOrdersByUser(data: GetOrdersByUserRequest) {
     const result = await this.queryHandler.listOrders(
-      new ListOrdersQuery(
-        data.userId,
-        data.page,
-        data.pageSize,
-        data.statusFilter,
-      ),
+      new ListOrdersQuery(data.userId, data.page, data.pageSize, data.statusFilter),
     );
     return {
       orders: result.orders.map((o: unknown) => this.mapToResponse(o)),
@@ -98,12 +91,10 @@ export class OrderGrpcController {
       totalAmount: o['totalCents'],
       currency: o['currency'] ?? 'VND',
       items: (o['items'] as unknown[]) ?? [],
-      createdAt: o['createdAt'] instanceof Date
-        ? (o['createdAt'] as Date).getTime()
-        : o['createdAt'],
-      updatedAt: o['updatedAt'] instanceof Date
-        ? (o['updatedAt'] as Date).getTime()
-        : o['updatedAt'],
+      createdAt:
+        o['createdAt'] instanceof Date ? (o['createdAt'] as Date).getTime() : o['createdAt'],
+      updatedAt:
+        o['updatedAt'] instanceof Date ? (o['updatedAt'] as Date).getTime() : o['updatedAt'],
     };
   }
 }

@@ -23,17 +23,22 @@ import {
 } from '@nestjs/swagger';
 import { JwtAuthGuard } from '@hypercommerce/common';
 import { RolesGuard } from '@hypercommerce/common';
-import { CurrentUser, JwtPayload } from '@hypercommerce/common';
+import type { JwtPayload } from '@hypercommerce/common';
+import { CurrentUser } from '@hypercommerce/common';
 import { Roles } from '@hypercommerce/common';
-import { CursorPaginationDto } from '@hypercommerce/common';
-import { OrderService } from './order.service';
-import { OrderQueryService } from './services/order-query.service';
-import { DisputeService } from './services/dispute.service';
-import { CommissionService } from './services/commission.service';
-import { CreateOrderDto } from './dto/create-order.dto';
-import { UpdateOrderStatusDto } from './dto/update-order-status.dto';
+import type { CursorPaginationDto } from '@hypercommerce/common';
+import type { OrderService } from './order.service';
+import type { OrderQueryService } from './services/order-query.service';
+import type { DisputeService } from './services/dispute.service';
+import type { CommissionService } from './services/commission.service';
+import type { CreateOrderDto } from './dto/create-order.dto';
+import type { UpdateOrderStatusDto } from './dto/update-order-status.dto';
 import { OrderResponseDto } from './dto/order-response.dto';
-import { CreateDisputeDto, ResolveDisputeDto, SellerDisputeResponseDto } from './dto/dispute.dto';
+import type {
+  CreateDisputeDto,
+  ResolveDisputeDto,
+  SellerDisputeResponseDto,
+} from './dto/dispute.dto';
 import { OrderOwnershipGuard } from './guards/order-ownership.guard';
 
 @ApiTags('orders')
@@ -70,10 +75,7 @@ export class OrderController {
   @ApiOperation({ summary: 'List my orders (cursor pagination)' })
   @ApiQuery({ name: 'limit', required: false, type: Number })
   @ApiQuery({ name: 'cursor', required: false, type: String })
-  async listMyOrders(
-    @CurrentUser() user: JwtPayload,
-    @Query() pagination: CursorPaginationDto,
-  ) {
+  async listMyOrders(@CurrentUser() user: JwtPayload, @Query() pagination: CursorPaginationDto) {
     return this.orderQueryService.findByUserId(user.sub, pagination);
   }
 
@@ -118,10 +120,7 @@ export class OrderController {
   @HttpCode(HttpStatus.OK)
   @UseGuards(OrderOwnershipGuard)
   @ApiOperation({ summary: 'Cancel an order (user-initiated)' })
-  async cancelOrder(
-    @Param('id', ParseUUIDPipe) id: string,
-    @CurrentUser() user: JwtPayload,
-  ) {
+  async cancelOrder(@Param('id', ParseUUIDPipe) id: string, @CurrentUser() user: JwtPayload) {
     return this.orderService.cancelOrder(id, user.sub, 'USER_REQUESTED');
   }
 
@@ -144,9 +143,7 @@ export class OrderController {
   @Get(':id/disputes')
   @UseGuards(OrderOwnershipGuard)
   @ApiOperation({ summary: 'Get all disputes for an order' })
-  async getOrderDisputes(
-    @Param('id', ParseUUIDPipe) orderId: string,
-  ) {
+  async getOrderDisputes(@Param('id', ParseUUIDPipe) orderId: string) {
     return this.disputeService.getDisputesByOrder(orderId);
   }
 

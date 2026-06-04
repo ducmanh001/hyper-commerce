@@ -1,11 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import {
-  IsString,
-  IsNotEmpty,
-  IsOptional,
-  MaxLength,
-  Matches,
-} from 'class-validator';
+import { IsString, IsNotEmpty, IsOptional, MaxLength, Matches } from 'class-validator';
 
 /**
  * ShippingAddressDto — validated address object.

@@ -26,19 +26,19 @@ export type ShippingZone = 'SAME_CITY' | 'SAME_REGION' | 'CROSS_REGION';
 
 export interface ShippingCalculationInput {
   method: ShippingMethod;
-  originCity: string;     // seller warehouse city
+  originCity: string; // seller warehouse city
   destinationCity: string;
-  weightGrams: number;    // total order weight
-  orderTotal: number;     // to check free shipping threshold
-  sellerId?: string;      // for seller-subsidized shipping lookup
+  weightGrams: number; // total order weight
+  orderTotal: number; // to check free shipping threshold
+  sellerId?: string; // for seller-subsidized shipping lookup
   freeShippingVoucher?: boolean;
 }
 
 export interface ShippingResult {
-  fee: number;         // VND, 0 if free
+  fee: number; // VND, 0 if free
   method: ShippingMethod;
   zone: ShippingZone;
-  estimatedDays: string;  // e.g. "2-3 ngày"
+  estimatedDays: string; // e.g. "2-3 ngày"
   isFree: boolean;
   freeShippingReason?: 'VOUCHER' | 'ORDER_THRESHOLD' | 'SELLER_SUBSIDY';
 }
@@ -55,7 +55,7 @@ const CITY_REGION: Record<string, string> = {
   'binh duong': 'SOUTH',
   'dong nai': 'SOUTH',
   'da nang': 'CENTRAL',
-  'hue': 'CENTRAL',
+  hue: 'CENTRAL',
   'quy nhon': 'CENTRAL',
   'can tho': 'MEKONG',
   'an giang': 'MEKONG',
@@ -88,8 +88,8 @@ const BASE_RATES: Record<ShippingZone, Record<WeightTier, number>> = {
 
 const METHOD_MULTIPLIERS: Record<ShippingMethod, number> = {
   STANDARD: 1.0,
-  EXPRESS: 1.8,    // 80% surcharge
-  SAME_DAY: 3.5,   // 250% surcharge — only available SAME_CITY
+  EXPRESS: 1.8, // 80% surcharge
+  SAME_DAY: 3.5, // 250% surcharge — only available SAME_CITY
 };
 
 const ESTIMATED_DAYS: Record<ShippingZone, Record<ShippingMethod, string>> = {
@@ -123,8 +123,7 @@ export class ShippingCalculatorService {
     const base = BASE_RATES[zone][weightTier];
 
     // SAME_DAY only available same city
-    const method =
-      input.method === 'SAME_DAY' && zone !== 'SAME_CITY' ? 'EXPRESS' : input.method;
+    const method = input.method === 'SAME_DAY' && zone !== 'SAME_CITY' ? 'EXPRESS' : input.method;
 
     const rawFee = Math.round(base * METHOD_MULTIPLIERS[method]);
 

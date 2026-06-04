@@ -53,11 +53,7 @@ export class OrderPriceHelper {
    * Throws PriceMismatchException if too far off.
    * This prevents price tampering at the API layer.
    */
-  validateClientPrice(
-    clientPrice: number,
-    serverPrice: number,
-    tolerancePercent = 1,
-  ): boolean {
+  validateClientPrice(clientPrice: number, serverPrice: number, tolerancePercent = 1): boolean {
     if (serverPrice === 0) return clientPrice === 0;
     const diff = Math.abs(clientPrice - serverPrice);
     const pct = (diff / serverPrice) * 100;
@@ -68,10 +64,7 @@ export class OrderPriceHelper {
    * Compute shipping fee based on method and address.
    * Real impl calls logistics-service for live rates.
    */
-  computeShippingFee(
-    method: 'STANDARD' | 'EXPRESS' | 'SAME_DAY',
-    destCity: string,
-  ): number {
+  computeShippingFee(method: 'STANDARD' | 'EXPRESS' | 'SAME_DAY', destCity: string): number {
     const baseRates: Record<string, number> = {
       STANDARD: 25_000,
       EXPRESS: 50_000,

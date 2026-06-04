@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsString, IsIn } from 'class-validator';
-import { OrderTransition } from '../saga/order-state-machine';
+import type { OrderTransition } from '../saga/order-state-machine';
 
 export class UpdateOrderStatusDto {
   @ApiProperty({

@@ -8,6 +8,7 @@ import { KafkaConsumerService } from '@hypercommerce/kafka';
 import { RedisClientService } from '@hypercommerce/redis';
 import { Order } from './entities/order.entity';
 import { OrderItem } from './entities/order-item.entity';
+import { OutboxEvent } from './entities/outbox-event.entity';
 import { Voucher } from './entities/voucher.entity';
 import { VoucherUsage } from './entities/voucher-usage.entity';
 import { Commission } from './entities/commission.entity';
@@ -18,6 +19,7 @@ import { OrderRepository } from './repositories/order.repository';
 import { OrderItemRepository } from './repositories/order-item.repository';
 import { IdempotencyService } from './idempotency/idempotency.service';
 import { OrderSagaOrchestrator } from './saga/order-saga.orchestrator';
+import { OutboxProcessorService } from './saga/outbox-processor.service';
 import { OrderQueryService } from './services/order-query.service';
 import { OrderPriceHelper } from './helpers/order-price.helper';
 import { PriceVerificationService } from './services/price-verification.service';
@@ -28,7 +30,15 @@ import { ShippingCalculatorService } from './services/shipping-calculator.servic
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Order, OrderItem, Voucher, VoucherUsage, Commission, Dispute]),
+    TypeOrmModule.forFeature([
+      Order,
+      OrderItem,
+      OutboxEvent,
+      Voucher,
+      VoucherUsage,
+      Commission,
+      Dispute,
+    ]),
     ConfigModule,
     ElasticsearchModule.registerAsync({
       useFactory: (config: ConfigService) => ({
@@ -58,6 +68,8 @@ import { ShippingCalculatorService } from './services/shipping-calculator.servic
     // Domain helpers
     IdempotencyService,
     OrderSagaOrchestrator,
+    // Outbox pattern — polls DB and publishes to Kafka reliably
+    OutboxProcessorService,
     OrderPriceHelper,
   ],
   exports: [OrderService, OrderRepository, CommissionService, VoucherService],

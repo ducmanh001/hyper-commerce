@@ -1,15 +1,10 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import {
-  Repository,
-  DataSource,
-  FindOptionsWhere,
-  MoreThanOrEqual,
-  LessThanOrEqual,
-  Between,
-} from 'typeorm';
-import { Order, OrderStatus } from '../entities/order.entity';
-import { CursorPaginationDto } from '@hypercommerce/common';
+import type { Repository, DataSource } from 'typeorm';
+import { FindOptionsWhere, MoreThanOrEqual, LessThanOrEqual, Between } from 'typeorm';
+import type { OrderStatus } from '../entities/order.entity';
+import { Order } from '../entities/order.entity';
+import type { CursorPaginationDto } from '@hypercommerce/common';
 
 export interface OrderStats {
   totalOrders: number;
@@ -68,10 +63,7 @@ export class OrderRepository {
    * Cursor-based pagination — O(log n) via index seek.
    * cursor = base64(createdAt + ":" + id) for stable ordering.
    */
-  async findByUserId(
-    userId: string,
-    pagination: CursorPaginationDto,
-  ): Promise<PaginatedOrders> {
+  async findByUserId(userId: string, pagination: CursorPaginationDto): Promise<PaginatedOrders> {
     const limit = pagination.limit ?? 20;
     const qb = this.repo
       .createQueryBuilder('o')
@@ -83,10 +75,10 @@ export class OrderRepository {
 
     if (pagination.cursor) {
       const { createdAt, id } = this.decodeCursor(pagination.cursor);
-      qb.andWhere(
-        '(o.createdAt < :createdAt OR (o.createdAt = :createdAt AND o.id < :id))',
-        { createdAt, id },
-      );
+      qb.andWhere('(o.createdAt < :createdAt OR (o.createdAt = :createdAt AND o.id < :id))', {
+        createdAt,
+        id,
+      });
     }
 
     const rows = await qb.getMany();
@@ -96,9 +88,7 @@ export class OrderRepository {
 
     return {
       items,
-      nextCursor: hasMore && lastItem
-        ? this.encodeCursor(lastItem.createdAt, lastItem.id)
-        : null,
+      nextCursor: hasMore && lastItem ? this.encodeCursor(lastItem.createdAt, lastItem.id) : null,
       total: await this.repo.count({ where: { userId } }),
     };
   }
@@ -117,7 +107,10 @@ export class OrderRepository {
 
     if (pagination.cursor) {
       const { createdAt, id } = this.decodeCursor(pagination.cursor);
-      qb.andWhere('(o.createdAt < :createdAt OR (o.createdAt = :createdAt AND o.id < :id))', { createdAt, id });
+      qb.andWhere('(o.createdAt < :createdAt OR (o.createdAt = :createdAt AND o.id < :id))', {
+        createdAt,
+        id,
+      });
     }
 
     const rows = await qb.getMany();
@@ -127,9 +120,7 @@ export class OrderRepository {
 
     return {
       items,
-      nextCursor: hasMore && lastItem
-        ? this.encodeCursor(lastItem.createdAt, lastItem.id)
-        : null,
+      nextCursor: hasMore && lastItem ? this.encodeCursor(lastItem.createdAt, lastItem.id) : null,
       total: await this.repo.count({ where: { sellerId } }),
     };
   }
@@ -192,7 +183,17 @@ export class OrderRepository {
   async updateStatus(
     id: string,
     status: OrderStatus,
-    extra?: Partial<Pick<Order, 'cancelledAt' | 'cancellationReason' | 'cancelledBy' | 'confirmedAt' | 'completedAt' | 'refundedAt'>>,
+    extra?: Partial<
+      Pick<
+        Order,
+        | 'cancelledAt'
+        | 'cancellationReason'
+        | 'cancelledBy'
+        | 'confirmedAt'
+        | 'completedAt'
+        | 'refundedAt'
+      >
+    >,
   ): Promise<void> {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     await this.repo.update(id, { status, ...(extra ?? {}) } as any);
@@ -212,7 +213,6 @@ export class OrderRepository {
     version: number,
     changes: Omit<Partial<Order>, 'metadata'> & { metadata?: Record<string, unknown> },
   ): Promise<number> {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const result = await this.repo
       .createQueryBuilder()
       .update(Order)

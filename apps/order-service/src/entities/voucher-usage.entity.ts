@@ -4,16 +4,10 @@
 // Enables per-user limit enforcement and abuse detection.
 // ============================================================
 
-import {
-  Entity,
-  PrimaryGeneratedColumn,
-  Column,
-  CreateDateColumn,
-  Index,
-} from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, Index } from 'typeorm';
 
 @Entity('voucher_usages')
-@Index(['voucherId', 'userId'])  // per-user usage count lookup
+@Index(['voucherId', 'userId']) // per-user usage count lookup
 @Index(['orderId'], { unique: true }) // one voucher per order
 export class VoucherUsage {
   @PrimaryGeneratedColumn('uuid')

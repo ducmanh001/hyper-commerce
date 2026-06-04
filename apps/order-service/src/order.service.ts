@@ -14,10 +14,10 @@
 
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, DataSource, EntityManager } from 'typeorm';
+import type { Repository, DataSource, EntityManager } from 'typeorm';
 import { v4 as uuidv4 } from 'uuid';
-import { KafkaProducerService } from '@hypercommerce/kafka';
-import { RedisClientService } from '@hypercommerce/redis';
+import type { KafkaProducerService } from '@hypercommerce/kafka';
+import type { RedisClientService } from '@hypercommerce/redis';
 import { APP_CONSTANTS } from '@hypercommerce/common/constants/app.constants';
 import {
   NotFoundException,
@@ -25,16 +25,20 @@ import {
   OrderStateTransitionException,
   ForbiddenException,
 } from '@hypercommerce/common/exceptions/domain.exceptions';
-import { Order, OrderStatus } from './entities/order.entity';
+import type { OrderStatus } from './entities/order.entity';
+import { Order } from './entities/order.entity';
 import { OrderItem } from './entities/order-item.entity';
-import { IdempotencyService } from './idempotency/idempotency.service';
-import { OrderStateмашина, OrderTransition } from './saga/order-state-machine';
-import { CreateOrderDto, OrderResponseDto } from './dto';
-import { OrderRepository } from './repositories/order.repository';
-import { PriceVerificationService } from './services/price-verification.service';
-import { VoucherService } from './services/voucher.service';
-import { CommissionService } from './services/commission.service';
-import { ShippingCalculatorService } from './services/shipping-calculator.service';
+import { OutboxEvent, OutboxEventStatus } from './entities/outbox-event.entity';
+import type { IdempotencyService } from './idempotency/idempotency.service';
+import type { OrderTransition } from './saga/order-state-machine';
+import { OrderStateмашина } from './saga/order-state-machine';
+import type { CreateOrderDto } from './dto';
+import { OrderResponseDto } from './dto';
+import type { OrderRepository } from './repositories/order.repository';
+import type { PriceVerificationService } from './services/price-verification.service';
+import type { VoucherService } from './services/voucher.service';
+import type { CommissionService } from './services/commission.service';
+import type { ShippingCalculatorService } from './services/shipping-calculator.service';
 
 @Injectable()
 export class OrderService {
@@ -68,11 +72,15 @@ export class OrderService {
    */
   async createOrder(dto: CreateOrderDto, userId: string): Promise<OrderResponseDto> {
     // ── Idempotency check ──────────────────────────────────
-    const cached = await this.idempotency.getResult<OrderResponseDto>(
-      dto.idempotencyKey ?? '',
-    );
+    const cached = await this.idempotency.getResult<OrderResponseDto>(dto.idempotencyKey ?? '');
     if (cached && dto.idempotencyKey) {
-      this.logger.log(JSON.stringify({ event: 'order_idempotent_hit', idempotencyKey: dto.idempotencyKey, userId }));
+      this.logger.log(
+        JSON.stringify({
+          event: 'order_idempotent_hit',
+          idempotencyKey: dto.idempotencyKey,
+          userId,
+        }),
+      );
       return cached;
     }
 
@@ -99,8 +107,9 @@ export class OrderService {
       const shipping = dto.shippingAddress
         ? this.shippingCalculator.calculate({
             method: (dto.shippingMethod as 'STANDARD' | 'EXPRESS' | 'SAME_DAY') ?? 'STANDARD',
-            originCity: 'tp.hcm',   // TODO: fetch from seller warehouse location
-            destinationCity: (dto.shippingAddress as unknown as Record<string, string>)['city'] ?? 'tp.hcm',
+            originCity: 'tp.hcm', // TODO: fetch from seller warehouse location
+            destinationCity:
+              (dto.shippingAddress as unknown as Record<string, string>)['city'] ?? 'tp.hcm',
             weightGrams: verifiedItems.reduce((sum, item) => sum + item.quantity * 500, 0), // 500g default per item
             orderTotal: subtotal,
             freeShippingVoucher: false, // updated below if voucher is FREE_SHIPPING
@@ -159,7 +168,7 @@ export class OrderService {
             productId: item.productId,
             variantId: item.variantId,
             quantity: item.quantity,
-            unitPrice: item.verifiedUnitPrice,  // ← SERVER PRICE, not client
+            unitPrice: item.verifiedUnitPrice, // ← SERVER PRICE, not client
             subtotal: item.subtotal,
             productName: item.snapshot.name,
             sellerId: item.snapshot.sellerId,
@@ -184,29 +193,40 @@ export class OrderService {
         voucherReserved = null; // committed, no need to rollback
       }
 
-      // ── STEP 6: Publish Saga trigger event ─────────────────
-      await this.kafka.publish({
-        topic: APP_CONSTANTS.KAFKA_TOPICS.ORDER_EVENTS,
-        partitionKey: dto.sellerId ?? orderId,
-        value: {
-          type: 'ORDER_CREATED',
-          orderId,
-          userId,
-          sellerId: dto.sellerId,
-          items: verifiedItems.map((i) => ({
-            productId: i.productId,
-            variantId: i.variantId,
-            quantity: i.quantity,
-            unitPrice: i.verifiedUnitPrice,  // verified prices in event too
-          })),
-          totalAmount: order.totalAmount,
-          subtotal,
-          shippingFee,
-          discountAmount,
-          currency: order.currency,
-          idempotencyKey: dto.idempotencyKey,
-          timestamp: new Date().toISOString(),
-        },
+      // ── STEP 6: Write Saga event to Outbox (same transaction as order) ──
+      // OUTBOX PATTERN: event is written atomically with the order.
+      // OutboxProcessorService polls and publishes to Kafka separately.
+      // Eliminates dual-write risk: if Kafka is down, event stays in DB.
+      await this.dataSource.transaction(async (manager: EntityManager) => {
+        const outboxEvent = manager.create(OutboxEvent, {
+          id: uuidv4(),
+          aggregateType: 'Order',
+          aggregateId: orderId,
+          topic: APP_CONSTANTS.KAFKA_TOPICS.ORDER_EVENTS,
+          partitionKey: dto.sellerId ?? orderId,
+          payload: {
+            type: 'ORDER_CREATED',
+            orderId,
+            userId,
+            sellerId: dto.sellerId,
+            items: verifiedItems.map((i) => ({
+              productId: i.productId,
+              variantId: i.variantId,
+              quantity: i.quantity,
+              unitPrice: i.verifiedUnitPrice,
+            })),
+            totalAmount: order.totalAmount,
+            subtotal,
+            shippingFee,
+            discountAmount,
+            currency: order.currency,
+            idempotencyKey: dto.idempotencyKey,
+            timestamp: new Date().toISOString(),
+          },
+          status: OutboxEventStatus.PENDING,
+          attemptCount: 0,
+        });
+        await manager.save(OutboxEvent, outboxEvent);
       });
 
       const response = OrderResponseDto.fromEntity(order, []);
@@ -235,9 +255,9 @@ export class OrderService {
     } catch (err) {
       // Rollback voucher reservation if order creation failed
       if (voucherReserved) {
-        await this.voucherService.rollbackUsage(voucherReserved, userId).catch((e) =>
-          this.logger.error(`Voucher rollback failed: ${String(e)}`),
-        );
+        await this.voucherService
+          .rollbackUsage(voucherReserved, userId)
+          .catch((e) => this.logger.error(`Voucher rollback failed: ${String(e)}`));
       }
       throw err;
     } finally {
@@ -249,10 +269,7 @@ export class OrderService {
    * Transition order state — called by Saga event handlers.
    * Uses optimistic locking to prevent concurrent state corruption.
    */
-  async transitionState(
-    orderId: string,
-    transition: OrderTransition,
-  ): Promise<Order> {
+  async transitionState(orderId: string, transition: OrderTransition): Promise<Order> {
     const order = await this.orderRepo.findOne({ where: { id: orderId } });
     if (!order) throw new NotFoundException('Order', orderId);
 
@@ -279,7 +296,11 @@ export class OrderService {
       .execute();
 
     if (!result.affected || result.affected === 0) {
-      throw new OrderStateTransitionException(orderId, order.status, `${transition} (concurrent conflict)`);
+      throw new OrderStateTransitionException(
+        orderId,
+        order.status,
+        `${transition} (concurrent conflict)`,
+      );
     }
 
     const updated = result.raw[0] as Order;
@@ -289,14 +310,16 @@ export class OrderService {
       const sellerId = order.sellerId;
       const orderGmv = order.totalAmount;
       // Fire-and-forget: don't block order confirmation on commission creation
-      this.commissionService.createCommission({
-        orderId,
-        sellerId,
-        orderGmv,
-        paymentMethod: order.paymentMethod ?? 'UNKNOWN',
-      }).catch((e) =>
-        this.logger.error(`Commission creation failed for order ${orderId}: ${String(e)}`),
-      );
+      this.commissionService
+        .createCommission({
+          orderId,
+          sellerId,
+          orderGmv,
+          paymentMethod: order.paymentMethod ?? 'UNKNOWN',
+        })
+        .catch((e) =>
+          this.logger.error(`Commission creation failed for order ${orderId}: ${String(e)}`),
+        );
     }
 
     return updated;
@@ -317,11 +340,7 @@ export class OrderService {
    * Cancel an order — user-initiated.
    * Only cancellable in PENDING or STOCK_RESERVED state.
    */
-  async cancelOrder(
-    orderId: string,
-    userId: string,
-    reason: string,
-  ): Promise<Order> {
+  async cancelOrder(orderId: string, userId: string, reason: string): Promise<Order> {
     const order = await this.orderRepo.findOne({ where: { id: orderId } });
     if (!order) throw new NotFoundException('Order', orderId);
     if (order.userId !== userId) {

@@ -56,7 +56,7 @@ export type ResolutionType =
 @Index(['orderId'])
 @Index(['buyerId', 'status'])
 @Index(['sellerId', 'status'])
-@Index(['status', 'respondByDeadline'])  // for escalation scheduler
+@Index(['status', 'respondByDeadline']) // for escalation scheduler
 export class Dispute {
   @PrimaryGeneratedColumn('uuid')
   id!: string;

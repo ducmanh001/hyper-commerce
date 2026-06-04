@@ -16,7 +16,7 @@
 // ============================================================
 
 import { Injectable, Logger } from '@nestjs/common';
-import { RedisClientService } from '@hypercommerce/redis';
+import type { RedisClientService } from '@hypercommerce/redis';
 import { APP_CONSTANTS } from '@hypercommerce/common/constants/app.constants';
 
 export interface IdempotencyRecord<T> {
@@ -79,14 +79,9 @@ export class IdempotencyService {
    *
    * Uses SET NX (Set if Not eXists) — atomic in Redis.
    */
-  async tryAcquireProcessingLock(
-    idempotencyKey: string,
-    ttlSeconds = 30,
-  ): Promise<boolean> {
+  async tryAcquireProcessingLock(idempotencyKey: string, ttlSeconds = 30): Promise<boolean> {
     const lockKey = `${this.PREFIX}lock:${idempotencyKey}`;
-    const result = await this.redis
-      .getClient()
-      .set(lockKey, '1', 'EX', ttlSeconds, 'NX');
+    const result = await this.redis.getClient().set(lockKey, '1', 'EX', ttlSeconds, 'NX');
 
     return result === 'OK';
   }

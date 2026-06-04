@@ -20,17 +20,18 @@
 
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { KafkaProducerService } from '@hypercommerce/kafka';
+import type { Repository } from 'typeorm';
+import type { KafkaProducerService } from '@hypercommerce/kafka';
 import {
   NotFoundException,
   ForbiddenException,
   ConflictException,
 } from '@hypercommerce/common/exceptions/domain.exceptions';
 import { APP_CONSTANTS } from '@hypercommerce/common/constants/app.constants';
-import { Dispute, DisputeReason, DisputeStatus, ResolutionType } from '../entities/dispute.entity';
+import type { DisputeStatus, ResolutionType } from '../entities/dispute.entity';
+import { Dispute, DisputeReason } from '../entities/dispute.entity';
 import { Order } from '../entities/order.entity';
-import {
+import type {
   CreateDisputeDto,
   ResolveDisputeDto,
   SellerDisputeResponseDto,
@@ -66,11 +67,7 @@ export class DisputeService {
    * 3. Within dispute window for the category
    * 4. No existing OPEN or ESCALATED dispute for same order
    */
-  async openDispute(
-    orderId: string,
-    buyerId: string,
-    dto: CreateDisputeDto,
-  ): Promise<Dispute> {
+  async openDispute(orderId: string, buyerId: string, dto: CreateDisputeDto): Promise<Dispute> {
     const order = await this.orderRepo.findOne({
       where: { id: orderId },
       relations: ['items'],
@@ -183,9 +180,7 @@ export class DisputeService {
     }
 
     if (dispute.status !== 'AWAITING_SELLER_RESPONSE') {
-      throw new ConflictException(
-        `Cannot respond: dispute is in status '${dispute.status}'`,
-      );
+      throw new ConflictException(`Cannot respond: dispute is in status '${dispute.status}'`);
     }
 
     dispute.status = 'AWAITING_BUYER_EVIDENCE';
@@ -325,9 +320,7 @@ export class DisputeService {
       });
     }
 
-    this.logger.log(
-      JSON.stringify({ event: 'disputes_escalated', count: overdue.length }),
-    );
+    this.logger.log(JSON.stringify({ event: 'disputes_escalated', count: overdue.length }));
 
     return overdue.length;
   }
@@ -336,10 +329,7 @@ export class DisputeService {
     return this.disputeRepo.find({ where: { orderId }, order: { createdAt: 'DESC' } });
   }
 
-  async getDisputesByBuyer(
-    buyerId: string,
-    status?: DisputeStatus,
-  ): Promise<Dispute[]> {
+  async getDisputesByBuyer(buyerId: string, status?: DisputeStatus): Promise<Dispute[]> {
     const qb = this.disputeRepo
       .createQueryBuilder('d')
       .where('d.buyerId = :buyerId', { buyerId })

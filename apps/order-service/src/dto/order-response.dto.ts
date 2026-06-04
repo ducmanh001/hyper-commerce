@@ -1,7 +1,7 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { OrderStatus } from '../entities/order.entity';
-import { Order } from '../entities/order.entity';
-import { OrderItem } from '../entities/order-item.entity';
+import type { OrderStatus } from '../entities/order.entity';
+import type { Order } from '../entities/order.entity';
+import type { OrderItem } from '../entities/order-item.entity';
 
 export class OrderItemResponseDto {
   @ApiProperty() id!: string;

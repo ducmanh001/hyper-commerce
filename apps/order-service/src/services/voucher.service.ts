@@ -22,15 +22,16 @@
 
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, DataSource } from 'typeorm';
-import { RedisClientService } from '@hypercommerce/redis';
+import type { Repository, DataSource } from 'typeorm';
+import type { RedisClientService } from '@hypercommerce/redis';
 import {
   NotFoundException,
   VoucherExpiredException,
   VoucherExhaustedException,
   VoucherIneligibleException,
 } from '@hypercommerce/common/exceptions/domain.exceptions';
-import { Voucher, DiscountType } from '../entities/voucher.entity';
+import type { DiscountType } from '../entities/voucher.entity';
+import { Voucher } from '../entities/voucher.entity';
 import { VoucherUsage } from '../entities/voucher-usage.entity';
 
 export interface VoucherValidationRequest {
@@ -38,7 +39,7 @@ export interface VoucherValidationRequest {
   userId: string;
   sellerId?: string;
   categoryIds?: string[];
-  orderSubtotal: number;  // before discount
+  orderSubtotal: number; // before discount
   currency: string;
 }
 
@@ -46,7 +47,7 @@ export interface VoucherValidationResult {
   voucherId: string;
   code: string;
   discountType: DiscountType;
-  discountAmount: number;     // actual amount to deduct
+  discountAmount: number; // actual amount to deduct
   finalTotal: number;
   description?: string;
 }
@@ -132,7 +133,10 @@ export class VoucherService {
 
     if (voucher.scope === 'CATEGORY' && voucher.categoryId) {
       if (!req.categoryIds?.includes(voucher.categoryId)) {
-        throw new VoucherIneligibleException(req.code, 'Voucher is not valid for items in your cart');
+        throw new VoucherIneligibleException(
+          req.code,
+          'Voucher is not valid for items in your cart',
+        );
       }
     }
 
@@ -244,10 +248,7 @@ export class VoucherService {
 
     if (voucher) {
       // Cache until voucher expires (max 1 hour)
-      const ttl = Math.min(
-        Math.floor((voucher.expiresAt.getTime() - Date.now()) / 1000),
-        3600,
-      );
+      const ttl = Math.min(Math.floor((voucher.expiresAt.getTime() - Date.now()) / 1000), 3600);
       if (ttl > 0) {
         await this.redis.set(cacheKey, JSON.stringify(voucher), ttl);
       }
