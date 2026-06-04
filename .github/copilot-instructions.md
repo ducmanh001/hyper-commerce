@@ -62,6 +62,10 @@ Multi-vendor social commerce platform. Target: 50M DAU, 500K orders/day, 100K co
 | architecture, design, new service, sharding, saga          | `agents/architect.agent.md` |
 | feature idea, i want, phase 1, explore, plan card          | `agents/discovery.agent.md` |
 
+**Ambiguous task rule**: Nếu task không map rõ vào bất kỳ keyword nào trong bảng trên,
+hoặc span > 2 domain, hoặc chứa từ "not sure", "maybe", "explore", "what if" →
+bắt buộc load `agents/discovery.agent.md` trước. Không implement thẳng.
+
 ## Workflow Files
 
 - **Fragments**: `.github/prompts/fragments/` — +base +kafka +redis +tx +migration +verify-L2/L3/L4 +wrap
@@ -95,6 +99,7 @@ Multi-vendor social commerce platform. Target: 50M DAU, 500K orders/day, 100K co
 
 | Unsure about                             | Retrieve BEFORE answering                           | Update AFTER implementing                          |
 | ---------------------------------------- | --------------------------------------------------- | -------------------------------------------------- |
+| Bắt đầu mọi task                         | Đọc `.github/PATTERNS.md` trước                     | Nếu fix recurring bug → add pattern ngay sau       |
 | Table exists? which service owns it?     | `infrastructure/postgres/SCHEMA.md` (table map)     | Create entity file → run `make context:index`      |
 | Column names / data types / indexes?     | Read the entity file listed in SCHEMA.md table map  | Edit the entity file — not SCHEMA.md               |
 | Next migration number?                   | `infrastructure/postgres/SCHEMA.md` (top of file)   | Run `make context:index` — auto-derived from files |
@@ -102,7 +107,6 @@ Multi-vendor social commerce platform. Target: 50M DAU, 500K orders/day, 100K co
 | Kafka event payload / interface?         | `libs/events/src/events.ts`                         | Add interface to events.ts                         |
 | Saga flow / compensating events?         | `libs/events/EVENTS.md` (saga diagram)              | Update diagram if flow changes                     |
 | gRPC method name / request type?         | `libs/grpc/PROTOS.md` (catalog)                     | Add new method to proto file + PROTOS.md           |
-| Queue name / Job name constant           | `libs/queue/src/constants/queue.constants.ts`       | Add constants to that file                         |
 | Queue name / Job name constant           | `libs/queue/src/constants/queue.constants.ts`       | Add constants to that file                         |
 | API Gateway proxy routes                 | `apps/api-gateway/server.js`                        | Add proxy route for new services                   |
 | Port number / service name               | Already in this file — reread above                 | Add new service to port map in this file           |
@@ -136,42 +140,6 @@ For tasks spanning multiple turns or sessions:
 1. After each major step → write state to `/memories/session/` (files changed, decisions, what next step needs)
 2. At start of continuation session → read that session file first
 3. Handoff only what the next step cannot re-derive from code — skip file contents it will read itself
-
-## Prompt Fragments — Auto-resolution Rule (LCB v3 L7)
-
-When a prompt contains `+tag` tokens, resolve each by reading the corresponding fragment file **before** implementing. Fragments inherit into the prompt as if they were typed inline.
-
-| Tag          | File                                      | Auto-include when                                          |
-| ------------ | ----------------------------------------- | ---------------------------------------------------------- |
-| `+base`      | `.github/prompts/fragments/+base.md`      | Always (every L2+ prompt)                                  |
-| `+kafka`     | `.github/prompts/fragments/+kafka.md`     | Prompt mentions Kafka / event / consumer / producer        |
-| `+redis`     | `.github/prompts/fragments/+redis.md`     | Prompt mentions Redis / cache / TTL / lock                 |
-| `+tx`        | `.github/prompts/fragments/+tx.md`        | Prompt mentions transaction / debit / credit / multi-table |
-| `+migration` | `.github/prompts/fragments/+migration.md` | Prompt mentions new table / migration / entity             |
-| `+wrap`      | `.github/prompts/fragments/+wrap.md`      | Always when invoking a spec file (`#file:*.spec.md`)       |
-| `+verify-L2` | `.github/prompts/fragments/+verify-L2.md` | Level 2 prompt                                             |
-| `+verify-L3` | `.github/prompts/fragments/+verify-L3.md` | Level 3 prompt                                             |
-| `+verify-L4` | `.github/prompts/fragments/+verify-L4.md` | Level 4 prompt                                             |
-
-**Auto-include rule**: Even if `+tag` is not written explicitly, auto-include fragments whose "when" condition matches the prompt. Never ask — silently resolve.
-
-## Commit Message Rules (enforced by commitlint)
-
-Full guide: `.github/COMMIT_CONVENTION.md`
-
-**Quick rules — check BEFORE writing any commit:**
-
-- Subject: `type(scope): subject` — max **72 chars**, min 10 chars
-- Aim for **50 chars** (readable in `git log --oneline`)
-- Imperative mood: `add`, `fix`, `remove` — not `added`, `fixing`
-- No capital after colon, no trailing period
-- Types: `feat` `fix` `docs` `chore` `refactor` `perf` `test` `style` `ci` `revert`
-- Body lines wrap at **72 chars**
-- Breaking change: `feat(scope)!:` + `BREAKING CHANGE:` footer
-
-**Avoid vague verbs:** `update X` → `add X` / `fix X` / `remove X` / `replace X`
-
----
 
 ## Learned Patterns (LCB v3 L6 — updated over time)
 
