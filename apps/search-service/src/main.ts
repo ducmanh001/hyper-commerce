@@ -11,6 +11,6 @@ async function bootstrap(): Promise<void> {
   const config = app.get(ConfigService);
   const port = config.get<number>('SEARCH_PORT', 3010);
   await app.listen(port);
-  console.log(`Search Service running on port ${port}`);
+  console.warn(`Search Service running on port ${port}`);
 }
 bootstrap();

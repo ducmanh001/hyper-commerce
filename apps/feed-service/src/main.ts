@@ -11,6 +11,6 @@ async function bootstrap(): Promise<void> {
   const config = app.get(ConfigService);
   const port = config.get<number>('FEED_PORT', 3008);
   await app.listen(port);
-  console.log(`Feed Service running on port ${port}`);
+  console.warn(`Feed Service running on port ${port}`);
 }
 bootstrap();

@@ -13,6 +13,6 @@ async function bootstrap(): Promise<void> {
   const port = config.get<number>('AI_PORT', 3006);
 
   await app.listen(port);
-  console.log(`AI Service running on port ${port}`);
+  console.warn(`AI Service running on port ${port}`);
 }
 bootstrap();

@@ -10,6 +10,6 @@ async function bootstrap(): Promise<void> {
   const config = app.get(ConfigService);
   const port = config.get<number>('NOTIFICATION_PORT', 3004);
   await app.listen(port);
-  console.log(`Notification Service running on port ${port}`);
+  console.warn(`Notification Service running on port ${port}`);
 }
 bootstrap();

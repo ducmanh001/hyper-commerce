@@ -163,15 +163,15 @@ export class TwoTowerService {
   }
 
   private async fetchRecentInteractions(
-    userId: string,
+    _userId: string,
   ): Promise<Array<{ productId: string; timestampMs: number }>> {
     // In production: query ClickHouse or interaction service
     return [];
   }
 
   private async getPopularFallback(
-    limit: number,
-    excludeIds: string[],
+    _limit: number,
+    _excludeIds: string[],
   ): Promise<RecommendedItem[]> {
     // Return trending products from Redis sorted set
     return [];

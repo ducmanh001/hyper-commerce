@@ -275,7 +275,7 @@ export class RecommendationService implements OnModuleInit {
    */
   private applyBusinessRules(
     candidates: RecommendedProduct[],
-    ctx: RecommendationContext,
+    _ctx: RecommendationContext,
   ): RecommendedProduct[] {
     return candidates.map((c) => {
       // Placeholder — in production: fetch product flags from cache

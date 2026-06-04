@@ -93,12 +93,15 @@ export class EventCollectorService implements OnModuleInit, OnModuleDestroy {
 
   private async onAnalyticsEvent(
     event: Record<string, unknown>,
-    meta: MessageMetadata,
+    _meta: MessageMetadata,
   ): Promise<void> {
     this.addToBuffer(event as unknown as AnalyticsEvent);
   }
 
-  private async onOrderEvent(event: Record<string, unknown>, meta: MessageMetadata): Promise<void> {
+  private async onOrderEvent(
+    event: Record<string, unknown>,
+    _meta: MessageMetadata,
+  ): Promise<void> {
     if (event.type !== 'ORDER_CONFIRMED') return;
 
     // Normalize to analytics event

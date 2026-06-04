@@ -209,7 +209,6 @@ export class FraudDetectionService {
   // ── Private helpers ───────────────────────────────────────
 
   private async checkVelocity(userId: string, ipAddress: string): Promise<VelocityResult> {
-    const now = Date.now();
     const key1h = `fraud:vel:1h:${userId}`;
     const key24h = `fraud:vel:24h:${userId}`;
     const keyIp1h = `fraud:vel:ip:1h:${ipAddress}`;

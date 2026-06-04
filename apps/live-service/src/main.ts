@@ -11,6 +11,6 @@ async function bootstrap(): Promise<void> {
   const config = app.get(ConfigService);
   const port = config.get<number>('LIVE_PORT', 3007);
   await app.listen(port);
-  console.log(`Live Service running on port ${port} (WebSocket + HTTP)`);
+  console.warn(`Live Service running on port ${port} (WebSocket + HTTP)`);
 }
 bootstrap();

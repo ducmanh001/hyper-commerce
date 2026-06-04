@@ -151,7 +151,7 @@ export class AdsService {
 
     const solvent = candidates.filter((c, i) => {
       const b = parseInt(budgets[i] ?? '0', 10);
-      const d = dailyBudgets[i] !== null ? parseInt(dailyBudgets[i]!, 10) : Infinity;
+      const d = dailyBudgets[i] !== null ? parseInt(dailyBudgets[i] as string, 10) : Infinity;
       return b > 500 && d > 500; // Must have at least min bid available
     });
 
@@ -181,7 +181,7 @@ export class AdsService {
     //    (or min bid ₫500 if no competitor)
     const slots: AuctionSlot[] = [];
     for (let i = 0; i < winners.length; i++) {
-      const { campaign, effectiveBid } = winners[i];
+      const { campaign, effectiveBid: _effectiveBid } = winners[i];
       const nextBid = effectiveBids[i + 1]?.effectiveBid ?? 0;
       const cpcVnd = Math.max(500, Math.ceil(nextBid + 1));
 
