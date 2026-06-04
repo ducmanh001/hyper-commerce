@@ -1,8 +1,20 @@
-import { Controller, Get, Post, Body, Param, Delete, Headers, HttpCode, HttpStatus, RawBodyRequest, Req } from '@nestjs/common';
+import type { RawBodyRequest } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Param,
+  Delete,
+  Headers,
+  HttpCode,
+  HttpStatus,
+  Req,
+} from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
-import { SubscriptionService } from './subscription.service';
+import type { SubscriptionService } from './subscription.service';
 import { IsOptional, IsString, IsUUID } from 'class-validator';
-import { Request } from 'express';
+import type { Request } from 'express';
 
 class CancelDto {
   @IsOptional()
@@ -44,7 +56,7 @@ export class SubscriptionController {
   }
 
   @Get('subscription/tier/:sellerId')
-  @ApiOperation({ summary: "Get seller tier info (called by other services)" })
+  @ApiOperation({ summary: 'Get seller tier info (called by other services)' })
   getSellerTier(@Param('sellerId') sellerId: string) {
     return this.subscriptionService.getSellerTier(sellerId);
   }
@@ -52,10 +64,7 @@ export class SubscriptionController {
   @Delete('subscription/my')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Cancel subscription (effective at period end)' })
-  cancel(
-    @Headers('x-seller-id') sellerId: string,
-    @Body() dto: CancelDto,
-  ) {
+  cancel(@Headers('x-seller-id') sellerId: string, @Body() dto: CancelDto) {
     return this.subscriptionService.cancelSubscription(sellerId, dto.reason);
   }
 

@@ -1,10 +1,17 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, Index } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  UpdateDateColumn,
+  Index,
+} from 'typeorm';
 import { PlanTier } from './subscription-plan.entity';
 
 export enum SubscriptionStatus {
   ACTIVE = 'ACTIVE',
   TRIALING = 'TRIALING',
-  PAST_DUE = 'PAST_DUE',   // Payment failed, grace period
+  PAST_DUE = 'PAST_DUE', // Payment failed, grace period
   CANCELLED = 'CANCELLED',
   EXPIRED = 'EXPIRED',
 }

@@ -2,9 +2,9 @@ import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn } from 'typeor
 
 export enum PlanTier {
   FREE = 'FREE',
-  BASIC = 'BASIC',             // ₫299K/month
+  BASIC = 'BASIC', // ₫299K/month
   PROFESSIONAL = 'PROFESSIONAL', // ₫799K/month
-  ENTERPRISE = 'ENTERPRISE',   // Custom SLA
+  ENTERPRISE = 'ENTERPRISE', // Custom SLA
 }
 
 @Entity('subscription_plans')

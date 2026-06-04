@@ -6,15 +6,17 @@ import { AppModule } from './app.module';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, { rawBody: true });
 
-  app.useGlobalPipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }));
+  app.useGlobalPipes(
+    new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }),
+  );
 
   const config = new DocumentBuilder()
     .setTitle('HyperCommerce Subscription Service')
     .setDescription(
       'Recurring revenue via seller subscription plans. ' +
-      'Plans: FREE → BASIC (₫299K) → PROFESSIONAL (₫799K) → ENTERPRISE. ' +
-      'Commission discount and feature unlocks per tier. ' +
-      'Billing via Stripe Subscriptions with webhook for payment events.',
+        'Plans: FREE → BASIC (₫299K) → PROFESSIONAL (₫799K) → ENTERPRISE. ' +
+        'Commission discount and feature unlocks per tier. ' +
+        'Billing via Stripe Subscriptions with webhook for payment events.',
     )
     .setVersion('1.0')
     .addBearerAuth()

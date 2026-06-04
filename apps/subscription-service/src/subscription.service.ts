@@ -1,8 +1,8 @@
 import { Injectable, Logger, NotFoundException, ConflictException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import type { Repository } from 'typeorm';
 import { InjectRedis } from '@nestjs-modules/ioredis';
-import Redis from 'ioredis';
+import type Redis from 'ioredis';
 import { SubscriptionPlan, PlanTier } from './entities/subscription-plan.entity';
 import { SellerSubscription, SubscriptionStatus } from './entities/seller-subscription.entity';
 
@@ -43,7 +43,13 @@ export class SubscriptionService {
   async activateSubscription(
     sellerId: string,
     planId: string,
-    stripeData: { subscriptionId: string; customerId: string; periodStart: Date; periodEnd: Date; amountPaid: number },
+    stripeData: {
+      subscriptionId: string;
+      customerId: string;
+      periodStart: Date;
+      periodEnd: Date;
+      amountPaid: number;
+    },
   ): Promise<SellerSubscription> {
     const plan = await this.planRepo.findOne({ where: { id: planId } });
     if (!plan) throw new NotFoundException('Plan not found');
@@ -104,7 +110,9 @@ export class SubscriptionService {
     if (cached) return JSON.parse(cached) as SellerTierInfo;
 
     // Cache miss: read from DB
-    const sub = await this.subRepo.findOne({ where: { sellerId, status: SubscriptionStatus.ACTIVE } });
+    const sub = await this.subRepo.findOne({
+      where: { sellerId, status: SubscriptionStatus.ACTIVE },
+    });
     const tier = sub?.planTier ?? PlanTier.FREE;
     const plan = await this.planRepo.findOne({ where: { tier } });
 
