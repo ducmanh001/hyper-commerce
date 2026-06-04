@@ -1,0 +1,7 @@
+#!/usr/bin/env sh
+# Auto-install if package.json changed after merge/pull
+changed=$(git diff-tree -r --name-only --no-commit-id ORIG_HEAD HEAD 2>/dev/null)
+if echo "$changed" | grep -q "package.json"; then
+  echo "📦 package.json changed — running npm install..."
+  npm install --legacy-peer-deps
+fi
