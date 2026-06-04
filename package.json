@@ -39,7 +39,7 @@
     "format": "prettier --write \"**/*.{ts,json,md,yml,yaml}\"",
     "format:check": "prettier --check \"**/*.{ts,json,md,yml,yaml}\" --ignore-path .prettierignore",
     "typecheck": "tsc --noEmit",
-    "type-check": "tsc --noEmit",
+    "type-check": "tsc --noEmit --incremental false",
     "prepare": "husky",
     "start:gateway": "KAFKAJS_NO_PARTITIONER_WARNING=1 node apps/api-gateway/server.js",
     "prepare": "husky"
