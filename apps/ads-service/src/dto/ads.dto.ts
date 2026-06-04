@@ -1,4 +1,14 @@
-import { IsArray, IsEnum, IsInt, IsNotEmpty, IsOptional, IsString, IsUUID, Max, Min } from 'class-validator';
+import {
+  IsArray,
+  IsEnum,
+  IsInt,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  IsUUID,
+  Max,
+  Min,
+} from 'class-validator';
 import { ApiProperty, ApiPropertyOptional, PartialType, PickType } from '@nestjs/swagger';
 import { BiddingModel, CampaignType } from '../entities/campaign.entity';
 import { Type } from 'class-transformer';
@@ -30,7 +40,7 @@ export class CreateCampaignDto {
 
   @ApiProperty({ description: 'Max CPC/CPM bid in VND', example: 2000 })
   @IsInt()
-  @Min(500)   // ₫500 min bid
+  @Min(500) // ₫500 min bid
   @Max(500_000)
   maxBidVnd: number;
 
@@ -53,7 +63,14 @@ export class CreateCampaignDto {
 }
 
 export class UpdateCampaignDto extends PartialType(
-  PickType(CreateCampaignDto, ['name', 'totalBudget', 'dailyBudget', 'maxBidVnd', 'targetKeywords', 'targetCategories'] as const),
+  PickType(CreateCampaignDto, [
+    'name',
+    'totalBudget',
+    'dailyBudget',
+    'maxBidVnd',
+    'targetKeywords',
+    'targetCategories',
+  ] as const),
 ) {}
 
 export class AuctionRequestDto {

@@ -1,4 +1,11 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, Index } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  UpdateDateColumn,
+  Index,
+} from 'typeorm';
 
 export enum CampaignStatus {
   DRAFT = 'DRAFT',
@@ -10,13 +17,13 @@ export enum CampaignStatus {
 
 export enum CampaignType {
   SPONSORED_PRODUCT = 'SPONSORED_PRODUCT', // Search result + feed injection
-  BANNER = 'BANNER',                        // Homepage banner
-  CATEGORY_TOP = 'CATEGORY_TOP',            // Top of category listing
+  BANNER = 'BANNER', // Homepage banner
+  CATEGORY_TOP = 'CATEGORY_TOP', // Top of category listing
 }
 
 export enum BiddingModel {
-  CPC = 'CPC',  // Cost-per-click (default, performance-based)
-  CPM = 'CPM',  // Cost-per-mille/thousand impressions (brand awareness)
+  CPC = 'CPC', // Cost-per-click (default, performance-based)
+  CPM = 'CPM', // Cost-per-mille/thousand impressions (brand awareness)
 }
 
 @Entity('ad_campaigns')

@@ -6,14 +6,16 @@ import { AppModule } from './app.module';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  app.useGlobalPipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }));
+  app.useGlobalPipes(
+    new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }),
+  );
 
   const config = new DocumentBuilder()
     .setTitle('HyperCommerce Ads Service')
     .setDescription(
       'Second-price GSP auction engine for sponsored products. ' +
-      'Revenue model: CPC (performance) + CPM (brand awareness). ' +
-      'Budget management via Redis atomic DECRBY for real-time depletion tracking.',
+        'Revenue model: CPC (performance) + CPM (brand awareness). ' +
+        'Budget management via Redis atomic DECRBY for real-time depletion tracking.',
     )
     .setVersion('1.0')
     .addBearerAuth()

@@ -1,13 +1,18 @@
 import { Injectable, Logger, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, DataSource } from 'typeorm';
+import type { Repository, DataSource } from 'typeorm';
 import { InjectRedis } from '@nestjs-modules/ioredis';
-import Redis from 'ioredis';
+import type Redis from 'ioredis';
 import { InjectQueue } from '@nestjs/bullmq';
-import { Queue } from 'bullmq';
+import type { Queue } from 'bullmq';
 import { Campaign, CampaignStatus, BiddingModel } from './entities/campaign.entity';
 import { AdImpression } from './entities/ad-impression.entity';
-import { CreateCampaignDto, UpdateCampaignDto, AuctionRequestDto, RecordClickDto } from './dto/ads.dto';
+import type {
+  CreateCampaignDto,
+  UpdateCampaignDto,
+  AuctionRequestDto,
+  RecordClickDto,
+} from './dto/ads.dto';
 
 // CTR history bucket size for Quality Score calculation
 const CTR_BUCKET = 100; // events per bucket
@@ -27,7 +32,7 @@ export interface AuctionSlot {
   impressionId: string;
   campaignId: string;
   productId: string;
-  cpcVnd: number;       // Second-price CPC charged per click
+  cpcVnd: number; // Second-price CPC charged per click
   cpmVnd: number | null; // CPM fee if CPM campaign
   position: number;
 }
@@ -119,7 +124,8 @@ export class AdsService {
     const keywords = dto.keywords.map((k) => k.toLowerCase().trim());
 
     // 1. Fetch eligible campaigns (ACTIVE, keyword overlap, no ended)
-    const candidates = await this.dataSource.query<Campaign[]>(`
+    const candidates = await this.dataSource.query<Campaign[]>(
+      `
       SELECT * FROM ad_campaigns
       WHERE status = 'ACTIVE'
         AND (
@@ -129,7 +135,9 @@ export class AdsService {
         AND (end_at IS NULL OR end_at > NOW())
         AND (start_at IS NULL OR start_at <= NOW())
       LIMIT 50
-    `, [keywords, dto.category ?? null]);
+    `,
+      [keywords, dto.category ?? null],
+    );
 
     if (candidates.length === 0) return [];
 
@@ -185,7 +193,8 @@ export class AdsService {
         userId: null,
         keyword: keywords[0] ?? null,
         position: i + 1,
-        cpmFeeVnd: campaign.biddingModel === BiddingModel.CPM ? Math.ceil(campaign.maxBidVnd / 1000) : null,
+        cpmFeeVnd:
+          campaign.biddingModel === BiddingModel.CPM ? Math.ceil(campaign.maxBidVnd / 1000) : null,
       });
       const impression = await this.impressionRepo.save(impressionEntity);
 
@@ -193,7 +202,11 @@ export class AdsService {
       if (campaign.biddingModel === BiddingModel.CPM) {
         const cpmFee = Math.ceil(campaign.maxBidVnd / 1000);
         void this.deductBudget(campaign.id, cpmFee);
-        void this.adsQueue.add('cpm-charge', { campaignId: campaign.id, impressionId: impression.id, fee: cpmFee });
+        void this.adsQueue.add('cpm-charge', {
+          campaignId: campaign.id,
+          impressionId: impression.id,
+          fee: cpmFee,
+        });
       }
 
       slots.push({
@@ -201,7 +214,8 @@ export class AdsService {
         campaignId: campaign.id,
         productId: campaign.productIds[0],
         cpcVnd,
-        cpmVnd: campaign.biddingModel === BiddingModel.CPM ? Math.ceil(campaign.maxBidVnd / 1000) : null,
+        cpmVnd:
+          campaign.biddingModel === BiddingModel.CPM ? Math.ceil(campaign.maxBidVnd / 1000) : null,
         position: i + 1,
       });
     }
@@ -230,7 +244,9 @@ export class AdsService {
     const charged = await this.deductBudget(impression.campaignId, 1); // 1 = placeholder, real CPC from impression
     if (!charged) {
       // Budget exhausted during this click — pause campaign
-      await this.campaignRepo.update(impression.campaignId, { status: CampaignStatus.BUDGET_EXHAUSTED });
+      await this.campaignRepo.update(impression.campaignId, {
+        status: CampaignStatus.BUDGET_EXHAUSTED,
+      });
     }
 
     // Push billing event to queue for DB reconciliation
@@ -271,7 +287,9 @@ export class AdsService {
   private async updateCtrCounter(campaignId: string, isClick: boolean): Promise<void> {
     const key = CTR_KEY(campaignId);
     const raw = await this.redis.get(key);
-    const data = raw ? (JSON.parse(raw) as { clicks: number; impressions: number }) : { clicks: 0, impressions: 0 };
+    const data = raw
+      ? (JSON.parse(raw) as { clicks: number; impressions: number })
+      : { clicks: 0, impressions: 0 };
     data.impressions += 1;
     if (isClick) data.clicks += 1;
     await this.redis.set(key, JSON.stringify(data), 'EX', 86_400 * 30); // 30-day TTL

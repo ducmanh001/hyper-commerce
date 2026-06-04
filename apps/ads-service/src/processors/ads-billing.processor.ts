@@ -1,8 +1,8 @@
 import { Processor, WorkerHost } from '@nestjs/bullmq';
 import { Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { Job } from 'bullmq';
+import type { Repository } from 'typeorm';
+import type { Job } from 'bullmq';
 import { Campaign, CampaignStatus } from '../entities/campaign.entity';
 
 // WHY a billing processor?
@@ -16,21 +16,27 @@ import { Campaign, CampaignStatus } from '../entities/campaign.entity';
 export class AdsBillingProcessor extends WorkerHost {
   private readonly logger = new Logger(AdsBillingProcessor.name);
 
-  constructor(
-    @InjectRepository(Campaign) private campaignRepo: Repository<Campaign>,
-  ) {
+  constructor(@InjectRepository(Campaign) private campaignRepo: Repository<Campaign>) {
     super();
   }
 
   async process(job: Job): Promise<void> {
     if (job.name === 'cpc-click') {
-      await this.handleCpcClick(job.data as { campaignId: string; impressionId: string; userId?: string });
+      await this.handleCpcClick(
+        job.data as { campaignId: string; impressionId: string; userId?: string },
+      );
     } else if (job.name === 'cpm-charge') {
-      await this.handleCpmCharge(job.data as { campaignId: string; impressionId: string; fee: number });
+      await this.handleCpmCharge(
+        job.data as { campaignId: string; impressionId: string; fee: number },
+      );
     }
   }
 
-  private async handleCpcClick(data: { campaignId: string; impressionId: string; cpcVnd?: number }): Promise<void> {
+  private async handleCpcClick(data: {
+    campaignId: string;
+    impressionId: string;
+    cpcVnd?: number;
+  }): Promise<void> {
     const { campaignId } = data;
     const cpc = data.cpcVnd ?? 500;
 
@@ -50,7 +56,11 @@ export class AdsBillingProcessor extends WorkerHost {
     this.logger.debug(`CPC charge ₫${cpc} applied to campaign ${campaignId}`);
   }
 
-  private async handleCpmCharge(data: { campaignId: string; impressionId: string; fee: number }): Promise<void> {
+  private async handleCpmCharge(data: {
+    campaignId: string;
+    impressionId: string;
+    fee: number;
+  }): Promise<void> {
     const { campaignId, fee } = data;
 
     await this.campaignRepo
@@ -65,8 +75,15 @@ export class AdsBillingProcessor extends WorkerHost {
       .execute();
 
     // Check if budget exhausted after this charge
-    const campaign = await this.campaignRepo.findOne({ where: { id: campaignId }, select: ['totalSpent', 'totalBudget', 'status'] });
-    if (campaign && campaign.totalSpent >= campaign.totalBudget && campaign.status === CampaignStatus.ACTIVE) {
+    const campaign = await this.campaignRepo.findOne({
+      where: { id: campaignId },
+      select: ['totalSpent', 'totalBudget', 'status'],
+    });
+    if (
+      campaign &&
+      campaign.totalSpent >= campaign.totalBudget &&
+      campaign.status === CampaignStatus.ACTIVE
+    ) {
       await this.campaignRepo.update(campaignId, { status: CampaignStatus.BUDGET_EXHAUSTED });
       this.logger.log(`Campaign ${campaignId} budget exhausted — paused`);
     }

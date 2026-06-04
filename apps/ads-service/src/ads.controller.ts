@@ -1,10 +1,25 @@
 import {
-  Controller, Get, Post, Patch, Delete, Param, Body, ParseUUIDPipe,
-  HttpCode, HttpStatus, Headers, Query,
+  Controller,
+  Get,
+  Post,
+  Patch,
+  Delete,
+  Param,
+  Body,
+  ParseUUIDPipe,
+  HttpCode,
+  HttpStatus,
+  Headers,
+  Query,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
-import { AdsService } from './ads.service';
-import { CreateCampaignDto, UpdateCampaignDto, AuctionRequestDto, RecordClickDto } from './dto/ads.dto';
+import type { AdsService } from './ads.service';
+import type {
+  CreateCampaignDto,
+  UpdateCampaignDto,
+  AuctionRequestDto,
+  RecordClickDto,
+} from './dto/ads.dto';
 
 // NOTE: In production, seller identity comes from validated JWT (user-service).
 // For this service, sellerId is passed via X-Seller-Id header (set by API gateway
@@ -20,10 +35,7 @@ export class AdsController {
 
   @Post('ads/campaigns')
   @ApiOperation({ summary: 'Create a new ad campaign' })
-  createCampaign(
-    @Headers('x-seller-id') sellerId: string,
-    @Body() dto: CreateCampaignDto,
-  ) {
+  createCampaign(@Headers('x-seller-id') sellerId: string, @Body() dto: CreateCampaignDto) {
     return this.adsService.createCampaign(sellerId, dto);
   }
 
@@ -35,10 +47,7 @@ export class AdsController {
 
   @Get('ads/campaigns/:id')
   @ApiOperation({ summary: 'Get single campaign' })
-  getCampaign(
-    @Headers('x-seller-id') sellerId: string,
-    @Param('id', ParseUUIDPipe) id: string,
-  ) {
+  getCampaign(@Headers('x-seller-id') sellerId: string, @Param('id', ParseUUIDPipe) id: string) {
     return this.adsService.getCampaign(sellerId, id);
   }
 
@@ -55,20 +64,14 @@ export class AdsController {
   @Post('ads/campaigns/:id/activate')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Activate a campaign' })
-  activate(
-    @Headers('x-seller-id') sellerId: string,
-    @Param('id', ParseUUIDPipe) id: string,
-  ) {
+  activate(@Headers('x-seller-id') sellerId: string, @Param('id', ParseUUIDPipe) id: string) {
     return this.adsService.activateCampaign(sellerId, id);
   }
 
   @Post('ads/campaigns/:id/pause')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Pause a campaign' })
-  pause(
-    @Headers('x-seller-id') sellerId: string,
-    @Param('id', ParseUUIDPipe) id: string,
-  ) {
+  pause(@Headers('x-seller-id') sellerId: string, @Param('id', ParseUUIDPipe) id: string) {
     return this.adsService.pauseCampaign(sellerId, id);
   }
 
@@ -81,12 +84,10 @@ export class AdsController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'Run second-price ad auction',
-    description: 'Returns ranked sponsored product slots. Called server-side by search/feed services.',
+    description:
+      'Returns ranked sponsored product slots. Called server-side by search/feed services.',
   })
-  runAuction(
-    @Body() dto: AuctionRequestDto,
-    @Headers('x-session-id') sessionId?: string,
-  ) {
+  runAuction(@Body() dto: AuctionRequestDto, @Headers('x-session-id') sessionId?: string) {
     return this.adsService.runAuction(dto, sessionId);
   }
 
