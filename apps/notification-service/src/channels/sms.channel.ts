@@ -4,10 +4,11 @@
 // ============================================================
 
 import { Injectable, Logger } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-// eslint-disable-next-line @typescript-eslint/no-var-requires, @typescript-eslint/no-require-imports
+import type { ConfigService } from '@nestjs/config';
+// eslint-disable-next-line @typescript-eslint/no-require-imports
 const Twilio = require('twilio');
-import { RedisClientService } from '@hypercommerce/redis';
+import type { RedisClientService } from '@hypercommerce/redis';
+import type { Redis } from 'ioredis';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 
@@ -17,7 +18,12 @@ export interface SmsPayload {
   phoneNumber?: string; // Override if already known
 }
 
-import { INotificationChannel, NotificationPayload, DeliveryResult } from './interfaces/notification-channel.interface';
+import { randomInt } from 'crypto';
+import type {
+  INotificationChannel,
+  NotificationPayload,
+  DeliveryResult,
+} from './interfaces/notification-channel.interface';
 
 @Injectable()
 export class SmsChannel implements INotificationChannel {
@@ -47,9 +53,9 @@ export class SmsChannel implements INotificationChannel {
 
     // Rate limit: max 3 SMS per hour per user (cost control + anti-spam)
     const rateLimitKey = `sms:rl:${payload.userId}`;
-    const count = await (this.redis.getClient() as import('ioredis').Redis).incr(rateLimitKey);
+    const count = await (this.redis.getClient() as Redis).incr(rateLimitKey);
     if (count === 1) {
-      await (this.redis.getClient() as import('ioredis').Redis).expire(rateLimitKey, 3600);
+      await (this.redis.getClient() as Redis).expire(rateLimitKey, 3600);
     }
     if (count > 3) {
       this.logger.warn(`SMS rate limit exceeded for user ${payload.userId}`);
@@ -80,7 +86,7 @@ export class SmsChannel implements INotificationChannel {
     const { createHash } = await import('crypto');
     const otpHash = createHash('sha256').update(otp).digest('hex');
 
-    await (this.redis.getClient() as import('ioredis').Redis).set(otpKey, otpHash, 'EX', 300);
+    await (this.redis.getClient() as Redis).set(otpKey, otpHash, 'EX', 300);
 
     await this.send({
       userId,
@@ -105,8 +111,8 @@ export class SmsChannel implements INotificationChannel {
   }
 
   private generateOtp(): string {
-    // 6-digit numeric OTP
-    return Math.floor(100_000 + Math.random() * 900_000).toString();
+    // 6-digit numeric OTP — crypto.randomInt is CSPRNG, safe for security-sensitive use
+    return randomInt(100_000, 1_000_000).toString();
   }
 
   private async getUserPhone(userId: string): Promise<string | null> {

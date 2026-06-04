@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
-import { EmailChannel } from './email.channel';
-import { SmsChannel } from './sms.channel';
-import { PushChannel } from './push.channel';
-import { InAppChannel } from './in-app.channel';
+import type { EmailChannel } from './email.channel';
+import type { SmsChannel } from './sms.channel';
+import type { PushChannel } from './push.channel';
+import type { InAppChannel } from './in-app.channel';
 import type { INotificationChannel } from './interfaces/notification-channel.interface';
 
 export type NotificationPriority = 'CRITICAL' | 'HIGH' | 'NORMAL' | 'LOW';

@@ -1,6 +1,10 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import { INotificationChannel, NotificationPayload, DeliveryResult } from './interfaces/notification-channel.interface';
+import type { ConfigService } from '@nestjs/config';
+import type {
+  INotificationChannel,
+  NotificationPayload,
+  DeliveryResult,
+} from './interfaces/notification-channel.interface';
 
 /**
  * PushChannel — Firebase Cloud Messaging (FCM) for Android + APNs for iOS.

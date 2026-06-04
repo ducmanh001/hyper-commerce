@@ -12,9 +12,9 @@ export interface NotificationPayload {
   userId: string;
   title: string;
   body: string;
-  subject?: string;     // email subject line
-  message?: string;     // SMS plain-text override
-  template?: string;    // template name/type for email
+  subject?: string; // email subject line
+  message?: string; // SMS plain-text override
+  template?: string; // template name/type for email
   phoneNumber?: string; // SMS recipient override
   data?: Record<string, string>;
   imageUrl?: string;

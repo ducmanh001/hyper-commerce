@@ -4,11 +4,12 @@
 // ============================================================
 
 import { Injectable, Logger } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
+import type { ConfigService } from '@nestjs/config';
+import type { Redis } from 'ioredis';
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore - package installed at runtime
 import * as admin from 'firebase-admin';
-import { RedisClientService } from '@hypercommerce/redis';
+import type { RedisClientService } from '@hypercommerce/redis';
 
 export interface PushPayload {
   userId: string;
@@ -18,7 +19,11 @@ export interface PushPayload {
   data?: Record<string, string>;
 }
 
-import { INotificationChannel, NotificationPayload, DeliveryResult } from './interfaces/notification-channel.interface';
+import type {
+  INotificationChannel,
+  NotificationPayload,
+  DeliveryResult,
+} from './interfaces/notification-channel.interface';
 
 @Injectable()
 export class PushChannel implements INotificationChannel {
@@ -39,7 +44,9 @@ export class PushChannel implements INotificationChannel {
           credential: admin.credential.cert({ projectId, clientEmail, privateKey }),
         });
       } catch (err) {
-        this.logger.warn(`Firebase Admin init failed: ${(err as Error).message}. Push notifications disabled.`);
+        this.logger.warn(
+          `Firebase Admin init failed: ${(err as Error).message}. Push notifications disabled.`,
+        );
       }
     }
   }
@@ -83,17 +90,19 @@ export class PushChannel implements INotificationChannel {
 
     // Remove invalid/expired tokens
     const invalidTokens: string[] = [];
-    response.responses.forEach((resp: { success: boolean; error?: { code: string } }, idx: number) => {
-      if (!resp.success && resp.error) {
-        const errCode = resp.error.code;
-        if (
-          errCode === 'messaging/registration-token-not-registered' ||
-          errCode === 'messaging/invalid-registration-token'
-        ) {
-          invalidTokens.push(tokens[idx]);
+    response.responses.forEach(
+      (resp: { success: boolean; error?: { code: string } }, idx: number) => {
+        if (!resp.success && resp.error) {
+          const errCode = resp.error.code;
+          if (
+            errCode === 'messaging/registration-token-not-registered' ||
+            errCode === 'messaging/invalid-registration-token'
+          ) {
+            invalidTokens.push(tokens[idx]);
+          }
         }
-      }
-    });
+      },
+    );
 
     if (invalidTokens.length) {
       await this.removeInvalidTokens(payload.userId, invalidTokens);
@@ -111,17 +120,17 @@ export class PushChannel implements INotificationChannel {
    */
   async registerToken(userId: string, token: string): Promise<void> {
     const key = `push:tokens:${userId}`;
-    await (this.redis.getClient() as import('ioredis').Redis).sadd(key, token);
-    await (this.redis.getClient() as import('ioredis').Redis).expire(key, 86_400 * 90); // 90 days
+    await (this.redis.getClient() as Redis).sadd(key, token);
+    await (this.redis.getClient() as Redis).expire(key, 86_400 * 90); // 90 days
   }
 
   private async getUserPushTokens(userId: string): Promise<string[]> {
     const key = `push:tokens:${userId}`;
-    return (this.redis.getClient() as import('ioredis').Redis).smembers(key);
+    return (this.redis.getClient() as Redis).smembers(key);
   }
 
   private async removeInvalidTokens(userId: string, tokens: string[]): Promise<void> {
     const key = `push:tokens:${userId}`;
-    await (this.redis.getClient() as import('ioredis').Redis).srem(key, ...tokens);
+    await (this.redis.getClient() as Redis).srem(key, ...tokens);
   }
 }

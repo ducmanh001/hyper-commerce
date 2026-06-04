@@ -1,20 +1,27 @@
 import { Controller, Post, Body } from '@nestjs/common';
-import { NotificationService, NotificationType, NotificationChannel } from './notification.service';
+import type {
+  NotificationService,
+  NotificationType,
+  NotificationChannel,
+} from './notification.service';
 
 @Controller('notifications')
 export class NotificationController {
   constructor(private readonly notificationService: NotificationService) {}
 
   @Post('send')
-  async send(@Body() body: {
-    userId: string;
-    type: NotificationType;
-    title: string;
-    body: string;
-    channels?: NotificationChannel[];
-    data?: Record<string, string>;
-    priority?: 'HIGH' | 'NORMAL' | 'LOW';
-  }) {
+  async send(
+    @Body()
+    body: {
+      userId: string;
+      type: NotificationType;
+      title: string;
+      body: string;
+      channels?: NotificationChannel[];
+      data?: Record<string, string>;
+      priority?: 'HIGH' | 'NORMAL' | 'LOW';
+    },
+  ) {
     return this.notificationService.dispatch({
       userId: body.userId,
       type: body.type,

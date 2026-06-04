@@ -4,16 +4,17 @@
 // Priority queues, template rendering, delivery tracking.
 // ============================================================
 
-import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
+import type { OnModuleInit } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { KafkaConsumerService, MessageMetadata } from '@hypercommerce/kafka';
+import type { Repository } from 'typeorm';
+import type { KafkaConsumerService, MessageMetadata } from '@hypercommerce/kafka';
 import { APP_CONSTANTS } from '@hypercommerce/common/constants/app.constants';
 import { Notification } from './entities/notification.entity';
-import { PushChannel } from './channels/push.channel';
-import { SmsChannel } from './channels/sms.channel';
-import { EmailChannel } from './channels/email.channel';
-import { RedisClientService } from '@hypercommerce/redis';
+import type { PushChannel } from './channels/push.channel';
+import type { SmsChannel } from './channels/sms.channel';
+import type { EmailChannel } from './channels/email.channel';
+import type { RedisClientService } from '@hypercommerce/redis';
 
 export type NotificationChannel = 'PUSH' | 'SMS' | 'EMAIL' | 'IN_APP';
 
@@ -43,10 +44,13 @@ interface NotificationPayload {
 }
 
 // Template registry — in production: stored in DB, hot-reloaded
-const NOTIFICATION_TEMPLATES: Record<NotificationType, {
-  title: (data: Record<string, string>) => string;
-  body: (data: Record<string, string>) => string;
-}> = {
+const NOTIFICATION_TEMPLATES: Record<
+  NotificationType,
+  {
+    title: (data: Record<string, string>) => string;
+    body: (data: Record<string, string>) => string;
+  }
+> = {
   ORDER_CONFIRMED: {
     title: () => '✅ Đơn hàng đã xác nhận!',
     body: (d) => `Đơn #${d.orderId} - ${d.totalAmount}đ đang được chuẩn bị.`,
@@ -108,33 +112,35 @@ export class NotificationService implements OnModuleInit {
   ) {}
 
   async onModuleInit(): Promise<void> {
-    this.consumer.registerConsumer({
-      groupId: 'notification-consumer',
-      topics: [
-        APP_CONSTANTS.KAFKA_TOPICS.NOTIFICATION_DISPATCH,
-        APP_CONSTANTS.KAFKA_TOPICS.ORDER_CONFIRMED,
-        APP_CONSTANTS.KAFKA_TOPICS.ORDER_CANCELLED,
-        APP_CONSTANTS.KAFKA_TOPICS.PAYMENT_FAILED,
-      ],
-      handlers: [
-        {
-          topic: APP_CONSTANTS.KAFKA_TOPICS.NOTIFICATION_DISPATCH,
-          handle: this.onNotificationDispatch.bind(this),
-        },
-        {
-          topic: APP_CONSTANTS.KAFKA_TOPICS.ORDER_CONFIRMED,
-          handle: this.onOrderConfirmed.bind(this),
-        },
-        {
-          topic: APP_CONSTANTS.KAFKA_TOPICS.ORDER_CANCELLED,
-          handle: this.onOrderCancelled.bind(this),
-        },
-        {
-          topic: APP_CONSTANTS.KAFKA_TOPICS.PAYMENT_FAILED,
-          handle: this.onPaymentFailed.bind(this),
-        },
-      ],
-    }).catch((err: Error) => this.logger.warn(`Kafka consumer init failed: ${err.message}`));
+    this.consumer
+      .registerConsumer({
+        groupId: 'notification-consumer',
+        topics: [
+          APP_CONSTANTS.KAFKA_TOPICS.NOTIFICATION_DISPATCH,
+          APP_CONSTANTS.KAFKA_TOPICS.ORDER_CONFIRMED,
+          APP_CONSTANTS.KAFKA_TOPICS.ORDER_CANCELLED,
+          APP_CONSTANTS.KAFKA_TOPICS.PAYMENT_FAILED,
+        ],
+        handlers: [
+          {
+            topic: APP_CONSTANTS.KAFKA_TOPICS.NOTIFICATION_DISPATCH,
+            handle: this.onNotificationDispatch.bind(this),
+          },
+          {
+            topic: APP_CONSTANTS.KAFKA_TOPICS.ORDER_CONFIRMED,
+            handle: this.onOrderConfirmed.bind(this),
+          },
+          {
+            topic: APP_CONSTANTS.KAFKA_TOPICS.ORDER_CANCELLED,
+            handle: this.onOrderCancelled.bind(this),
+          },
+          {
+            topic: APP_CONSTANTS.KAFKA_TOPICS.PAYMENT_FAILED,
+            handle: this.onPaymentFailed.bind(this),
+          },
+        ],
+      })
+      .catch((err: Error) => this.logger.warn(`Kafka consumer init failed: ${err.message}`));
   }
 
   /**
@@ -254,7 +260,7 @@ export class NotificationService implements OnModuleInit {
         body: '',
         priority: 'HIGH',
         data: {
-          productName: event.productName as string ?? 'Sản phẩm',
+          productName: (event.productName as string) ?? 'Sản phẩm',
           price: String(event.price ?? ''),
         },
       });
@@ -268,9 +274,7 @@ export class NotificationService implements OnModuleInit {
     if (event.type !== 'ORDER_CONFIRMED') return;
     // Fetch order details to get userId — cross-service call via HTTP/gRPC
     // Simplified here for clarity
-    this.logger.log(
-      JSON.stringify({ event: 'notif_order_confirmed', orderId: event.orderId }),
-    );
+    this.logger.log(JSON.stringify({ event: 'notif_order_confirmed', orderId: event.orderId }));
   }
 
   private async onOrderCancelled(

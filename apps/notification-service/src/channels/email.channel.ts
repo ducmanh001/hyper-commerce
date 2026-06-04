@@ -5,11 +5,15 @@
 // ============================================================
 
 import { Injectable, Logger } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-// eslint-disable-next-line @typescript-eslint/no-var-requires, @typescript-eslint/no-require-imports
+import type { ConfigService } from '@nestjs/config';
+// eslint-disable-next-line @typescript-eslint/no-require-imports
 const sgMail = require('@sendgrid/mail');
 
-import { INotificationChannel, NotificationPayload, DeliveryResult } from './interfaces/notification-channel.interface';
+import type {
+  INotificationChannel,
+  NotificationPayload,
+  DeliveryResult,
+} from './interfaces/notification-channel.interface';
 
 // SendGrid dynamic template IDs — managed in SendGrid dashboard
 const TEMPLATE_IDS: Record<string, string> = {
@@ -30,10 +34,7 @@ export class EmailChannel implements INotificationChannel {
 
   constructor(private readonly config: ConfigService) {
     const apiKey = this.config.get<string>('SENDGRID_API_KEY');
-    this.fromEmail = this.config.get<string>(
-      'SENDGRID_FROM_EMAIL',
-      'noreply@hypercommerce.com',
-    );
+    this.fromEmail = this.config.get<string>('SENDGRID_FROM_EMAIL', 'noreply@hypercommerce.com');
 
     if (apiKey) {
       sgMail.setApiKey(apiKey);
@@ -42,7 +43,8 @@ export class EmailChannel implements INotificationChannel {
   }
 
   async send(payload: NotificationPayload): Promise<DeliveryResult> {
-    if (!this.initialized) return { channel: 'EMAIL', success: false, errorCode: 'NOT_INITIALIZED' };
+    if (!this.initialized)
+      return { channel: 'EMAIL', success: false, errorCode: 'NOT_INITIALIZED' };
 
     const toEmail = await this.getUserEmail(payload.userId);
     if (!toEmail) return { channel: 'EMAIL', success: false, errorCode: 'NO_EMAIL' };
