@@ -30,11 +30,15 @@ When given an error or unexpected behavior:
 
 1. Show the full stack trace (not just the last line)
 2. Show the relevant entity/service/module file
-3. Check: does TypeScript compile? `npx tsc --noEmit`
+3. Check: does TypeScript compile?
+
+```bash
+npm run type-check
+```
 
 ### Step 4 — Fix approach
 
 - Fix the ROOT cause, not the symptom
 - If it's a missing env var: add to `.env.example` AND `docker-compose.yml`
 - If it's a missing entity: add to module `TypeOrmModule.forFeature([Entity])`
-- Run `npx tsc --noEmit` after fix to confirm no regressions
+- Verify fix: run `npm run type-check` in terminal — must exit 0

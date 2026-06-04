@@ -58,6 +58,8 @@ npx jest --coverage --testPathPattern="apps/{service}"
 # Target: ≥ 80% line, 100% branch cho payment + auth + OTP
 ```
 
+> Chạy trong terminal — không cần agent.
+
 ## Anti-patterns — KHÔNG làm
 
 - ĐỪNG mock `crypto` — test với real crypto

@@ -163,5 +163,14 @@
       "^@hypercommerce/tracing(|/.*)$": "<rootDir>/libs/tracing/src/$1",
       "^@hypercommerce/events(|/.*)$": "<rootDir>/libs/events/src/$1"
     }
+  },
+  "lint-staged": {
+    "**/*.{ts,tsx}": [
+      "eslint --fix --max-warnings=0",
+      "prettier --write"
+    ],
+    "**/*.{js,json,md,yml,yaml}": [
+      "prettier --write"
+    ]
   }
 }

@@ -109,7 +109,7 @@ UPDATE {table} SET {new_col} = {expression} WHERE {new_col} IS NULL;
 
 - [ ] Check breaking changes in CHANGELOG of upgraded package
 - [ ] Upgrade in a branch, never main directly
-- [ ] Run `npx tsc --noEmit` after upgrade
+- [ ] Run `npm run type-check` after upgrade
 - [ ] Run `npm audit` — resolve HIGH/CRITICAL
 - [ ] Test locally with `docker compose up` before pushing
 - [ ] Update Dockerfile base image if Node.js version changed

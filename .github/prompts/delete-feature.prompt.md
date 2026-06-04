@@ -69,7 +69,7 @@ List every file that imports or calls it.
 
 ```bash
 # 0 TypeScript errors
-npx tsc --noEmit --project tsconfig.json 2>&1 | grep -v tsbuildinfo
+npm run type-check
 
 # No dead imports
 grep -r "import.*{FeatureName}" apps/ libs/ --include="*.ts"

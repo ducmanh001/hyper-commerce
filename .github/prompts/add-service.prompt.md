@@ -79,5 +79,5 @@ Brief description: ${input:description:Service này làm gì}
 
 ```bash
 npx nest build ${serviceName}
-npx tsc --noEmit --project tsconfig.json 2>&1 | grep -v tsbuildinfo
+npm run type-check
 ```

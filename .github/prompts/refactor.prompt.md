@@ -52,7 +52,7 @@ If any item is MIGRATION-NEEDED → create migration file before changing code.
 ### Step 5 — Verify
 
 ```bash
-npx tsc --noEmit --project tsconfig.json 2>&1 | grep -v tsbuildinfo
+npm run type-check
 ```
 
 Expected: 0 errors
