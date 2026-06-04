@@ -41,6 +41,7 @@
     "typecheck": "tsc --noEmit",
     "type-check": "tsc --noEmit --incremental false",
     "prepare": "husky",
+    "ci:local": "npm run lint:check && npm run type-check && npm run format:check && npm audit --audit-level=critical --omit=dev && echo '✅ All CI checks passed locally'",
     "start:gateway": "KAFKAJS_NO_PARTITIONER_WARNING=1 node apps/api-gateway/server.js"
   },
   "dependencies": {

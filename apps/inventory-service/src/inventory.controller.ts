@@ -79,7 +79,7 @@ export class InventoryController {
   async adjustStock(
     @Param('productId') productId: string,
     @Body() body: { quantity: number; reason: string; variantId?: string },
-    @CurrentUser() user: JwtPayload,
+    @CurrentUser() _user: JwtPayload,
   ) {
     return this.inventoryService.getStock(productId, body.variantId);
   }

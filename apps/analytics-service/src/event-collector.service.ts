@@ -119,7 +119,7 @@ export class EventCollectorService implements OnModuleInit, OnModuleDestroy {
     });
   }
 
-  private async onLiveEvent(event: Record<string, unknown>, meta: MessageMetadata): Promise<void> {
+  private async onLiveEvent(event: Record<string, unknown>, _meta: MessageMetadata): Promise<void> {
     this.addToBuffer({
       eventId: String(event.id ?? `live_${Date.now()}`),
       eventType: event.type as string,

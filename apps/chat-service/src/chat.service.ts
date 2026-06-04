@@ -312,10 +312,11 @@ export class ChatService {
   // ── Typing indicator (Redis, no DB write) ─────────────────
 
   setTyping(conversationId: string, userId: string, isTyping: boolean): void {
-    if (!this.typingUsers.has(conversationId)) {
-      this.typingUsers.set(conversationId, new Set());
+    let set = this.typingUsers.get(conversationId);
+    if (!set) {
+      set = new Set<string>();
+      this.typingUsers.set(conversationId, set);
     }
-    const set = this.typingUsers.get(conversationId)!;
     isTyping ? set.add(userId) : set.delete(userId);
   }
 

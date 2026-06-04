@@ -213,7 +213,10 @@ export class InventoryService implements OnModuleInit {
 
   // ── Kafka Event Handlers ──────────────────────────────────
 
-  private async onOrderEvent(event: Record<string, unknown>, meta: MessageMetadata): Promise<void> {
+  private async onOrderEvent(
+    event: Record<string, unknown>,
+    _meta: MessageMetadata,
+  ): Promise<void> {
     if (event.type !== 'ORDER_CREATED') return;
 
     const request: ReserveStockRequest = {
@@ -226,7 +229,7 @@ export class InventoryService implements OnModuleInit {
 
   private async onOrderCancelled(
     event: Record<string, unknown>,
-    meta: MessageMetadata,
+    _meta: MessageMetadata,
   ): Promise<void> {
     if (event.type !== 'ORDER_CANCELLED') return;
     await this.releaseReservation(event.orderId as string);

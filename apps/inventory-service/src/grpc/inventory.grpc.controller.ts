@@ -50,7 +50,7 @@ export class InventoryGrpcController {
   // ) {}
 
   @GrpcMethod('InventoryService', 'CheckStock')
-  async checkStock(data: CheckStockRequest) {
+  async checkStock(_data: CheckStockRequest) {
     // Fast path: check Redis first
     // const available = await this.inventoryService.checkStock(
     //   data.productId, data.variantId, data.quantity
@@ -91,19 +91,19 @@ export class InventoryGrpcController {
   }
 
   @GrpcMethod('InventoryService', 'ReleaseReservation')
-  async releaseReservation(data: ReleaseReservationRequest) {
+  async releaseReservation(_data: ReleaseReservationRequest) {
     // await this.inventoryService.releaseReservation(data.reservationId);
     return { success: true };
   }
 
   @GrpcMethod('InventoryService', 'CommitReservation')
-  async commitReservation(data: CommitReservationRequest) {
+  async commitReservation(_data: CommitReservationRequest) {
     // await this.inventoryService.commitReservation(data.reservationId);
     return { success: true };
   }
 
   @GrpcMethod('InventoryService', 'GetFlashSaleStock')
-  async getFlashSaleStock(data: GetFlashSaleStockRequest) {
+  async getFlashSaleStock(_data: GetFlashSaleStockRequest) {
     return {
       remaining: 50,
       total: 100,

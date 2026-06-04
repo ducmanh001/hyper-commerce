@@ -108,7 +108,7 @@ jobs:
 
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@master
-        continue-on-error: true  # Trivy DB may be unavailable; non-blocking
+        continue-on-error: true # Trivy DB may be unavailable; non-blocking
         with:
           scan-type: 'fs'
           scan-ref: '.'
@@ -126,7 +126,6 @@ jobs:
       (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop') &&
       vars.DEPLOY_ECR == 'true'
     continue-on-error: true
-
     strategy:
       matrix:
         service:

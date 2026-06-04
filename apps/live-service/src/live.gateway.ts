@@ -107,10 +107,12 @@ export class LiveGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
       socket.username = payload.username;
 
       // Register in connection maps
-      if (!this.connectionMap.has(socket.userId)) {
-        this.connectionMap.set(socket.userId, new Set());
+      let sockets = this.connectionMap.get(socket.userId);
+      if (!sockets) {
+        sockets = new Set<string>();
+        this.connectionMap.set(socket.userId, sockets);
       }
-      this.connectionMap.get(socket.userId)!.add(socket.id);
+      sockets.add(socket.id);
       this.socketUserMap.set(socket.id, socket.userId);
 
       // Mark user as online
