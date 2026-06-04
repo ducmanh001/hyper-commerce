@@ -927,6 +927,8 @@ const INTERNAL_SERVICES = {
   ai:           process.env.AI_SERVICE_URL          ?? 'http://ai-service:3010',
   analytics:    process.env.ANALYTICS_SERVICE_URL   ?? 'http://analytics-service:3009',
   notification: process.env.NOTIFICATION_SERVICE_URL ?? 'http://notification-service:3008',
+  review:       process.env.REVIEW_SERVICE_URL      ?? 'http://review-service:3016',
+  chat:         process.env.CHAT_SERVICE_URL        ?? 'http://chat-service:3015',
 };
 
 const INTERNAL_TOKEN = process.env.INTERNAL_SERVICE_TOKEN ?? 'internal_dev_token_change_in_prod';
@@ -1842,6 +1844,77 @@ io.on('connection', (socket) => {
 });
 
 // ═══════════════════════════════════════════════════════════════════════════
+// ── REVIEW SERVICE PROXY ───────────────────────────────────────────────────
+// Route /api/v1/reviews/* → review-service:3016
+// ═══════════════════════════════════════════════════════════════════════════
+
+// Public: list reviews & stats
+app.get('/api/v1/reviews', async (req, res) => {
+  const qs = new URLSearchParams(req.query).toString();
+  const result = await callInternal(INTERNAL_SERVICES.review, `/api/v1/reviews?${qs}`, { timeoutMs: 5000 });
+  if (!result) return res.status(503).json({ message: 'Review service unavailable' });
+  res.json(result.data);
+});
+
+app.get('/api/v1/reviews/product/:productId/stats', async (req, res) => {
+  const result = await callInternal(INTERNAL_SERVICES.review, `/api/v1/reviews/product/${req.params.productId}/stats`);
+  if (!result) return res.status(503).json({ message: 'Review service unavailable' });
+  res.json(result.data);
+});
+
+app.get('/api/v1/reviews/:id', async (req, res) => {
+  const result = await callInternal(INTERNAL_SERVICES.review, `/api/v1/reviews/${req.params.id}`);
+  if (!result) return res.status(503).json({ message: 'Review service unavailable' });
+  res.json(result.data);
+});
+
+// Auth required: submit review
+app.post('/api/v1/reviews', authMiddleware, async (req, res) => {
+  const result = await callInternal(INTERNAL_SERVICES.review, '/api/v1/reviews', { method: 'POST', body: req.body });
+  if (!result) return res.status(503).json({ message: 'Review service unavailable' });
+  res.status(201).json(result.data);
+});
+
+// Auth required: helpful votes
+app.post('/api/v1/reviews/:id/helpful', authMiddleware, async (req, res) => {
+  const body = { ...req.body, userId: req.user.id };
+  const result = await callInternal(INTERNAL_SERVICES.review, `/api/v1/reviews/${req.params.id}/helpful`, { method: 'POST', body });
+  if (!result) return res.status(503).json({ message: 'Review service unavailable' });
+  res.json(result.data);
+});
+
+// Seller: add reply
+app.post('/api/v1/reviews/:id/reply', authMiddleware, async (req, res) => {
+  const body = { ...req.body, sellerId: req.user.id };
+  const result = await callInternal(INTERNAL_SERVICES.review, `/api/v1/reviews/${req.params.id}/reply`, { method: 'POST', body });
+  if (!result) return res.status(503).json({ message: 'Review service unavailable' });
+  res.status(201).json(result.data);
+});
+
+// Admin: moderation endpoints (ADMIN role required)
+app.get('/api/v1/admin/reviews/pending', authMiddleware, async (req, res) => {
+  if (!req.user.roles?.includes('ADMIN')) return res.status(403).json({ message: 'Forbidden' });
+  const qs = new URLSearchParams(req.query).toString();
+  const result = await callInternal(INTERNAL_SERVICES.review, `/api/v1/admin/reviews/pending?${qs}`);
+  if (!result) return res.status(503).json({ message: 'Review service unavailable' });
+  res.json(result.data);
+});
+
+app.patch('/api/v1/admin/reviews/:id/approve', authMiddleware, async (req, res) => {
+  if (!req.user.roles?.includes('ADMIN')) return res.status(403).json({ message: 'Forbidden' });
+  const result = await callInternal(INTERNAL_SERVICES.review, `/api/v1/admin/reviews/${req.params.id}/approve`, { method: 'PATCH' });
+  if (!result) return res.status(503).json({ message: 'Review service unavailable' });
+  res.json(result.data);
+});
+
+app.patch('/api/v1/admin/reviews/:id/reject', authMiddleware, async (req, res) => {
+  if (!req.user.roles?.includes('ADMIN')) return res.status(403).json({ message: 'Forbidden' });
+  const result = await callInternal(INTERNAL_SERVICES.review, `/api/v1/admin/reviews/${req.params.id}/reject`, { method: 'PATCH', body: req.body });
+  if (!result) return res.status(503).json({ message: 'Review service unavailable' });
+  res.json(result.data);
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
 // ── BOOTSTRAP ──────────────────────────────────────────────────────────────
 // ═══════════════════════════════════════════════════════════════════════════
 
@@ -1897,6 +1970,7 @@ async function bootstrap() {
     console.log(`\n🚀 HyperCommerce API Gateway running on http://localhost:${PORT}`);
     console.log(`   Socket.IO ready at ws://localhost:${PORT}`);
     console.log(`   Endpoints: /api/auth, /api/products, /api/cart, /api/orders, /api/live-streams`);
+    console.log(`   Reviews:   /api/v1/reviews, /api/v1/admin/reviews`);
     console.log(`   Admin:     /api/admin/* (ADMIN role required)`);
     console.log(`   Health:    http://localhost:${PORT}/health\n`);
   });
