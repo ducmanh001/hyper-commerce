@@ -41,16 +41,16 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 
-# ====================================================================
-# 2c. ENVIRONMENT FILES (nhạy cảm — không bao giờ commit)
-# ====================================================================
-.env
-.env.local
-.env.*.local
-.env.test.local
-.env.production.local
-# Cho phép commit .env.example (template không chứa secrets)
-!.env.example
+# # ====================================================================
+# # 2c. ENVIRONMENT FILES (nhạy cảm — không bao giờ commit)
+# # ====================================================================
+# .env
+# .env.local
+# .env.*.local
+# .env.test.local
+# .env.production.local
+# # Cho phép commit .env.example (template không chứa secrets)
+# !.env.example
 
 # ====================================================================
 # 3. BẢO MẬT: LOẠI BỎ CÁC FILE CẤU HÌNH MÔI TRƯỜNG (ENV, TOKEN, KEY)
