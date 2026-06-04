@@ -51,14 +51,25 @@ import { Test } from '@nestjs/testing';
 - [ ] GET /resource/:id không có JWT → 401
 - [ ] GET /resource/:id của user khác → 403
 
-## 6. Coverage check
+## 6. Coverage check — REQUIRED, run and report
 
 ```bash
 npx jest --coverage --testPathPattern="apps/{service}"
 # Target: ≥ 80% line, 100% branch cho payment + auth + OTP
 ```
 
-> Chạy trong terminal — không cần agent.
+**AI phải chạy lệnh này và báo cáo kết quả trước khi kết thúc:**
+
+```
+Coverage report:
+  Statements : XX% (target ≥80%)
+  Branches   : XX% (target 100% cho payment/auth/OTP)
+  Lines      : XX%
+
+Tests: X passed, 0 failed
+```
+
+Nếu coverage < threshold → viết thêm test cho branches bị miss, chạy lại.
 
 ## Anti-patterns — KHÔNG làm
 

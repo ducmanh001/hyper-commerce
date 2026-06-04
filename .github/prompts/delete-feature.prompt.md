@@ -73,7 +73,20 @@ npm run type-check
 
 # No dead imports
 grep -r "import.*{FeatureName}" apps/ libs/ --include="*.ts"
+
+# FK orphan check — no entity still references deleted table
+grep -rn "{FeatureName}\|{featureName}Id" apps/ libs/ --include="*.entity.ts"
+
+# Kafka consumer cleanup — no handler still listening to deleted topic
+grep -rn "@EventPattern\|subscribe\|consumer" apps/ libs/ --include="*.ts" \
+  | grep "{topic.name}"
+
+# Dead BullMQ job — no processor still handling deleted queue
+grep -rn "QUEUE_NAMES\|JOB_NAMES" apps/ libs/ --include="*.ts" \
+  | grep "{QUEUE_CONSTANT_NAME}"
 ```
+
+**All 4 checks must return 0 results before closing this task.**
 
 ## If deleting an entire service
 
