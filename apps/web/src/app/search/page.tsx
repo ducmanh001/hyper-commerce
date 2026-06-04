@@ -119,6 +119,21 @@ async function SearchResults({ searchParams }: PageProps) {
         {result.total.toLocaleString('vi-VN')} kết quả
         {searchParams.q ? ` cho "${searchParams.q}"` : ''}
       </p>
+      {result.query?.corrected && result.query.corrected !== result.query.original && (
+        <p className="text-sm text-blue-600 mb-3">
+          Hiển thị kết quả cho{' '}
+          <span className="font-medium">&ldquo;{result.query.corrected}&rdquo;</span>
+          {' '}— bạn có muốn tìm{' '}
+          <Link
+            href={`/search?q=${encodeURIComponent(result.query.original)}`}
+            className="underline hover:text-blue-800"
+          >
+            &ldquo;{result.query.original}&rdquo;
+          </Link>
+          ?
+        </p>
+      )}
+      </p>
 
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
         {result.products.map((product) => (

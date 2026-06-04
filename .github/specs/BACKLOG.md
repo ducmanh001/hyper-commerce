@@ -17,7 +17,7 @@ created: 2026-06-05
 
 | #   | Task                               | Spec                                                               | Level | Agent        | Status |
 | --- | ---------------------------------- | ------------------------------------------------------------------ | ----- | ------------ | ------ |
-| 1   | Qdrant + Search Embedding Pipeline | [qdrant-search-embedding.spec.md](qdrant-search-embedding.spec.md) | L3    | `@ai-ml`     | TODO   |
+| 1   | Qdrant + Search Embedding Pipeline | [qdrant-search-embedding.spec.md](qdrant-search-embedding.spec.md) | L3    | `@ai-ml`     | DONE   |
 | 2   | Feed Ranking v1 Linear Complete    | [feed-ranking-v1.spec.md](feed-ranking-v1.spec.md)                 | L3    | `@ai-ml`     | TODO   |
 | 3   | Referral System (3 services)       | [referral-system.spec.md](referral-system.spec.md)                 | L4    | `@architect` | READY  |
 
@@ -107,7 +107,7 @@ Verify: npx tsc --noEmit
 
 | Task                     | FE File                                         | Depends on                | Status               |
 | ------------------------ | ----------------------------------------------- | ------------------------- | -------------------- |
-| Search page → real API   | `apps/web/src/app/search/page.tsx`              | qdrant-search-embedding   | TODO                 |
+| Search page → real API   | `apps/web/src/app/search/page.tsx`              | qdrant-search-embedding   | DONE                 |
 | Home feed → real API     | `apps/web/src/app/page.tsx`                     | feed-ranking-v1           | TODO                 |
 | Wishlist page → real API | `apps/web/src/app/wishlist/page.tsx`            | wishlist-service          | Included in spec #12 |
 | Seller subscription page | `apps/web/src/app/seller/subscription/page.tsx` | subscription-renewal-cron | TODO                 |

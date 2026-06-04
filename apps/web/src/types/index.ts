@@ -152,7 +152,15 @@ export interface SearchResult {
     priceRanges: Array<{ min: number; max: number; count: number }>;
     sellers: Array<{ id: string; name: string; count: number }>;
   };
-  sponsored?: Product[]; // Top 3 sponsored slots
+  sponsored?: Product[];
+  /** Spell-correction info from hybrid search — present when search-service is UP */
+  query?: {
+    original: string;
+    corrected?: string;
+    intent?: string;
+  };
+  /** Click-through tracking ID */
+  searchId?: string;
 }
 
 export interface ApiError {
