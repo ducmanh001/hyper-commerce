@@ -25,3 +25,5 @@ RUN npm ci --legacy-peer-deps
 
 # Source code KHÔNG copy vào image — sẽ được bind-mount qua volume
 # Mục đích: code thay đổi không cần rebuild image
+
+# Expose the port (optional, as it can be set at runtime)

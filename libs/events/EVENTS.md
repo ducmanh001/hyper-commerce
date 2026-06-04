@@ -10,6 +10,9 @@
 | `order.events`        | order-service     | inventory-service, payment-service, notification-service, analytics-service, wallet-service |
 | `inventory.events`    | inventory-service | order-service, notification-service                                                         |
 | `payment.events`      | payment-service   | order-service, notification-service                                                         |
+| `product.created`     | inventory-service | search-service (ES indexer `search-indexer`), search-service (embedder `search-embedder`)   |
+| `product.updated`     | inventory-service | search-service (ES indexer `search-indexer`), search-service (embedder `search-embedder`)   |
+| `product.deleted`     | inventory-service | search-service (ES indexer `search-indexer`)                                                |
 | `user.events`         | user-service      | notification-service, feed-service                                                          |
 | `live.events`         | live-service      | feed-service, notification-service, analytics-service, wallet-service                       |
 | `review.events`       | review-service    | ai-service, search-service, notification-service                                            |

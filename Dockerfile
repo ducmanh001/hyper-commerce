@@ -59,3 +59,5 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
 
 # Start the service
 CMD ["node", "dist/apps/${SERVICE}/main"]
+
+# Expose the port (optional, as it can be set at runtime)

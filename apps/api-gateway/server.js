@@ -1557,7 +1557,43 @@ app.post('/api/payments/webhook/:provider', async (req, res) => {
 app.get('/api/search', publicLimit, async (req, res) => {
   // Delegate sang search-service (BM25 + vector search) nếu available
   const svc = await callInternal(INTERNAL_SERVICES.search, `/search?${new URLSearchParams(req.query).toString()}`);
-  if (svc) return res.json(svc.data);
+  if (svc) {
+    const data = svc.data;
+    // Normalize search-service ProductHit[] → FE Product[] shape
+    if (Array.isArray(data.hits)) {
+      const { page = 1, pageSize = 24 } = req.query;
+      const products = data.hits.map((hit) => ({
+        id: hit.id,
+        name: hit.name,
+        slug: hit.id, // fallback slug
+        description: '',
+        price: hit.price ?? 0,
+        originalPrice: hit.originalPrice,
+        thumbnailUrl: hit.imageUrl ?? '',
+        images: hit.imageUrl ? [hit.imageUrl] : [],
+        sellerId: hit.sellerId ?? '',
+        sellerName: hit.sellerName ?? '',
+        categoryId: '',
+        categoryName: '',
+        rating: hit.rating ?? 0,
+        reviewCount: hit.reviewCount ?? 0,
+        soldCount: hit.soldCount ?? 0,
+        stockQuantity: hit.inStock ? 1 : 0,
+        tags: [],
+      }));
+      return res.json({
+        products,
+        total: data.total ?? products.length,
+        page: Number(page),
+        pageSize: Number(pageSize),
+        facets: data.facets,
+        sponsored: [],
+        query: data.query,
+        searchId: data.searchId,
+      });
+    }
+    return res.json(svc.data);
+  }
 
   // Fallback: SQL ILIKE
   try {
