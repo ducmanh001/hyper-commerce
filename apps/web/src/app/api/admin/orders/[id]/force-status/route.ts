@@ -1,8 +1,8 @@
 import { NextRequest } from 'next/server';
-import { proxyToGateway } from '@/lib/gateway';
+import { proxyToAdminService } from '@/lib/admin-proxy';
 
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
-  return proxyToGateway(req, `/api/admin/orders/${params.id}/force-status`, { method: 'PATCH' });
+  return proxyToAdminService(req, `/admin/orders/${params.id}/force-status`, { method: 'PATCH' });
 }
 
 export { POST as PATCH };

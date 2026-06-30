@@ -1,10 +1,10 @@
 import { NextRequest } from 'next/server';
-import { proxyToGateway } from '@/lib/gateway';
+import { proxyToAdminService } from '@/lib/admin-proxy';
 
 export async function GET(req: NextRequest) {
-  return proxyToGateway(req, '/api/admin/feature-flags', { method: 'GET' });
+  return proxyToAdminService(req, '/admin/feature-flags', { method: 'GET' });
 }
 
 export async function POST(req: NextRequest) {
-  return proxyToGateway(req, '/api/admin/feature-flags');
+  return proxyToAdminService(req, '/admin/feature-flags');
 }

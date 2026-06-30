@@ -3,6 +3,11 @@
 // WHY NOT AXIOS? Next.js Server Components use native fetch
 // with built-in caching. Using axios in RSC requires extra
 // config. We use fetch directly, axios only in Client Components.
+//
+// Auth model:
+// - Browser calls same-origin `/api/*` BFF routes
+// - BFF reads httpOnly auth cookies and forwards auth to gateway
+// - Client code should not rely on localStorage tokens
 // =====================================================
 
 import { ApiError, SearchResult, Product, Order, Cart, CartItem } from '@/types';
@@ -10,27 +15,8 @@ import { ApiError, SearchResult, Product, Order, Cart, CartItem } from '@/types'
 const INTERNAL_BASE = process.env.GATEWAY_URL ?? 'http://localhost:4000';
 // All service calls go through the API Gateway
 
-/**
- * Read the persisted Zustand auth token from localStorage.
- * Safe to call during SSR — returns null when window is undefined.
- * Zustand persists state under key 'hc-auth' as { state: { accessToken } }.
- */
-function getAuthToken(): string | null {
-  if (typeof window === 'undefined') return null;
-  try {
-    const raw = localStorage.getItem('hc-auth');
-    if (!raw) return null;
-    const parsed = JSON.parse(raw) as { state?: { accessToken?: string | null } };
-    return parsed?.state?.accessToken ?? null;
-  } catch {
-    return null;
-  }
-}
-
 function authHeaders(extra?: Record<string, string>): Record<string, string> {
-  const token = getAuthToken();
   const headers: Record<string, string> = { 'Content-Type': 'application/json', ...extra };
-  if (token) headers['Authorization'] = `Bearer ${token}`;
   return headers;
 }
 

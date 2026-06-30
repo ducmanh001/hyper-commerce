@@ -50,6 +50,10 @@ export const APP_CONSTANTS = {
     USER_ONLINE: 'online:', // online:{user_id} → TTL based
     CIRCUIT_BREAKER: 'cb:',
     FRAUD_SCORE: 'fraud:score:',
+    // Feed ranking v1
+    FEED_USER_EMBED: 'user:embed:', // user:embed:{userId} → float32 JSON array (768-dim)
+    FEED_AB_VARIANT: 'feed:ab:', // feed:ab:{userId} → 'v1'|'v2' (TTL=7d)
+    FEED_RANKED: 'feed:feat:user:', // feed:feat:user:{userId} → ranked JSON (TTL=300s)
   },
 
   // Follower thresholds
@@ -106,6 +110,30 @@ export const APP_CONSTANTS = {
     relationship: 0.2,
     diversity_penalty: 0.1,
   },
+
+  // v1 linear scoring weights — from social.agent.md formula
+  // Score = completionRate×0.30 + purchaseRate×0.20 + userInterest×0.20
+  //        + decay×0.15 + shareRate×0.15
+  FEED_RANK_WEIGHTS_V1: {
+    completionRate: 0.3,
+    purchaseRate: 0.2,
+    userInterest: 0.2,
+    decay: 0.15,
+    shareRate: 0.15,
+  },
+
+  // v2 weights — favour purchase intent and sharing signal
+  FEED_RANK_WEIGHTS_V2: {
+    completionRate: 0.2,
+    purchaseRate: 0.3,
+    userInterest: 0.2,
+    decay: 0.1,
+    shareRate: 0.2,
+  },
+
+  // Feed cache TTL
+  FEED_RANKED_TTL_SECONDS: 300, // 5 minutes (feed:feat:user:{userId})
+  FEED_AB_TTL_SECONDS: 604_800, // 7 days  (feed:ab:{userId})
 
   // Search
   SEARCH_MAX_RESULTS: 1_000,

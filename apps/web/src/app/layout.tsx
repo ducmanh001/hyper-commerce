@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import './globals.css';
+import { AuthSessionBootstrap } from '@/components/auth/AuthSessionBootstrap';
 
 export const metadata: Metadata = {
   title: {
@@ -36,6 +37,7 @@ export default function RootLayout({
         />
       </head>
       <body className="min-h-screen bg-gray-50">
+        <AuthSessionBootstrap />
         {children}
         <ToastContainer
           position="top-right"

@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuthStore } from '@/lib/store/auth';
+import { logoutUser } from '@/lib/auth-client';
 import {
   LayoutDashboard, BarChart2, Package, Megaphone, Scale, CreditCard,
   Video, CreditCard as SubscriptionIcon, Home, LogOut, ChevronRight,
@@ -30,9 +31,12 @@ const NAV: NavItem[] = [
 export function SellerNav() {
   const pathname = usePathname();
   const router   = useRouter();
-  const { user, clearAuth } = useAuthStore();
+  const user = useAuthStore((s) => s.user);
 
-  const handleLogout = () => { clearAuth(); router.push('/'); };
+  const handleLogout = async () => {
+    await logoutUser();
+    router.push('/');
+  };
 
   return (
     <nav className="flex flex-col h-full" style={{ background: 'linear-gradient(180deg, #0F172A 0%, #111827 60%, #0F172A 100%)' }}>

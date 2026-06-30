@@ -7,6 +7,9 @@ import { INJECTION_TOKENS } from '@hypercommerce/common/constants/app.constants'
 import { FeedFanoutWorker } from './fanout/feed-fanout.worker';
 import { FeedRankerService } from './ranking/feed-ranker.service';
 import { ScoringHelper } from './ranking/scoring.helper';
+import { RankingService } from './ranking/ranking.service';
+import { AbWeightResolverService } from './ranking/ab-weight-resolver.service';
+import { FeedService } from './feed.service';
 import { FeedRepository } from './repositories/feed.repository';
 import { FollowRepository } from './repositories/follow.repository';
 import { CelebrityDetectorHelper } from './helpers/celebrity-detector.helper';
@@ -34,6 +37,9 @@ const cassandraProvider = {
     FeedFanoutWorker,
     FeedRankerService,
     ScoringHelper,
+    RankingService,
+    AbWeightResolverService,
+    FeedService,
     FeedRepository,
     FollowRepository,
     CelebrityDetectorHelper,

@@ -1,10 +1,10 @@
 import { NextRequest } from 'next/server';
-import { proxyToGateway, gatewayUrl } from '@/lib/gateway';
+import { proxyToGateway, getGatewayAuthorization } from '@/lib/gateway';
 
 export async function GET(req: NextRequest) {
   // Map seller inventory to products API
   const { searchParams } = new URL(req.url);
-  const auth = req.headers.get('authorization');
+  const auth = getGatewayAuthorization(req);
   const GATEWAY_URL = process.env.GATEWAY_URL ?? 'http://localhost:4000';
   const { NextResponse } = await import('next/server');
 

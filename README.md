@@ -8,6 +8,7 @@
 ## Mục lục
 
 - [Tổng quan dự án](#tổng-quan-dự-án)
+- [Architecture Review](docs/ARCHITECTURE_REVIEW.md)
 - [Kiến trúc hệ thống](#kiến-trúc-hệ-thống)
 - [Mô hình kỹ thuật áp dụng](#mô-hình-kỹ-thuật-áp-dụng)
 - [Danh sách service](#danh-sách-service)

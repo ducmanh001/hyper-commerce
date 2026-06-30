@@ -1,6 +1,6 @@
 import { NextRequest } from 'next/server';
-import { proxyToGateway } from '@/lib/gateway';
+import { proxyToAdminService } from '@/lib/admin-proxy';
 
 export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
-  return proxyToGateway(req, `/api/admin/users/${params.id}/ban`, { method: 'PATCH' });
+  return proxyToAdminService(req, `/admin/users/${params.id}/ban`, { method: 'PATCH' });
 }

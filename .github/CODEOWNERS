@@ -1,0 +1,34 @@
+# Global defaults
+* @platform-team
+
+# Core platform
+/infrastructure/ @platform-team @sre-team
+/docs/ @platform-team @architecture-team
+/libs/common/ @platform-team
+/libs/database/ @platform-team @data-team
+/libs/kafka/ @platform-team @data-team
+/libs/redis/ @platform-team
+/libs/tracing/ @platform-team @sre-team
+/libs/events/ @platform-team @data-team
+
+# Web and edge
+/apps/web/ @web-team
+/apps/api-gateway/ @edge-team @platform-team
+
+# Domain services
+/apps/user-service/ @identity-team
+/apps/order-service/ @order-team
+/apps/payment-service/ @order-team @finance-team
+/apps/wallet-service/ @order-team @finance-team
+/apps/inventory-service/ @fulfillment-team
+/apps/search-service/ @catalog-team @search-team
+/apps/feed-service/ @growth-team
+/apps/live-service/ @growth-team @realtime-team
+/apps/chat-service/ @realtime-team
+/apps/notification-service/ @engagement-team
+/apps/analytics-service/ @data-team
+/apps/ai-service/ @ai-team
+/apps/ads-service/ @growth-team
+/apps/subscription-service/ @growth-team @finance-team
+/apps/review-service/ @catalog-team
+/apps/admin-service/ @internal-tools-team

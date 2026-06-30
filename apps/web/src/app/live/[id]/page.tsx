@@ -27,7 +27,7 @@ const DEMO_COMMENTS = [
 
 export default function LiveViewerPage() {
   const { id: streamId } = useParams<{ id: string }>();
-  const { user, accessToken: token } = useAuthStore();
+  const user = useAuthStore((s) => s.user);
 
   const socketRef = useRef<Socket | null>(null);
   const peerRef   = useRef<RTCPeerConnection | null>(null);
@@ -41,6 +41,7 @@ export default function LiveViewerPage() {
   const [connected, setConnected]       = useState(false);
   const [streamStatus, setStreamStatus] = useState<'live'|'ended'|'loading'>('loading');
   const [streamInfo, setStreamInfo]     = useState<{ title: string; hostName: string } | null>(null);
+  const [socketToken, setSocketToken]   = useState<string | null>(null);
   const chatRef = useRef<HTMLDivElement>(null);
 
   const addComment = useCallback((c: Comment) => {
@@ -64,10 +65,24 @@ export default function LiveViewerPage() {
       .catch(() => {});
   }, [streamId]);
 
+  useEffect(() => {
+    if (!user) {
+      setSocketToken(null);
+      return;
+    }
+
+    fetch('/api/auth/socket-token', { cache: 'no-store' })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => setSocketToken(data?.accessToken ?? null))
+      .catch(() => setSocketToken(null));
+  }, [user]);
+
   // ── WebRTC + Socket.IO ────────────────────────────────────────────────────
   useEffect(() => {
+    if (!socketToken) return;
+
     const socket = io(GATEWAY_WS, {
-      auth: { token: token ?? '' },
+      auth: { token: socketToken },
       transports: ['websocket', 'polling'],
     });
     socketRef.current = socket;
@@ -145,7 +160,7 @@ export default function LiveViewerPage() {
       peerRef.current?.close();
       socket.disconnect();
     };
-  }, [streamId, token, addComment]);
+  }, [streamId, socketToken, addComment]);
 
   const sendComment = () => {
     const msg = input.trim();

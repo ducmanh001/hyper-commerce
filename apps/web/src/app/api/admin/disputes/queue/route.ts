@@ -1,6 +1,8 @@
 import { NextRequest } from 'next/server';
-import { proxyToGateway } from '@/lib/gateway';
+import { adminServiceUrl, proxyToAdminService } from '@/lib/admin-proxy';
 
 export async function GET(req: NextRequest) {
-  return proxyToGateway(req, '/api/admin/disputes/queue', { method: 'GET' });
+  return proxyToAdminService(req, adminServiceUrl('/admin/disputes/queue', req), {
+    method: 'GET',
+  });
 }

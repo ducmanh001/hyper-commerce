@@ -40,8 +40,8 @@ Planned sequence: 6=next · auto-update via `make context:index`
 | `user_follows`         | user-service         | `apps/user-service/src/entities/user-follow.entity.ts`                 |
 | `user_profiles`        | user-service         | `apps/user-service/src/entities/user-profile.entity.ts`                |
 | `users`                | user-service         | `apps/user-service/src/entities/user.entity.ts`                        |
-| `wallet_transactions`  | wallet-service       | `apps/wallet-service/src/entities/wallet-transaction.entity.ts`        |
 | `wallet_outbox_events` | wallet-service       | `apps/wallet-service/src/entities/wallet-outbox.entity.ts`             |
+| `wallet_transactions`  | wallet-service       | `apps/wallet-service/src/entities/wallet-transaction.entity.ts`        |
 
 ---
 

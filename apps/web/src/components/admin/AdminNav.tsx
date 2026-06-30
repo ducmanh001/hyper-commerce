@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuthStore } from '@/lib/store/auth';
+import { logoutUser } from '@/lib/auth-client';
 import {
   LayoutDashboard, Users, ShoppingBag, Store, Scale, DollarSign,
   Shield, Key, ClipboardList, Flag, Megaphone, Home, LogOut, ChevronRight,
@@ -36,7 +37,7 @@ const NAV: NavItem[] = [
 export function AdminNav() {
   const pathname = usePathname();
   const router   = useRouter();
-  const { user, clearAuth } = useAuthStore();
+  const user = useAuthStore((s) => s.user);
 
   const visible = NAV.filter((item) => !item.roles || item.roles.includes(user?.role ?? ''));
 
@@ -134,7 +135,10 @@ export function AdminNav() {
           Về trang chủ
         </Link>
         <button
-          onClick={() => { clearAuth(); router.push('/auth/login'); }}
+          onClick={async () => {
+            await logoutUser();
+            router.push('/auth/login');
+          }}
           className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-gray-500 hover:text-red-400 hover:bg-red-500/8 transition-all"
         >
           <LogOut className="w-4 h-4" />
@@ -144,4 +148,3 @@ export function AdminNav() {
     </nav>
   );
 }
-

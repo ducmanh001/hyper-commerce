@@ -4,13 +4,14 @@ import Link from 'next/link';
 import { ShoppingCart, Search, Bell, User, LogOut, BarChart2, Package, Heart, Zap, ChevronDown, X, Menu } from 'lucide-react';
 import { useCartStore } from '@/lib/store/cart';
 import { useAuthStore } from '@/lib/store/auth';
+import { logoutUser } from '@/lib/auth-client';
 import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 
 export function Header() {
   const getItemCount = useCartStore((s) => s.getItemCount);
   const itemCount = getItemCount();
-  const { user, clearAuth } = useAuthStore();
+  const user = useAuthStore((s) => s.user);
   const [query, setQuery]       = useState('');
   const [menuOpen, setMenuOpen] = useState(false);
   const [userOpen, setUserOpen] = useState(false);
@@ -185,7 +186,11 @@ export function Header() {
                           )}
                           <hr className="my-1 border-gray-100" />
                           <button
-                            onClick={() => { clearAuth(); setUserOpen(false); router.push('/'); }}
+                            onClick={async () => {
+                              await logoutUser();
+                              setUserOpen(false);
+                              router.push('/');
+                            }}
                             className="flex w-full items-center gap-3 px-4 py-2.5 hover:bg-red-50 text-red-500 transition-colors"
                           >
                             <LogOut className="w-4 h-4" /> Đăng xuất

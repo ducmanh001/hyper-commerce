@@ -23,7 +23,8 @@ interface AuthState {
   refreshToken: string | null;
   isHydrated: boolean;
   // Actions
-  setAuth: (user: AuthUser, access: string, refresh: string) => void;
+  setAuth: (user: AuthUser, accessToken?: string | null, refreshToken?: string | null) => void;
+  syncSession: (user: AuthUser | null) => void;
   updateUser: (partial: Partial<AuthUser>) => void;
   clearAuth: () => void;
   setHydrated: () => void;
@@ -37,7 +38,15 @@ export const useAuthStore = create<AuthState>()(
       refreshToken: null,
       isHydrated: false,
 
-      setAuth: (user, accessToken, refreshToken) => set({ user, accessToken, refreshToken }),
+      setAuth: (user, accessToken = null, refreshToken = null) =>
+        set({ user, accessToken, refreshToken }),
+
+      syncSession: (user) =>
+        set((state) => ({
+          user,
+          accessToken: user ? state.accessToken : null,
+          refreshToken: user ? state.refreshToken : null,
+        })),
 
       updateUser: (partial) =>
         set((state) => ({
@@ -55,9 +64,9 @@ export const useAuthStore = create<AuthState>()(
           ? localStorage
           : { getItem: () => null, setItem: () => void 0, removeItem: () => void 0 },
       ),
-      onRehydrateStorage: () => (state) => {
-        state?.setHydrated();
-      },
+      partialize: (state) => ({
+        user: state.user,
+      }),
     },
   ),
 );

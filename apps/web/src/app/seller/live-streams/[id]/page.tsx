@@ -14,7 +14,7 @@ interface Comment { id: string; fullName: string; message: string; createdAt: st
 export default function SellerLivePage() {
   const { id: streamId } = useParams<{ id: string }>();
   const router = useRouter();
-  const { accessToken: token, user } = useAuthStore();
+  const user = useAuthStore((s) => s.user);
 
   // Refs
   const socketRef      = useRef<Socket | null>(null);
@@ -31,6 +31,7 @@ export default function SellerLivePage() {
   const [input, setInput]             = useState('');
   const [streamInfo, setStreamInfo]   = useState<{ title: string; streamKey: string } | null>(null);
   const [elapsed, setElapsed]         = useState(0);
+  const [socketToken, setSocketToken] = useState<string | null>(null);
   const chatRef = useRef<HTMLDivElement>(null);
 
   const addComment = useCallback((c: Comment) => {
@@ -45,6 +46,13 @@ export default function SellerLivePage() {
       .then(data => { if (data) setStreamInfo({ title: data.title, streamKey: data.streamKey ?? '' }); })
       .catch(() => {});
   }, [streamId]);
+
+  useEffect(() => {
+    fetch('/api/auth/socket-token', { cache: 'no-store' })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => setSocketToken(data?.accessToken ?? null))
+      .catch(() => setSocketToken(null));
+  }, []);
 
   // ── Elapsed timer ─────────────────────────────────────────────────────────
   useEffect(() => {
@@ -108,15 +116,18 @@ export default function SellerLivePage() {
     }
 
     // Call gateway to update stream status
-    const res = await fetch(`${GATEWAY_WS}/api/seller/live-streams/${streamId}/start`, {
+    const res = await fetch(`/api/seller/live-streams/${streamId}/start`, {
       method: 'POST',
-      headers: { Authorization: `Bearer ${token}` },
     });
     if (!res.ok) { toast.error('Không thể bắt đầu livestream'); return; }
+    if (!socketToken) {
+      toast.error('Phiên đăng nhập không hợp lệ. Vui lòng đăng nhập lại.');
+      return;
+    }
 
     // Connect socket
     const socket = io(GATEWAY_WS, {
-      auth: { token: token ?? '' },
+      auth: { token: socketToken },
       transports: ['websocket', 'polling'],
     });
     socketRef.current = socket;
@@ -157,9 +168,8 @@ export default function SellerLivePage() {
     socketRef.current?.disconnect();
     socketRef.current = null;
 
-    await fetch(`${GATEWAY_WS}/api/seller/live-streams/${streamId}/stop`, {
+    await fetch(`/api/seller/live-streams/${streamId}/stop`, {
       method: 'POST',
-      headers: { Authorization: `Bearer ${token}` },
     }).catch(() => {});
 
     setIsLive(false);

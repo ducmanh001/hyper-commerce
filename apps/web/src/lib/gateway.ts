@@ -6,8 +6,19 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { AUTH_COOKIE, isValidBearerHeader } from '@/lib/server/auth';
 
 const GATEWAY_URL = process.env.GATEWAY_URL ?? 'http://localhost:4000';
+
+export function getGatewayAuthorization(req: NextRequest): string | null {
+  const authHeader = req.headers.get('authorization');
+  if (isValidBearerHeader(authHeader)) {
+    return authHeader;
+  }
+
+  const accessToken = req.cookies.get(AUTH_COOKIE.accessToken)?.value;
+  return accessToken ? `Bearer ${accessToken}` : null;
+}
 
 export async function proxyToGateway(
   req: NextRequest,
@@ -21,7 +32,7 @@ export async function proxyToGateway(
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
   };
-  const auth = req.headers.get('authorization');
+  const auth = getGatewayAuthorization(req);
   if (auth) headers['Authorization'] = auth;
 
   let bodyStr: string | undefined;

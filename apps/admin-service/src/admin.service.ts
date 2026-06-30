@@ -53,6 +53,10 @@ export class AdminService {
         SELECT COUNT(*) AS new_users_today
         FROM users
         WHERE DATE(created_at) = $1::date
+      ),
+      user_totals AS (
+        SELECT COUNT(*) AS total_users
+        FROM users
       )
       SELECT
         o.orders_today,
@@ -64,13 +68,21 @@ export class AdminService {
              ELSE 0
         END AS payment_success_rate_pct,
         d.open_disputes,
-        u.new_users_today
-      FROM today_orders o, payment_stats p, dispute_stats d, new_users u
+        u.new_users_today,
+        ut.total_users
+      FROM today_orders o, payment_stats p, dispute_stats d, new_users u, user_totals ut
       `,
       [targetDate],
     );
 
-    return { date: targetDate, ...row };
+    return {
+      date: targetDate,
+      ...row,
+      totalUsers: Number(row?.['total_users'] ?? 0),
+      activeOrders: Number(row?.['orders_today'] ?? 0),
+      todayRevenue: Number(row?.['gmv_today'] ?? 0),
+      pendingDisputes: Number(row?.['open_disputes'] ?? 0),
+    };
   }
 
   // ------------------------------------------------------------------

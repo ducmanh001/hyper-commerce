@@ -16,6 +16,7 @@ import type { FeedItem } from '../repositories/feed.repository';
 import { FeedRepository } from '../repositories/feed.repository';
 import type { FollowRepository } from '../repositories/follow.repository';
 import type { CelebrityDetectorHelper } from '../helpers/celebrity-detector.helper';
+import type { FeedService } from '../feed.service';
 
 interface PostPublishedEvent {
   type: 'POST_PUBLISHED';
@@ -42,6 +43,7 @@ export class FeedFanoutWorker implements MessageHandler<PostPublishedEvent> {
     private readonly feedRepo: FeedRepository,
     private readonly followRepo: FollowRepository,
     private readonly celebrityDetector: CelebrityDetectorHelper,
+    private readonly feedService: FeedService,
   ) {}
 
   /**
@@ -131,6 +133,9 @@ export class FeedFanoutWorker implements MessageHandler<PostPublishedEvent> {
         await this.feedRepo.batchInsertFeedItems(feedItems.slice(i, i + writeBatchSize));
       }
 
+      // Invalidate ranked feed cache for all affected followers
+      await this.invalidateFeedCaches(followers.map((f) => f.id));
+
       totalWritten += feedItems.length;
       cursor = nextCursor ?? undefined;
     } while (cursor);
@@ -196,6 +201,9 @@ export class FeedFanoutWorker implements MessageHandler<PostPublishedEvent> {
 
         await this.feedRepo.batchInsertFeedItems(feedItems);
         totalWritten += feedItems.length;
+
+        // Invalidate ranked feed cache for active followers
+        await this.invalidateFeedCaches(activeFollowers.map((f) => f.id));
       }
 
       cursor = nextCursor ?? undefined;
@@ -211,5 +219,19 @@ export class FeedFanoutWorker implements MessageHandler<PostPublishedEvent> {
         traceId,
       }),
     );
+  }
+
+  /**
+   * Bulk-invalidate feed:feat:user:{userId} for a list of follower IDs.
+   * Uses a Redis pipeline — single round-trip regardless of batch size.
+   * Fire-and-forget: cache miss on next read is acceptable.
+   */
+  private async invalidateFeedCaches(followerIds: string[]): Promise<void> {
+    if (!followerIds.length) return;
+    try {
+      await Promise.all(followerIds.map((id) => this.feedService.invalidateCache(id)));
+    } catch (err) {
+      this.logger.warn(`Cache invalidation partial failure: ${(err as Error).message}`);
+    }
   }
 }
